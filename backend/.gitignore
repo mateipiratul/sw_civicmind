@@ -7,9 +7,6 @@ __pycache__/
 .env
 .venv/
 
-# Database
-db.sqlite3
-
 # IDEs
 .idea/
 .vscode/
