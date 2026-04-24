@@ -31,6 +31,14 @@
 ### 3. Personalization Logic (The "Pinterest" Feed)
 * Filter the `bills` table by matching the `impact_categories` JSON field with the user's `interests` array stored in their Django profile.
 
+## 📌 Current Sprint Focus
+* Your friend is finishing Django authentication.
+* Continue building the Django API surface:
+  * Create `profiles` serializers, viewsets, and routes.
+  * Add profile CRUD endpoints and user-related data access.
+  * Create initial endpoints for `bills` and `parliamentarians` in the Django app.
+* Keep auth integration ready by using DRF permissions and `request.user` access patterns.
+
 ## ⚠️ Implementation Rules
 1.  **Handle Nulls:** AI data and Impact Scores will be `null` until agents finish. Return `null` to frontend; do not crash.
 2.  **CORS:** Ensure `django-cors-headers` is configured to allow requests from the React frontend.
