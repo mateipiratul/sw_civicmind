@@ -1,0 +1,502 @@
+"""
+CivicMind REST API
+Reads from data/raw/ and data/processed/ JSON files.
+No database required — swap to Supabase queries later.
+
+Run:
+    uvicorn api.main:app --reload --port 8000
+"""
+import json
+import unicodedata
+from functools import lru_cache
+from pathlib import Path
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+DATA_RAW       = Path("data/raw")
+DATA_PROCESSED = Path("data/processed")
+
+app = FastAPI(
+    title="CivicMind API",
+    description="Transparency API for Romanian parliamentary bills and MPs",
+    version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ── Data loading ──────────────────────────────────────────────────────────────
+
+def _load_bills() -> list[dict]:
+    bills = []
+    for path in sorted(DATA_RAW.glob("bill_*.json")):
+        bills.append(json.loads(path.read_text(encoding="utf-8")))
+    return bills
+
+
+def _load_impact_scores() -> list[dict]:
+    path = DATA_PROCESSED / "impact_scores.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_notification_events() -> list[dict]:
+    path = DATA_PROCESSED / "bill_events.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_bill_flags() -> dict:
+    path = DATA_PROCESSED / "bill_flags.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_notification_jobs() -> list[dict]:
+    path = DATA_PROCESSED / "notification_jobs.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _bills_by_idp() -> dict[int, dict]:
+    return {b["idp"]: b for b in _load_bills()}
+
+
+def _norm(value: str) -> str:
+    decomposed = unicodedata.normalize("NFD", value or "")
+    without_marks = "".join(ch for ch in decomposed if unicodedata.category(ch) != "Mn")
+    return without_marks.casefold()
+
+
+# ── Health ────────────────────────────────────────────────────────────────────
+
+@app.get("/health")
+def health():
+    bills  = list(DATA_RAW.glob("bill_*.json"))
+    scores = DATA_PROCESSED / "impact_scores.json"
+    return {
+        "status": "ok",
+        "bills_on_disk": len(bills),
+        "impact_scores_ready": scores.exists(),
+    }
+
+
+# ── Bills ─────────────────────────────────────────────────────────────────────
+
+def _bill_summary(bill: dict) -> dict:
+    ai = bill.get("ai_analysis") or {}
+    sessions = bill.get("vote_sessions", [])
+    last_session = sessions[-1] if sessions else {}
+    return {
+        "idp":               bill["idp"],
+        "bill_number":       bill.get("bill_number"),
+        "title":             bill.get("title"),
+        "title_short":       ai.get("title_short") or bill.get("title", "")[:80],
+        "status":            bill.get("status"),
+        "impact_categories": ai.get("impact_categories", []),
+        "controversy_score": ai.get("controversy_score"),
+        "passed_by":         ai.get("passed_by"),
+        "dominant_party":    ai.get("dominant_party"),
+        "vote_date":         ai.get("vote_date") or last_session.get("date"),
+        "has_ai_analysis":   bool(ai),
+    }
+
+
+@app.get("/bills")
+def list_bills(
+    category: Optional[str] = Query(None, description="Filter by impact category"),
+    party:    Optional[str] = Query(None, description="Filter by dominant party"),
+    page:     int = Query(1, ge=1),
+    size:     int = Query(20, ge=1, le=100),
+):
+    bills = _load_bills()
+
+    if category:
+        bills = [
+            b for b in bills
+            if category.lower() in [c.lower() for c in (b.get("ai_analysis") or {}).get("impact_categories", [])]
+        ]
+    if party:
+        bills = [
+            b for b in bills
+            if (b.get("ai_analysis") or {}).get("dominant_party", "").upper() == party.upper()
+        ]
+
+    total = len(bills)
+    start = (page - 1) * size
+    page_bills = bills[start: start + size]
+
+    return {
+        "total": total,
+        "page":  page,
+        "size":  size,
+        "items": [_bill_summary(b) for b in page_bills],
+    }
+
+
+@app.get("/bills/{idp}")
+def get_bill(idp: int):
+    bill = _bills_by_idp().get(idp)
+    if not bill:
+        raise HTTPException(status_code=404, detail=f"Bill {idp} not found")
+
+    ai = bill.get("ai_analysis") or {}
+    sessions = bill.get("vote_sessions", [])
+
+    # Build party breakdown from last vote session
+    party_votes = []
+    if sessions:
+        party_votes = sessions[-1].get("by_party", [])
+
+    return {
+        **_bill_summary(bill),
+        "initiator":        bill.get("initiator"),
+        "registered_at":    bill.get("registered_at"),
+        "adopted_at":       bill.get("adopted_at"),
+        "documents":        bill.get("documents", {}),
+        "key_ideas":        ai.get("key_ideas", []),
+        "affected_profiles": ai.get("affected_profiles", []),
+        "arguments":        ai.get("arguments", {"pro": [], "con": []}),
+        "vote_sessions_count": len(sessions),
+        "party_votes":      party_votes,
+        "vote_summary":     sessions[-1].get("summary") if sessions else {},
+    }
+
+
+@app.get("/bills/{idp}/votes")
+def get_bill_votes(
+    idp: int,
+    q: Optional[str] = Query(None, description="Substring search by MP name"),
+    party: Optional[str] = Query(None, description="Filter by party"),
+    vote: Optional[str] = Query(None, description="Filter by vote: for | against | abstain | absent"),
+):
+    bill = _bills_by_idp().get(idp)
+    if not bill:
+        raise HTTPException(status_code=404, detail=f"Bill {idp} not found")
+
+    sessions = bill.get("vote_sessions", [])
+    if not sessions:
+        return {
+            "idp": idp,
+            "bill_number": bill.get("bill_number"),
+            "vote_session": None,
+            "total": 0,
+            "items": [],
+        }
+
+    session = sessions[-1]
+    votes = session.get("nominal_votes", [])
+
+    if q:
+        needle = _norm(q)
+        votes = [mv for mv in votes if needle in _norm(mv.get("mp_name", ""))]
+    if party:
+        votes = [mv for mv in votes if mv.get("party", "").upper() == party.upper()]
+    if vote:
+        allowed = {"for", "against", "abstain", "absent"}
+        if vote not in allowed:
+            raise HTTPException(status_code=422, detail=f"vote must be one of: {', '.join(sorted(allowed))}")
+        votes = [mv for mv in votes if mv.get("vote") == vote]
+
+    return {
+        "idp": idp,
+        "bill_number": bill.get("bill_number"),
+        "title_short": (bill.get("ai_analysis") or {}).get("title_short") or bill.get("title", "")[:80],
+        "vote_session": {
+            "idv": session.get("idv"),
+            "type": session.get("type"),
+            "date": session.get("date"),
+            "time": session.get("time"),
+            "description": session.get("description"),
+            "summary": session.get("summary", {}),
+            "by_party": session.get("by_party", []),
+        },
+        "total": len(votes),
+        "items": votes,
+    }
+
+
+# ── MPs ───────────────────────────────────────────────────────────────────────
+
+@app.get("/mps")
+def list_mps(
+    party: Optional[str] = Query(None, description="Filter by party"),
+    sort:  str           = Query("score", description="Sort field: score | name"),
+    page:  int           = Query(1, ge=1),
+    size:  int           = Query(50, ge=1, le=200),
+):
+    scores = _load_impact_scores()
+
+    if party:
+        scores = [s for s in scores if s.get("party", "").upper() == party.upper()]
+
+    if sort == "name":
+        scores = sorted(scores, key=lambda x: x.get("mp_name", ""))
+    else:
+        scores = sorted(scores, key=lambda x: x.get("score", 0), reverse=True)
+
+    total = len(scores)
+    start = (page - 1) * size
+    page_scores = scores[start: start + size]
+
+    return {
+        "total": total,
+        "page":  page,
+        "size":  size,
+        "items": [
+            {
+                "mp_slug":          s["mp_slug"],
+                "mp_name":          s["mp_name"],
+                "party":            s["party"],
+                "score":            s["score"],
+                "total_votes":      s["total_votes"],
+                "for_count":        s["for_count"],
+                "against_count":    s["against_count"],
+                "abstain_count":    s["abstain_count"],
+                "absent_count":     s["absent_count"],
+                "categories_voted": s["categories_voted"],
+                "narrative":        s.get("narrative", ""),
+            }
+            for s in page_scores
+        ],
+    }
+
+
+@app.get("/mps/search")
+def search_mps(
+    q: str = Query(..., min_length=1, description="Substring search by MP name"),
+    party: Optional[str] = Query(None, description="Filter by party"),
+    size: int = Query(20, ge=1, le=100),
+):
+    needle = _norm(q)
+    scores = _load_impact_scores()
+
+    matches = [
+        s for s in scores
+        if needle in _norm(s.get("mp_name", ""))
+    ]
+    if party:
+        matches = [s for s in matches if s.get("party", "").upper() == party.upper()]
+
+    matches = sorted(matches, key=lambda x: (-x.get("score", 0), x.get("mp_name", "")))[:size]
+
+    return {
+        "q": q,
+        "total": len(matches),
+        "items": [
+            {
+                "mp_slug":     s["mp_slug"],
+                "mp_name":     s["mp_name"],
+                "party":       s["party"],
+                "score":       s["score"],
+                "total_votes": s["total_votes"],
+            }
+            for s in matches
+        ],
+    }
+
+
+@app.get("/mps/{mp_slug}")
+def get_mp(mp_slug: str):
+    scores = _load_impact_scores()
+    mp = next((s for s in scores if s["mp_slug"] == mp_slug), None)
+    if not mp:
+        raise HTTPException(status_code=404, detail=f"MP '{mp_slug}' not found")
+
+    # Build vote history by scanning all bills
+    vote_history = []
+    for bill in _load_bills():
+        bill_number = bill.get("bill_number", "")
+        ai = bill.get("ai_analysis") or {}
+        for session in bill.get("vote_sessions", []):
+            for mv in session.get("nominal_votes", []):
+                if mv["mp_slug"] == mp_slug:
+                    vote_history.append({
+                        "idp":         bill["idp"],
+                        "bill_number": bill_number,
+                        "title_short": ai.get("title_short", bill.get("title", ""))[:80],
+                        "vote":        mv["vote"],
+                        "date":        session.get("date"),
+                        "categories":  ai.get("impact_categories", []),
+                    })
+
+    vote_history.sort(key=lambda x: x.get("date") or "", reverse=True)
+
+    return {
+        **mp,
+        "vote_history": vote_history,
+    }
+
+
+# ── Agent endpoints ───────────────────────────────────────────────────────────
+
+class QARequest(BaseModel):
+    idp:      int
+    question: str
+
+
+class MessengerRequest(BaseModel):
+    idp:       int
+    mp_name:   str
+    user_name: str
+    stance:    str  # "support" | "oppose"
+
+
+class NotificationRunRequest(BaseModel):
+    preferences_path: Optional[str] = None
+
+
+class NotificationDeliverRequest(BaseModel):
+    limit: int = 100
+
+
+@app.post("/qa")
+def ask_question(req: QARequest):
+    bill = _bills_by_idp().get(req.idp)
+    if not bill:
+        raise HTTPException(status_code=404, detail=f"Bill {req.idp} not found")
+    if not bill.get("ai_analysis"):
+        raise HTTPException(status_code=422, detail="Bill has no AI analysis. Run Scout first.")
+
+    from agents.qa import run_qa
+    answer = run_qa(bill, req.question)
+    return {"idp": req.idp, "question": req.question, "answer": answer}
+
+
+@app.post("/messenger")
+def draft_email(req: MessengerRequest):
+    if req.stance not in ("support", "oppose"):
+        raise HTTPException(status_code=422, detail="stance must be 'support' or 'oppose'")
+
+    bill = _bills_by_idp().get(req.idp)
+    if not bill:
+        raise HTTPException(status_code=404, detail=f"Bill {req.idp} not found")
+    if not bill.get("ai_analysis"):
+        raise HTTPException(status_code=422, detail="Bill has no AI analysis. Run Scout first.")
+
+    from agents.messenger import run_messenger
+    draft = run_messenger(bill, req.mp_name, req.user_name, req.stance)
+    return {"idp": req.idp, "draft": draft}
+
+
+# ── Stats (useful for dashboard overview) ─────────────────────────────────────
+
+@app.get("/notifications/events")
+def list_notification_events(
+    event_type: Optional[str] = Query(None, description="Filter by event type"),
+    idp: Optional[int] = Query(None, description="Filter by bill idp"),
+    limit: int = Query(100, ge=1, le=500),
+):
+    events = _load_notification_events()
+    flags = _load_bill_flags()
+
+    if event_type:
+        events = [e for e in events if e.get("event_type") == event_type]
+    if idp is not None:
+        events = [e for e in events if e.get("idp") == idp]
+
+    def event_key(event: dict) -> str:
+        if event["event_type"] == "new_bill":
+            return f"bill:{event['idp']}:new_bill"
+        if event["event_type"] == "analysis_created":
+            return f"bill:{event['idp']}:analysis_created"
+        return f"vote:{event.get('idv')}:new_final_vote"
+
+    events = sorted(events, key=lambda e: e.get("detected_at") or "", reverse=True)[:limit]
+    return {
+        "total": len(events),
+        "items": [
+            {
+                **event,
+                "event_key": event_key(event),
+                "flag_record": flags.get(event_key(event), {}),
+            }
+            for event in events
+        ],
+    }
+
+
+@app.post("/notifications/run")
+def run_notification_watchdog(req: NotificationRunRequest | None = None):
+    from agents.notifications import run_notifications
+
+    result = run_notifications(
+        data_dir=str(DATA_RAW),
+        processed_dir=str(DATA_PROCESSED),
+        preferences_path=(
+            req.preferences_path
+            if req and req.preferences_path
+            else str(DATA_PROCESSED / "notification_preferences.json")
+        ),
+    )
+    return {
+        "events_detected": len(result.get("events", [])),
+        "events_classified": len(result.get("flags", {})),
+        "jobs_queued": len(result.get("jobs", [])),
+    }
+
+
+@app.get("/notifications/jobs")
+def list_notification_jobs(
+    status: Optional[str] = Query(None, description="Filter by job status"),
+    email: Optional[str] = Query(None, description="Filter by recipient email"),
+    limit: int = Query(100, ge=1, le=500),
+):
+    jobs = _load_notification_jobs()
+
+    if status:
+        jobs = [j for j in jobs if j.get("status") == status]
+    if email:
+        jobs = [j for j in jobs if j.get("email", "").casefold() == email.casefold()]
+
+    jobs = sorted(jobs, key=lambda j: j.get("created_at") or "", reverse=True)[:limit]
+    return {"total": len(jobs), "items": jobs}
+
+
+@app.post("/notifications/deliver")
+def deliver_notification_jobs(req: NotificationDeliverRequest):
+    from agents.notification_delivery import run_notification_delivery
+
+    return run_notification_delivery(
+        processed_dir=str(DATA_PROCESSED),
+        limit=req.limit,
+        dry_run=True,
+    )
+
+
+@app.get("/stats")
+def stats():
+    bills  = _load_bills()
+    scores = _load_impact_scores()
+
+    all_cats: dict[str, int] = {}
+    party_counts: dict[str, int] = {}
+
+    for b in bills:
+        ai = b.get("ai_analysis") or {}
+        for cat in ai.get("impact_categories", []):
+            all_cats[cat] = all_cats.get(cat, 0) + 1
+        dp = ai.get("dominant_party", "")
+        if dp:
+            party_counts[dp] = party_counts.get(dp, 0) + 1
+
+    return {
+        "total_bills":    len(bills),
+        "bills_analysed": sum(1 for b in bills if b.get("ai_analysis")),
+        "total_mps":      len(scores),
+        "categories":     dict(sorted(all_cats.items(), key=lambda x: -x[1])),
+        "dominant_parties": dict(sorted(party_counts.items(), key=lambda x: -x[1])),
+        "avg_score":      round(sum(s["score"] for s in scores) / len(scores), 1) if scores else 0,
+    }
