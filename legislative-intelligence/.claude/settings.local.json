@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.cdep.ro)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(mkdir -p \"c:/Users/alexa/Desktop/techstars_/scraper\")",
+      "Bash(mkdir -p \"c:/Users/alexa/Desktop/techstars_/data/raw\")",
+      "Bash(pip install *)",
+      "Bash(python main.py --days 7 --max 5)",
+      "Bash(python main.py --days 7 --max 3)",
+      "Bash(python -c ' *)",
+      "Bash(grep -n \"\\\\\\\\\\\\\\\\u\" scraper/cdep.py)",
+      "Bash(python main.py --days 7 --max 20)",
+      "WebFetch(domain:docs.mistral.ai)",
+      "Bash(pip show *)",
+      "Bash(python -c \"import mistralai; print\\(dir\\(mistralai\\)\\)\")",
+      "Bash(python -c \"from mistralai.client import Mistral; print\\('OK:', Mistral\\)\")"
+    ]
+  }
+}

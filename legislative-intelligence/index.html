@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicMind</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f9f9f9; color: #111; font-size: 14px; }
+
+  /* Nav */
+  nav { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 0 24px; display: flex; align-items: center; gap: 0; height: 48px; }
+  .nav-brand { font-weight: 700; font-size: 16px; margin-right: 32px; cursor: pointer; }
+  .nav-link { padding: 14px 16px; cursor: pointer; color: #666; font-size: 13px; border-bottom: 2px solid transparent; transition: color 0.15s; }
+  .nav-link:hover { color: #111; }
+  .nav-link.active { color: #111; border-bottom-color: #111; font-weight: 500; }
+
+  /* Layout */
+  .page { display: none; max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  .page.active { display: block; }
+
+  /* Agent badge */
+  .agent { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; }
+  .agent-scout    { background: #e8f0fe; color: #1a56db; }
+  .agent-auditor  { background: #f3e8ff; color: #7c3aed; }
+  .agent-qa       { background: #e8fdf0; color: #16a34a; }
+  .agent-messenger{ background: #fff4e8; color: #d97706; }
+  .agent-notifications{ background: #eef2ff; color: #4338ca; }
+  .agent::before  { content: "⚡"; font-size: 10px; }
+
+  /* Section header */
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .section-header h2 { font-size: 18px; font-weight: 600; }
+  .section-header .spacer { flex: 1; }
+  .muted { color: #666; font-size: 12px; line-height: 1.5; }
+  .scope-note { background: #fff; border: 1px solid #d8dee8; border-left: 3px solid #1a56db; border-radius: 6px; padding: 12px 14px; margin-bottom: 20px; color: #344054; font-size: 13px; line-height: 1.5; }
+  .notice { background: #fffdf4; border: 1px solid #f2dfa4; border-radius: 6px; padding: 12px 14px; color: #594300; font-size: 13px; line-height: 1.5; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .toolbar input, .toolbar select, .field-group select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; min-height: 34px; }
+  .toolbar input:focus, .toolbar select:focus, .field-group select:focus { outline: none; border-color: #111; }
+  .toolbar input { min-width: 220px; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .card:hover { border-color: #aaa; }
+  .card-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; line-height: 1.4; }
+  .card-meta { font-size: 12px; color: #666; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+
+  /* Pills */
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 99px; border: 1px solid #ddd; background: #f4f4f4; color: #444; }
+  .pill-btn { cursor: pointer; transition: background 0.1s; }
+  .pill-btn:hover, .pill-btn.active { background: #111; color: #fff; border-color: #111; }
+
+  /* Filters */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
+  .stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+  .stat-num { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: #666; }
+
+  /* Detail view */
+  .detail-back { font-size: 12px; color: #666; cursor: pointer; margin-bottom: 16px; display: inline-flex; align-items: center; gap: 4px; }
+  .detail-back:hover { color: #111; }
+  .detail-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+  .detail-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .box { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+  .box h3 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+  .box ul { padding-left: 16px; }
+  .box li { font-size: 13px; margin-bottom: 6px; line-height: 1.5; color: #333; }
+
+  /* Vote bar */
+  .vote-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; margin-bottom: 12px; }
+  .vote-for     { background: #16a34a; }
+  .vote-against { background: #dc2626; }
+  .vote-abstain { background: #d97706; }
+  .vote-absent  { background: #e5e7eb; }
+  .vote-legend  { display: flex; gap: 12px; font-size: 11px; color: #666; flex-wrap: wrap; }
+  .vote-legend span::before { content: "●"; margin-right: 3px; }
+  .legend-for::before    { color: #16a34a; }
+  .legend-against::before{ color: #dc2626; }
+  .legend-abstain::before{ color: #d97706; }
+  .legend-absent::before { color: #aaa; }
+
+  /* Q&A */
+  .qa-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .qa-input-row { display: flex; gap: 8px; }
+  .qa-input-row input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+  .qa-input-row input:focus { outline: none; border-color: #111; }
+  .qa-answer { background: #f9f9f9; border-radius: 6px; padding: 12px; margin-top: 12px; font-size: 13px; line-height: 1.6; color: #333; }
+
+  /* Messenger */
+  .messenger-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .messenger-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group label { font-size: 11px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-group input { padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+  .field-group input:focus { outline: none; border-color: #111; }
+  .stance-btns { display: flex; gap: 8px; }
+  .stance-btn { padding: 7px 16px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 13px; background: #fff; }
+  .stance-btn.active-support { background: #e8fdf0; border-color: #16a34a; color: #16a34a; font-weight: 500; }
+  .stance-btn.active-oppose  { background: #fef2f2; border-color: #dc2626; color: #dc2626; font-weight: 500; }
+  .email-draft { background: #f9f9f9; border-radius: 6px; padding: 14px; margin-top: 12px; }
+  .email-subject { font-weight: 600; margin-bottom: 8px; font-size: 13px; }
+  .email-body { font-size: 13px; line-height: 1.6; color: #333; white-space: pre-wrap; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  th { background: #f4f4f4; text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e0e0e0; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; cursor: pointer; }
+
+  /* Score bar */
+  .score-bar { display: flex; align-items: center; gap: 8px; }
+  .score-track { width: 80px; height: 4px; background: #e0e0e0; border-radius: 2px; }
+  .score-fill { height: 100%; border-radius: 2px; background: #111; }
+
+  /* MP detail expand */
+  .mp-detail-row { display: none; background: #fafafa; }
+  .mp-detail-row.open { display: table-row; }
+  .mp-detail-inner { padding: 12px; }
+
+  /* Button */
+  .btn { padding: 8px 16px; background: #111; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .btn:hover { background: #333; }
+  .btn:disabled { background: #999; cursor: default; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-secondary { background: #fff; color: #111; border: 1px solid #ddd; }
+  .btn-secondary:hover { background: #f4f4f4; }
+
+  /* Loading / empty */
+  .loading { color: #999; font-size: 13px; padding: 32px; text-align: center; }
+  .empty   { color: #aaa; font-size: 13px; padding: 24px; text-align: center; border: 1px dashed #ddd; border-radius: 8px; }
+
+  /* Party chip */
+  .party { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #f0f0f0; }
+  .status-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: #eef2ff; color: #4338ca; }
+  .status-queued { background: #fff7ed; color: #c2410c; }
+  .status-sent_dry_run { background: #ecfdf3; color: #15803d; }
+  .status-for { background: #ecfdf3; color: #15803d; }
+  .status-against { background: #fef2f2; color: #b91c1c; }
+  .status-abstain { background: #fff7ed; color: #c2410c; }
+  .status-absent { background: #f4f4f5; color: #52525b; }
+  .job-body { max-height: 120px; overflow: auto; white-space: pre-wrap; color: #444; font-size: 12px; line-height: 1.5; background: #fafafa; border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+
+  @media (max-width: 760px) {
+    nav { overflow-x: auto; padding: 0 12px; }
+    .nav-brand { margin-right: 12px; white-space: nowrap; }
+    .nav-link { white-space: nowrap; padding: 14px 10px; }
+    .page { padding: 24px 14px; }
+    .two-col, .three-col, .messenger-fields { grid-template-columns: 1fr; }
+    .toolbar input { min-width: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand" onclick="navigate('home')">CivicMind</div>
+  <span class="nav-link active" data-page="home"    onclick="navigate('home')">Acasă</span>
+  <span class="nav-link"        data-page="bills"   onclick="navigate('bills')">Legi</span>
+  <span class="nav-link"        data-page="mps"     onclick="navigate('mps')">Deputați</span>
+  <span class="nav-link"        data-page="notifications" onclick="navigate('notifications')">Notificări</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════ HOME -->
+<div class="page active" id="page-home">
+  <div class="section-header">
+    <h2>Activitate legislativă CDEP</h2>
+  </div>
+  <div class="scope-note">
+    CivicMind urmărește momentan voturi și documente din Camera Deputaților. Notificările și emailurile folosesc această formulare și nu afirmă adoptarea finală de către întreg Parlamentul.
+  </div>
+  <div class="stats-grid" id="stats-grid">
+    <div class="loading">Se încarcă...</div>
+  </div>
+
+  <div class="section-header">
+    <h2>Categorii de impact</h2>
+    <span class="agent agent-scout">Scout</span>
+  </div>
+  <div class="filters" id="home-categories"></div>
+
+  <div class="section-header" style="margin-top:28px;">
+    <h2>Legi recente</h2>
+    <span class="agent agent-scout">Scout</span>
+  </div>
+  <div id="home-bills"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ BILLS -->
+<div class="page" id="page-bills">
+  <div class="section-header">
+    <h2>Proiecte de lege</h2>
+    <span class="agent agent-scout">Scout</span>
+  </div>
+
+  <div class="filters" id="bills-category-filters"></div>
+
+  <div id="bills-list">
+    <div class="loading">Se încarcă...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ BILL DETAIL -->
+<div class="page" id="page-bill-detail">
+  <div class="detail-back" onclick="navigate('bills')">← Înapoi la legi</div>
+  <div id="bill-detail-content">
+    <div class="loading">Se încarcă...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ MPs -->
+<div class="page" id="page-mps">
+  <div class="section-header">
+    <h2>Scor de impact — Deputați</h2>
+    <span class="agent agent-auditor">Auditor</span>
+  </div>
+
+  <div class="toolbar">
+    <input id="mp-search-input" type="search" placeholder="Caută deputat după nume" onkeydown="if(event.key==='Enter') searchMPs()">
+    <button class="btn btn-sm btn-secondary" onclick="searchMPs()">Caută</button>
+    <button class="btn btn-sm btn-secondary" onclick="clearMPSearch()">Reset</button>
+  </div>
+  <div id="mp-search-results"></div>
+
+  <div class="filters" id="mp-party-filters"></div>
+
+  <div id="mps-table-wrap">
+    <div class="loading">Se încarcă...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ NOTIFICATIONS -->
+<div class="page" id="page-notifications">
+  <div class="section-header">
+    <h2>Notificări și joburi email</h2>
+    <span class="agent agent-notifications">Notifications</span>
+  </div>
+
+  <div class="notice">
+    Livrarea reală de email nu este activă. Acest ecran rulează watchdog-ul, afișează flaguri și poate procesa joburi doar în modul dry-run.
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-sm" onclick="runNotifications()">Rulează watchdog</button>
+    <button class="btn btn-sm btn-secondary" onclick="deliverNotifications()">Dry-run delivery</button>
+    <select id="notification-job-status" onchange="loadNotificationJobs()">
+      <option value="">Toate joburile</option>
+      <option value="queued">Queued</option>
+      <option value="sent_dry_run">Sent dry-run</option>
+    </select>
+  </div>
+
+  <div id="notification-run-result"></div>
+
+  <div class="three-col" id="notification-stats" style="margin-bottom:16px;">
+    <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Evenimente</div></div>
+    <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">Joburi</div></div>
+    <div class="stat-card"><div class="stat-num">dry-run</div><div class="stat-label">Mod livrare</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-header"><h2>Evenimente recente</h2></div>
+      <div id="notification-events"><div class="loading">Se încarcă...</div></div>
+    </div>
+    <div>
+      <div class="section-header"><h2>Joburi queued/dry-run</h2></div>
+      <div id="notification-jobs"><div class="loading">Se încarcă...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = new URLSearchParams(location.search).get('api') || 'http://localhost:8000';
+
+// ── Router ────────────────────────────────────────────────────────────────────
+let currentBillIdp = null;
+let mpStance = 'support';
+let currentVotes = [];
+
+function navigate(page, idp) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+  if (page === 'bill-detail' && idp) {
+    currentBillIdp = idp;
+    document.getElementById('page-bill-detail').classList.add('active');
+    loadBillDetail(idp);
+  } else {
+    document.getElementById('page-' + page).classList.add('active');
+    const link = document.querySelector(`[data-page="${page}"]`);
+    if (link) link.classList.add('active');
+
+    if (page === 'home')  loadHome();
+    if (page === 'bills') loadBills();
+    if (page === 'mps')   loadMPs();
+    if (page === 'notifications') loadNotifications();
+  }
+  window.scrollTo(0, 0);
+}
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function api(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function post(path, body) {
+  const r = await fetch(API + path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Formatting helpers ────────────────────────────────────────────────────────
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+function categoryPill(c) { return `<span class="pill">${c}</span>`; }
+function partyChip(p) { return `<span class="party">${p}</span>`; }
+function passedLabel(p) {
+  const map = { unanimous: '✓ Unanim', comfortable: '✓ Confortabil', slim: '⚠ La limită' };
+  return map[p] || p;
+}
+function voteLabel(vote) {
+  const map = { for: 'Pentru', against: 'Împotrivă', abstain: 'Abținere', absent: 'Absent' };
+  return map[vote] || vote || '—';
+}
+function eventKey(e) {
+  if (e.event_type === 'new_bill') return `bill:${e.idp}:new_bill`;
+  if (e.event_type === 'analysis_created') return `bill:${e.idp}:analysis_created`;
+  return `vote:${e.idv}:new_final_vote`;
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+async function loadHome() {
+  try {
+    const stats = await api('/stats');
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${stats.total_bills}</div><div class="stat-label">Proiecte de lege</div></div>
+      <div class="stat-card"><div class="stat-num">${stats.bills_analysed}</div><div class="stat-label">Analizate cu AI</div></div>
+      <div class="stat-card"><div class="stat-num">${stats.total_mps}</div><div class="stat-label">Deputați urmăriți</div></div>
+      <div class="stat-card"><div class="stat-num">${stats.avg_score}</div><div class="stat-label">Scor mediu de impact</div></div>
+    `;
+
+    const cats = Object.entries(stats.categories);
+    document.getElementById('home-categories').innerHTML = cats
+      .map(([c, n]) => `<span class="pill pill-btn" onclick="navigate('bills'); filterBillCategory('${c}')">${c} <strong>${n}</strong></span>`)
+      .join('');
+
+    const bills = await api('/bills?size=5');
+    document.getElementById('home-bills').innerHTML = bills.items.map(billCard).join('');
+  } catch(e) {
+    document.getElementById('stats-grid').innerHTML = `<div class="empty">Nu se poate conecta la API.<br><small>Pornește: <code>uvicorn api.main:app --reload --port 8000</code></small></div>`;
+  }
+}
+
+// ── BILLS ─────────────────────────────────────────────────────────────────────
+let billCategoryFilter = null;
+
+function billCard(b) {
+  const cats = (b.impact_categories || []).map(categoryPill).join(' ');
+  return `
+    <div class="card" onclick="navigate('bill-detail', ${b.idp})">
+      <div class="card-title">${b.title_short || b.title}</div>
+      <div class="card-meta">
+        ${partyChip(b.dominant_party || '—')}
+        ${cats}
+        <span>${passedLabel(b.passed_by)}</span>
+        ${b.vote_date ? `<span>${b.vote_date}</span>` : ''}
+        ${b.controversy_score != null ? `<span>Controversă: ${Math.round(b.controversy_score * 100)}%</span>` : ''}
+      </div>
+    </div>`;
+}
+
+async function loadBills(category) {
+  if (category !== undefined) billCategoryFilter = category;
+  const q = billCategoryFilter ? `?category=${billCategoryFilter}` : '';
+  const wrap = document.getElementById('bills-list');
+  wrap.innerHTML = '<div class="loading">Se încarcă...</div>';
+
+  try {
+    const [bills, stats] = await Promise.all([api('/bills' + q), api('/stats')]);
+
+    // Category filters
+    const cats = ['toate', ...Object.keys(stats.categories)];
+    document.getElementById('bills-category-filters').innerHTML = cats.map(c => {
+      const active = (c === 'toate' && !billCategoryFilter) || c === billCategoryFilter ? 'active' : '';
+      const val = c === 'toate' ? 'null' : `'${c}'`;
+      return `<span class="pill pill-btn ${active}" onclick="filterBillCategory(${val})">${c}</span>`;
+    }).join('');
+
+    wrap.innerHTML = bills.items.length
+      ? bills.items.map(billCard).join('')
+      : '<div class="empty">Nicio lege găsită.</div>';
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Eroare: ${e.message}</div>`;
+  }
+}
+
+function filterBillCategory(cat) {
+  billCategoryFilter = cat === 'null' || !cat ? null : cat;
+  loadBills();
+}
+
+// ── BILL DETAIL ───────────────────────────────────────────────────────────────
+async function loadBillDetail(idp) {
+  const wrap = document.getElementById('bill-detail-content');
+  wrap.innerHTML = '<div class="loading">Se încarcă...</div>';
+
+  try {
+    const b = await api('/bills/' + idp);
+    const ai = b.has_ai_analysis;
+    const pro  = (b.arguments?.pro  || []).map(a => `<li>${a}</li>`).join('');
+    const con  = (b.arguments?.con  || []).map(a => `<li>${a}</li>`).join('');
+    const ideas= (b.key_ideas || []).map(a => `<li>${a}</li>`).join('');
+    const cats = (b.impact_categories || []).map(categoryPill).join(' ');
+
+    const vs = b.vote_summary || {};
+    const total = (vs.for||0) + (vs.against||0) + (vs.abstain||0) + (vs.absent||0);
+    const pct = n => total ? Math.round((n/total)*100) : 0;
+
+    const partyRows = (b.party_votes || []).sort((a,b) => b.for - a.for).slice(0,8)
+      .map(p => `<tr><td>${partyChip(p.party)}</td><td>${p.for}</td><td>${p.against}</td><td>${p.abstain}</td></tr>`).join('');
+
+    wrap.innerHTML = `
+      <div class="detail-badges">
+        ${cats}
+        <span class="agent agent-scout">Scout</span>
+        <span class="pill">${passedLabel(b.passed_by)}</span>
+        ${b.vote_date ? `<span class="pill">${b.vote_date}</span>` : ''}
+        ${b.controversy_score != null ? `<span class="pill">Controversă ${Math.round(b.controversy_score*100)}%</span>` : ''}
+      </div>
+      <div class="detail-title">${b.title}</div>
+      <div style="color:#666;font-size:12px;margin-bottom:24px;">${b.bill_number || ''} · ${b.status || ''} · ${partyChip(b.dominant_party||'—')}</div>
+
+      ${ai ? `
+      <!-- Key ideas -->
+      <div class="box" style="margin-bottom:12px;">
+        <h3>Idei cheie</h3>
+        <ul>${ideas}</ul>
+      </div>
+
+      <!-- PRO / CON -->
+      <div class="two-col" style="margin-bottom:12px;">
+        <div class="box">
+          <h3 style="color:#16a34a;">✓ Argumente Pro</h3>
+          <ul>${pro || '<li style="color:#aaa">Nedisponibil</li>'}</ul>
+        </div>
+        <div class="box">
+          <h3 style="color:#dc2626;">✗ Argumente Contra</h3>
+          <ul>${con || '<li style="color:#aaa">Nedisponibil</li>'}</ul>
+        </div>
+      </div>
+      ` : '<div class="empty" style="margin-bottom:12px;">Analiza AI nu este disponibilă. Rulează Scout mai întâi.</div>'}
+
+      <!-- Vote breakdown -->
+      <div class="box" style="margin-bottom:12px;">
+        <h3>Vot final — ${total} parlamentari</h3>
+        <div class="vote-bar" style="margin-top:12px;">
+          <div class="vote-for"     style="width:${pct(vs.for)}%"></div>
+          <div class="vote-against" style="width:${pct(vs.against)}%"></div>
+          <div class="vote-abstain" style="width:${pct(vs.abstain)}%"></div>
+          <div class="vote-absent"  style="width:${pct(vs.absent)}%"></div>
+        </div>
+        <div class="vote-legend">
+          <span class="legend-for">Pentru ${vs.for||0}</span>
+          <span class="legend-against">Împotrivă ${vs.against||0}</span>
+          <span class="legend-abstain">Abțineri ${vs.abstain||0}</span>
+          <span class="legend-absent">Absențe ${vs.absent||0}</span>
+        </div>
+        ${partyRows ? `
+        <table style="margin-top:14px;border:none;">
+          <tr><th>Partid</th><th>Pentru</th><th>Împotrivă</th><th>Abțineri</th></tr>
+          ${partyRows}
+        </table>` : ''}
+      </div>
+
+      <div class="box" style="margin-bottom:12px;">
+        <div class="section-header" style="margin-bottom:12px;">
+          <h3 style="font-size:14px;">Vot nominal</h3>
+          <span class="agent agent-scout">CDEP</span>
+          <span class="spacer"></span>
+        </div>
+        <div class="toolbar">
+          <input id="bill-vote-search" type="search" placeholder="Caută deputat în votul nominal" onkeydown="if(event.key==='Enter') loadBillVotes(${b.idp})">
+          <select id="bill-vote-filter" onchange="loadBillVotes(${b.idp})">
+            <option value="">Toate voturile</option>
+            <option value="for">Pentru</option>
+            <option value="against">Împotrivă</option>
+            <option value="abstain">Abținere</option>
+            <option value="absent">Absent</option>
+          </select>
+          <button class="btn btn-sm btn-secondary" onclick="loadBillVotes(${b.idp})">Filtrează</button>
+        </div>
+        <div id="bill-votes-table"><div class="loading">Se încarcă voturile...</div></div>
+      </div>
+
+      <!-- Q&A Agent -->
+      ${ai ? `
+      <div class="qa-box">
+        <div class="section-header" style="margin-bottom:12px;">
+          <h3 style="font-size:14px;">Întreabă despre această lege</h3>
+          <span class="agent agent-qa">Q&A</span>
+        </div>
+        <div class="qa-input-row">
+          <input id="qa-input" type="text" placeholder="ex: Cum mă afectează această lege ca angajat?" onkeydown="if(event.key==='Enter') askQA(${b.idp})">
+          <button class="btn btn-sm" onclick="askQA(${b.idp})">Întreabă</button>
+        </div>
+        <div id="qa-answer"></div>
+      </div>` : ''}
+
+      <!-- Messenger Agent -->
+      ${ai ? `
+      <div class="messenger-box">
+        <div class="section-header" style="margin-bottom:12px;">
+          <h3 style="font-size:14px;">Scrie deputatului tău</h3>
+          <span class="agent agent-messenger">Messenger</span>
+        </div>
+        <div class="messenger-fields">
+          <div class="field-group">
+            <label>Numele tău</label>
+            <input id="msg-user" type="text" placeholder="Maria Ionescu">
+          </div>
+          <div class="field-group">
+            <label>Deputat</label>
+            <input id="msg-mp" type="text" placeholder="Ion Popescu">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Poziție</div>
+          <div class="stance-btns">
+            <button class="stance-btn active-support" id="btn-support" onclick="setStance('support')">✓ Susțin</button>
+            <button class="stance-btn" id="btn-oppose" onclick="setStance('oppose')">✗ Mă opun</button>
+          </div>
+        </div>
+        <button class="btn btn-sm" onclick="draftEmail(${b.idp})">Generează email</button>
+        <div id="email-draft"></div>
+      </div>` : ''}
+    `;
+    loadBillVotes(idp);
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Eroare: ${e.message}</div>`;
+  }
+}
+
+async function loadBillVotes(idp) {
+  const q = document.getElementById('bill-vote-search')?.value.trim() || '';
+  const vote = document.getElementById('bill-vote-filter')?.value || '';
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (vote) params.set('vote', vote);
+
+  const wrap = document.getElementById('bill-votes-table');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Se încarcă voturile...</div>';
+
+  try {
+    const data = await api(`/bills/${idp}/votes${params.toString() ? '?' + params.toString() : ''}`);
+    currentVotes = data.items || [];
+    if (!currentVotes.length) {
+      wrap.innerHTML = '<div class="empty">Niciun vot nominal pentru filtrul curent.</div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>Deputat</th><th>Partid</th><th>Vot</th></tr></thead>
+        <tbody>
+          ${currentVotes.slice(0, 120).map(v => `
+            <tr>
+              <td>${esc(v.mp_name)}</td>
+              <td>${partyChip(esc(v.party))}</td>
+              <td><span class="status-pill status-${esc(v.vote)}">${voteLabel(v.vote)}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="muted" style="margin-top:8px;">${currentVotes.length} rezultate afișate pentru votul final CDEP.</div>
+    `;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Eroare: ${esc(e.message)}</div>`;
+  }
+}
+
+async function askQA(idp) {
+  const q = document.getElementById('qa-input').value.trim();
+  if (!q) return;
+  const box = document.getElementById('qa-answer');
+  box.innerHTML = '<div class="qa-answer" style="color:#999;">Se generează răspuns...</div>';
+  try {
+    const res = await post('/qa', { idp, question: q });
+    box.innerHTML = `<div class="qa-answer">${res.answer}</div>`;
+  } catch(e) {
+    box.innerHTML = `<div class="qa-answer" style="color:#dc2626;">Eroare: ${e.message}</div>`;
+  }
+}
+
+function setStance(stance) {
+  mpStance = stance;
+  document.getElementById('btn-support').className = 'stance-btn' + (stance==='support' ? ' active-support' : '');
+  document.getElementById('btn-oppose').className  = 'stance-btn' + (stance==='oppose'  ? ' active-oppose'  : '');
+}
+
+async function draftEmail(idp) {
+  const userName = document.getElementById('msg-user').value.trim() || 'Cetățean';
+  const mpName   = document.getElementById('msg-mp').value.trim()   || 'Domnule Deputat';
+  const box = document.getElementById('email-draft');
+  box.innerHTML = '<div class="qa-answer" style="color:#999;">Se generează emailul...</div>';
+  try {
+    const res = await post('/messenger', { idp, mp_name: mpName, user_name: userName, stance: mpStance });
+    const d = res.draft || {};
+    box.innerHTML = `
+      <div class="email-draft">
+        <div class="email-subject">${d.subject || ''}</div>
+        <div class="email-body">${(d.body || '').replace(/\n/g,'<br>')}</div>
+      </div>`;
+  } catch(e) {
+    box.innerHTML = `<div class="qa-answer" style="color:#dc2626;">Eroare: ${e.message}</div>`;
+  }
+}
+
+// ── MPs ───────────────────────────────────────────────────────────────────────
+let mpPartyFilter = null;
+let openMpSlug = null;
+
+async function loadMPs(party) {
+  if (party !== undefined) mpPartyFilter = party;
+  const q = mpPartyFilter ? `?party=${mpPartyFilter}&size=200` : '?size=200';
+  const wrap = document.getElementById('mps-table-wrap');
+  wrap.innerHTML = '<div class="loading">Se încarcă...</div>';
+
+  try {
+    const data = await api('/mps' + q);
+    const mps = data.items;
+
+    // Party filters
+    const parties = ['toate', ...new Set(mps.map(m => m.party))].sort();
+    document.getElementById('mp-party-filters').innerHTML = parties.map(p => {
+      const active = (p==='toate' && !mpPartyFilter) || p===mpPartyFilter ? 'active' : '';
+      const val = p==='toate' ? 'null' : `'${p}'`;
+      return `<span class="pill pill-btn ${active}" onclick="filterMPParty(${val})">${p}</span>`;
+    }).join('');
+
+    const rows = mps.map((m, i) => {
+      const fill = Math.round(m.score);
+      const cats = (m.categories_voted||[]).slice(0,3).map(categoryPill).join(' ');
+      return `
+        <tr onclick="toggleMP('${m.mp_slug}')">
+          <td style="color:#aaa;width:36px;">${i+1}</td>
+          <td><strong>${m.mp_name}</strong></td>
+          <td>${partyChip(m.party)}</td>
+          <td>
+            <div class="score-bar">
+              <div class="score-track"><div class="score-fill" style="width:${fill}%"></div></div>
+              <span>${m.score}</span>
+            </div>
+          </td>
+          <td>${cats}</td>
+          <td style="color:#666;">${m.for_count}F · ${m.against_count}Î · ${m.abstain_count}A · ${m.absent_count}L</td>
+        </tr>
+        <tr class="mp-detail-row" id="mp-detail-${m.mp_slug}">
+          <td colspan="6">
+            <div class="mp-detail-inner">
+              <div style="margin-bottom:8px;font-size:12px;color:#666;">${m.narrative || 'Narativ indisponibil.'}</div>
+              <div id="mp-history-${m.mp_slug}" style="font-size:12px;color:#999;">Se încarcă istoricul...</div>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Deputat</th><th>Partid</th><th>Scor</th><th>Domenii</th><th>Voturi</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Eroare: ${e.message}</div>`;
+  }
+}
+
+function filterMPParty(party) {
+  mpPartyFilter = party === 'null' || !party ? null : party;
+  loadMPs();
+}
+
+async function searchMPs() {
+  const q = document.getElementById('mp-search-input').value.trim();
+  const wrap = document.getElementById('mp-search-results');
+  if (!q) {
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.innerHTML = '<div class="loading">Se caută...</div>';
+  try {
+    const data = await api('/mps/search?q=' + encodeURIComponent(q));
+    const items = data.items || [];
+    wrap.innerHTML = items.length ? `
+      <div class="box" style="margin-bottom:16px;">
+        <h3>Rezultate căutare</h3>
+        <table>
+          <thead><tr><th>Deputat</th><th>Partid</th><th>Scor</th><th>Voturi</th></tr></thead>
+          <tbody>
+            ${items.map(m => `
+              <tr onclick="toggleMPFromSearch('${esc(m.mp_slug)}')">
+                <td><strong>${esc(m.mp_name)}</strong></td>
+                <td>${partyChip(esc(m.party))}</td>
+                <td>${m.score}</td>
+                <td>${m.total_votes}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '<div class="empty" style="margin-bottom:16px;">Niciun deputat găsit.</div>';
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty" style="margin-bottom:16px;">Eroare: ${esc(e.message)}</div>`;
+  }
+}
+
+function clearMPSearch() {
+  document.getElementById('mp-search-input').value = '';
+  document.getElementById('mp-search-results').innerHTML = '';
+}
+
+async function toggleMPFromSearch(slug) {
+  const row = document.getElementById('mp-detail-' + slug);
+  if (row) {
+    await toggleMP(slug);
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+async function toggleMP(slug) {
+  const row = document.getElementById('mp-detail-' + slug);
+  if (!row) return;
+  const isOpen = row.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.mp-detail-row').forEach(r => r.classList.remove('open'));
+  if (!isOpen) {
+    row.classList.add('open');
+    openMpSlug = slug;
+    const histEl = document.getElementById('mp-history-' + slug);
+    if (histEl && histEl.textContent.includes('Se încarcă')) {
+      try {
+        const mp = await api('/mps/' + slug);
+        const history = (mp.vote_history || []).slice(0, 8);
+        histEl.innerHTML = history.length
+          ? '<strong style="color:#333;">Ultimele voturi:</strong><br>' + history.map(v =>
+              `<span style="margin-right:8px;color:${v.vote==='for'?'#16a34a':v.vote==='against'?'#dc2626':'#d97706'};">●</span>${v.title_short} <span style="color:#aaa;">${v.date||''}</span>`
+            ).join('<br>')
+          : 'Niciun vot înregistrat.';
+      } catch(e) {
+        histEl.textContent = 'Eroare la încărcare.';
+      }
+    }
+  }
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+async function loadNotifications() {
+  await Promise.all([loadNotificationEvents(), loadNotificationJobs()]);
+}
+
+async function loadNotificationEvents() {
+  const wrap = document.getElementById('notification-events');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Se încarcă...</div>';
+  try {
+    const data = await api('/notifications/events?limit=20');
+    const items = data.items || [];
+    updateNotificationStats({ events: data.total });
+    wrap.innerHTML = items.length ? items.map(e => {
+      const flags = e.flag_record?.flags || [];
+      return `
+        <div class="card" style="cursor:default;">
+          <div class="card-title">${esc(e.bill_number || 'Eveniment')} <span class="status-pill">${esc(e.event_type)}</span></div>
+          <div class="card-meta">
+            <span class="mono">${esc(e.event_key || eventKey(e))}</span>
+            <span>${esc(e.detected_at || '')}</span>
+            <span>${esc(e.flag_record?.importance || '')}</span>
+          </div>
+          <div class="card-meta" style="margin-top:10px;">${flags.slice(0, 8).map(categoryPill).join(' ')}</div>
+        </div>
+      `;
+    }).join('') : '<div class="empty">Nu există evenimente. Rulează watchdog-ul.</div>';
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Eroare: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadNotificationJobs() {
+  const status = document.getElementById('notification-job-status')?.value || '';
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  params.set('limit', '20');
+
+  const wrap = document.getElementById('notification-jobs');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Se încarcă...</div>';
+  try {
+    const data = await api('/notifications/jobs?' + params.toString());
+    const items = data.items || [];
+    updateNotificationStats({ jobs: data.total });
+    wrap.innerHTML = items.length ? items.map(j => `
+      <div class="card" style="cursor:default;">
+        <div class="card-title">${esc(j.subject || 'Fără subiect')}</div>
+        <div class="card-meta">
+          <span class="status-pill status-${esc(j.status)}">${esc(j.status)}</span>
+          <span>${esc(j.email || '')}</span>
+          <span>${esc(j.importance || '')}</span>
+        </div>
+        <div class="card-meta">${(j.matched_flags || []).slice(0, 6).map(categoryPill).join(' ')}</div>
+        <div class="job-body">${esc(j.body || '')}</div>
+      </div>
+    `).join('') : '<div class="empty">Nu există joburi pentru filtrul curent.</div>';
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty">Eroare: ${esc(e.message)}</div>`;
+  }
+}
+
+function updateNotificationStats(partial) {
+  const stats = document.getElementById('notification-stats');
+  if (!stats) return;
+  const current = stats.dataset ? {
+    events: stats.dataset.events || '—',
+    jobs: stats.dataset.jobs || '—'
+  } : { events: '—', jobs: '—' };
+  const next = { ...current, ...partial };
+  stats.dataset.events = next.events;
+  stats.dataset.jobs = next.jobs;
+  stats.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${next.events}</div><div class="stat-label">Evenimente</div></div>
+    <div class="stat-card"><div class="stat-num">${next.jobs}</div><div class="stat-label">Joburi</div></div>
+    <div class="stat-card"><div class="stat-num">dry-run</div><div class="stat-label">Mod livrare</div></div>
+  `;
+}
+
+async function runNotifications() {
+  const box = document.getElementById('notification-run-result');
+  box.innerHTML = '<div class="qa-answer" style="color:#666;">Rulez watchdog-ul...</div>';
+  try {
+    const result = await post('/notifications/run', {});
+    box.innerHTML = `<div class="qa-answer">Evenimente noi: ${result.events_detected}. Flaguri: ${result.events_classified}. Joburi queued: ${result.jobs_queued}.</div>`;
+    await loadNotifications();
+  } catch(e) {
+    box.innerHTML = `<div class="qa-answer" style="color:#dc2626;">Eroare: ${esc(e.message)}</div>`;
+  }
+}
+
+async function deliverNotifications() {
+  const box = document.getElementById('notification-run-result');
+  box.innerHTML = '<div class="qa-answer" style="color:#666;">Procesez dry-run delivery...</div>';
+  try {
+    const result = await post('/notifications/deliver', { limit: 20 });
+    box.innerHTML = `<div class="qa-answer">Procesate dry-run: ${result.processed}. Rămase queued: ${result.remaining_queued}.</div>`;
+    await loadNotificationJobs();
+  } catch(e) {
+    box.innerHTML = `<div class="qa-answer" style="color:#dc2626;">Eroare: ${esc(e.message)}</div>`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+navigate('home');
+</script>
+</body>
+</html>

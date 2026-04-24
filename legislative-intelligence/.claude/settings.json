@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uvicorn api.main:app --port 8000 --reload)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(python -m uvicorn api.main:app --port 8000 --reload)",
+      "Bash(curl -s -X POST http://localhost:8000/qa -H \"Content-Type: application/json\" -d \"{\\\\\"idp\\\\\": 23048, \\\\\"question\\\\\": \\\\\"Cine este afectat de aceasta lege?\\\\\"}\")",
+      "Bash(curl -s -X POST http://localhost:8000/messenger -H \"Content-Type: application/json\" -d \"{\\\\\"idp\\\\\": 23048, \\\\\"mp_name\\\\\": \\\\\"Ion Popescu\\\\\", \\\\\"user_name\\\\\": \\\\\"Maria Ionescu\\\\\", \\\\\"stance\\\\\": \\\\\"support\\\\\"}\")"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "user_id": "demo-user-1",
+      "email": "demo@example.com",
+      "name": "Demo",
+      "email_opt_in": true,
+      "unsubscribed_at": null,
+      "frequency": "weekly",
+      "min_importance": "normal",
+      "major_alerts": true,
+      "categories": ["sanatate", "educatie", "mediu"],
+      "profiles": ["parinte", "angajat"],
+      "flags": []
+    }
+  ]
+}
