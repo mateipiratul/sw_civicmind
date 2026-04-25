@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/profile/")({
@@ -63,8 +64,13 @@ function ProfilePage() {
   
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [county, setCounty] = useState("");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  
+  const [metadata, setMetadata] = useState<{ impact_categories: string[], counties: string[] } | null>(null);
+  const [isMetadataLoading, setIsMetadataLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -76,8 +82,25 @@ function ProfilePage() {
     if (user) {
       setUsername(user.username || "");
       setEmail(user.email || "");
+      setCounty(user.county || "");
+      setSelectedInterests(user.interests || []);
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        setIsMetadataLoading(true);
+        const data = await api.getMetadata();
+        setMetadata(data);
+      } catch (err) {
+        console.error("Failed to fetch metadata", err);
+      } finally {
+        setIsMetadataLoading(false);
+      }
+    };
+    fetchMetadata();
+  }, []);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,17 +108,30 @@ function ProfilePage() {
     setMessage(null);
 
     try {
-      const updated = await api.updateProfile({ username, email });
+      const updated = await api.updateProfile({ 
+        username, 
+        email, 
+        county, 
+        interests: selectedInterests 
+      });
       updateUser(updated);
-      setMessage({ type: "success", text: "Profile updated successfully!" });
+      setMessage({ type: "success", text: "Profil actualizat cu succes!" });
     } catch (err) {
       setMessage({ 
         type: "error", 
-        text: err instanceof Error ? err.message : "Failed to update profile" 
+        text: err instanceof Error ? err.message : "Actualizarea profilului a eșuat" 
       });
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const toggleInterest = (interest: string) => {
+    setSelectedInterests(prev => 
+      prev.includes(interest) 
+        ? prev.filter(i => i !== interest) 
+        : [...prev, interest]
+    );
   };
 
   if (isLoading || !user) {
@@ -103,55 +139,58 @@ function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-4xl py-10 space-y-8">
-      <Breadcrumbs items={[{ label: "Profile" }]} />
+    <div className="container mx-auto px-4 max-w-4xl py-10 space-y-8 text-[#111]">
+      <Breadcrumbs items={[{ label: "Profil" }]} />
       
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-gray-900">User Profile</h1>
-        <p className="text-gray-500 text-lg mt-1">Manage your account settings and civic interests.</p>
+        <h1 className="text-4xl font-semibold tracking-tight">Profil Utilizator</h1>
+        <p className="text-gray-500 text-lg mt-1.5">Gestionează setările contului și interesele civice.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-1 space-y-6">
-          <Card className="shadow-none border border-[#e2e2e2] overflow-hidden">
-            <CardHeader className="text-center bg-gray-50 pb-8">
-              <div className="mx-auto h-24 w-24 rounded-full bg-white shadow-sm border-4 border-white flex items-center justify-center text-4xl text-gray-600 font-black uppercase mb-3">
+          <Card className="shadow-none border border-[#e2e2e2] overflow-hidden rounded-xl">
+            <CardHeader className="text-center bg-gray-50/50 pb-8 pt-10">
+              <div className="mx-auto h-20 w-20 rounded-full bg-white shadow-sm border-2 border-white flex items-center justify-center text-3xl text-gray-400 font-bold uppercase mb-4">
                 {user.username?.charAt(0) || "?"}
               </div>
-              <CardTitle className="text-2xl font-bold">{user.username || "User"}</CardTitle>
-              <CardDescription className="text-gray-500 font-medium">{user.email}</CardDescription>
+              <CardTitle className="text-xl font-semibold">{user.username || "Utilizator"}</CardTitle>
+              <CardDescription className="text-gray-400 font-medium">{user.email}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5 pt-6">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500 font-medium">Role</span>
-                <Badge variant="outline" className="capitalize px-3 py-1 font-bold">
+            <CardContent className="space-y-4 pt-6 px-6 pb-8">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-400 font-medium">Rol</span>
+                <Badge variant="outline" className="capitalize px-2 py-0.5 font-semibold text-[11px] border-gray-200 text-gray-500">
                   {user.role}
                 </Badge>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500 font-medium">Status</span>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-400 font-medium">Status</span>
                 <Badge 
                   variant={user.status === "active" ? "default" : "destructive"} 
-                  className="capitalize px-3 py-1 font-bold"
+                  className={cn(
+                    "capitalize px-2 py-0.5 font-semibold text-[11px] border-0",
+                    user.status === "active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                  )}
                 >
                   {user.status}
                 </Badge>
               </div>
-              <Separator className="bg-gray-100" />
+              <Separator className="bg-[#f0f0f0] my-2" />
               <Button 
                 variant="outline" 
-                className="w-full font-bold rounded-xl" 
+                className="w-full font-semibold rounded-lg border-[#e2e2e2] text-sm py-5" 
                 onClick={() => refreshUser()}
               >
-                Refresh Profile
+                Actualizează Datele
               </Button>
               {user.role === "admin" && (
                 <Button 
                   variant="secondary" 
-                  className="w-full mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold rounded-xl"
+                  className="w-full mt-1 bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold rounded-lg text-sm py-5"
                   onClick={() => navigate({ to: "/admin/stats" })}
                 >
-                  Admin Panel
+                  Panou Admin
                 </Button>
               )}
             </CardContent>
@@ -159,55 +198,97 @@ function ProfilePage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <Card className="shadow-none border border-[#e2e2e2] rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gray-50/50">
-              <CardTitle className="text-2xl font-bold">Profile Information</CardTitle>
-              <CardDescription className="text-base">Update your account details to keep your profile current.</CardDescription>
+          <Card className="shadow-none border border-[#e2e2e2] rounded-xl overflow-hidden bg-white">
+            <CardHeader className="bg-gray-50/30 px-6 py-6 border-b border-[#f0f0f0]">
+              <CardTitle className="text-lg font-semibold">Informații Cont</CardTitle>
+              <CardDescription className="text-gray-400">Actualizează detaliile de bază ale profilului tău.</CardDescription>
             </CardHeader>
-            <CardContent className="pt-8">
+            <CardContent className="p-8">
               <form onSubmit={handleUpdateProfile} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-bold text-gray-700">Username</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="py-6 rounded-xl border-gray-200 focus:ring-gray-400 text-lg"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nume utilizator</Label>
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="py-5 rounded-lg border-[#e2e2e2] focus:ring-1 focus:ring-gray-300 text-sm"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="py-5 rounded-lg border-[#e2e2e2] focus:ring-1 focus:ring-gray-300 text-sm"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-bold text-gray-700">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="py-6 rounded-xl border-gray-200 focus:ring-gray-400 text-lg"
-                    required
-                  />
+
+                <div className="space-y-4 pt-4 border-t border-[#f8f8f8]">
+                  <div className="space-y-2">
+                    <Label htmlFor="county" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Județ de reședință</Label>
+                    <Select value={county} onValueChange={setCounty}>
+                      <SelectTrigger className="w-full py-5 rounded-lg border-[#e2e2e2] text-sm">
+                        <SelectValue placeholder="Selectează un județ" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {metadata?.counties.map((c) => (
+                          <SelectItem key={c} value={c} className="text-sm">
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-gray-400">Vom prioritiza legile și reprezentanții din acest județ în feed.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-[#f8f8f8]">
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Interese Civice</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {metadata?.impact_categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleInterest(cat)}
+                        className={cn(
+                          "px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left flex items-center justify-between",
+                          selectedInterests.includes(cat)
+                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                            : "bg-white text-gray-500 border-[#e2e2e2] hover:border-gray-300"
+                        )}
+                      >
+                        {cat}
+                        {selectedInterests.includes(cat) && <span className="h-1.5 w-1.5 rounded-full bg-white ml-2" />}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-400">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
                 </div>
 
                 {message && (
                   <div className={cn(
-                    "p-4 rounded-xl text-sm font-bold flex items-center gap-3",
+                    "p-4 rounded-lg text-sm font-semibold flex items-center gap-3",
                     message.type === "success" ? "bg-green-50 text-green-700 border border-green-100" : "bg-red-50 text-red-700 border border-red-100"
                   )}>
-                    <div className={cn(
-                      "h-2 w-2 rounded-full",
-                      message.type === "success" ? "bg-green-500" : "bg-red-500"
-                    )} />
                     {message.text}
                   </div>
                 )}
 
-                <Button 
-                  type="submit" 
-                  disabled={isUpdating} 
-                  className="px-8 py-6 rounded-xl font-bold text-lg shadow-lg bg-[#111] hover:bg-gray-800 active:scale-[0.98] transition-all"
-                >
-                  {isUpdating ? "Saving..." : "Save Changes"}
-                </Button>
+                <div className="pt-2">
+                  <Button 
+                    type="submit" 
+                    disabled={isUpdating} 
+                    className="px-10 py-5 rounded-lg font-semibold text-sm bg-[#111] hover:bg-gray-800 active:scale-[0.98] transition-all"
+                  >
+                    {isUpdating ? "Se salvează..." : "Salvează Modificările"}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>

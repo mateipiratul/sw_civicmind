@@ -115,7 +115,10 @@ function RegisterPage() {
                         transition: "border-color 0.12s",
                       }}
                       onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "#888"; }}
-                      onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--border-input)"; field.handleBlur(); }}
+                      onBlur={(e) => { 
+                        (e.target as HTMLInputElement).style.borderColor = "var(--border-input)"; 
+                        field.handleBlur(); 
+                      }}
                     />
                   </div>
                 )}
