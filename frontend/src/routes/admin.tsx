@@ -22,7 +22,7 @@ function AdminLayout() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#111]" />
       </div>
     );
   }
@@ -37,26 +37,26 @@ function AdminLayout() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
-              <span className="text-lg font-bold text-indigo-600">Admin Panel</span>
+              <span className="text-lg font-bold text-[#111]">Admin Panel</span>
               <nav className="flex items-center gap-4">
                 <Link
                   to="/admin/stats"
-                  className="text-sm font-medium text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md transition-colors"
-                  activeProps={{ className: "bg-indigo-50 text-indigo-600" }}
+                  className="text-sm font-medium text-gray-600 hover:text-[#111] px-3 py-2 rounded-md transition-colors"
+                  activeProps={{ className: "bg-gray-100 text-[#111]" }}
                 >
                   Dashboard
                 </Link>
                 <Link
                   to="/admin/users"
-                  className="text-sm font-medium text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md transition-colors"
-                  activeProps={{ className: "bg-indigo-50 text-indigo-600" }}
+                  className="text-sm font-medium text-gray-600 hover:text-[#111] px-3 py-2 rounded-md transition-colors"
+                  activeProps={{ className: "bg-gray-100 text-[#111]" }}
                 >
                   Users
                 </Link>
                 <Link
                   to="/admin/bills"
-                  className="text-sm font-medium text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md transition-colors"
-                  activeProps={{ className: "bg-indigo-50 text-indigo-600" }}
+                  className="text-sm font-medium text-gray-600 hover:text-[#111] px-3 py-2 rounded-md transition-colors"
+                  activeProps={{ className: "bg-gray-100 text-[#111]" }}
                 >
                   Bills
                 </Link>

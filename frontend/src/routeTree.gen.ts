@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MpsRouteImport } from './routes/mps'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
@@ -20,6 +22,16 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminStatsRouteImport } from './routes/admin/stats'
 import { Route as AdminBillsRouteImport } from './routes/admin/bills'
 
+const MpsRoute = MpsRouteImport.update({
+  id: '/mps',
+  path: '/mps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -74,6 +86,8 @@ const AdminBillsRoute = AdminBillsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/mps': typeof MpsRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -86,6 +100,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/mps': typeof MpsRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -99,6 +115,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/mps': typeof MpsRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -113,6 +131,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/chat'
+    | '/mps'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -125,6 +145,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/chat'
+    | '/mps'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -137,6 +159,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/chat'
+    | '/mps'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -150,6 +174,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ChatRoute: typeof ChatRoute
+  MpsRoute: typeof MpsRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthLogoutRoute: typeof AuthLogoutRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
@@ -159,6 +185,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/mps': {
+      id: '/mps'
+      path: '/mps'
+      fullPath: '/mps'
+      preLoaderRoute: typeof MpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -249,6 +289,8 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ChatRoute: ChatRoute,
+  MpsRoute: MpsRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthLogoutRoute: AuthLogoutRoute,
   AuthRegisterRoute: AuthRegisterRoute,

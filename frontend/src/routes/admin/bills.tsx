@@ -101,7 +101,7 @@ function AdminBillsPage() {
                   </tr>
                 ) : (
                   data.bills.map((bill) => (
-                    <tr key={bill.idp} className="hover:bg-indigo-50/30 transition-colors">
+                    <tr key={bill.idp} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 font-mono text-xs text-gray-400">#{bill.idp}</td>
                       <td className="px-6 py-4">
                         <span className="font-bold text-gray-900">{bill.bill_number}</span>
@@ -124,7 +124,7 @@ function AdminBillsPage() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          className="font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg"
+                          className="font-bold text-[#111] hover:text-gray-600 hover:bg-gray-100 rounded-lg"
                           onClick={() => navigate({ 
                             to: "/bills/$id",
                             params: { id: bill.idp.toString() }

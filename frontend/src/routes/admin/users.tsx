@@ -159,7 +159,7 @@ function AdminUsersPage() {
                   </tr>
                 ) : (
                   data.users.map((user) => (
-                    <tr key={user.id} className="hover:bg-indigo-50/30 transition-colors">
+                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 font-mono text-xs text-gray-400">#{user.id}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -184,7 +184,7 @@ function AdminUsersPage() {
                           onValueChange={(val) => handleStatusChange(user.id, val, user.username)}
                           disabled={isUpdating === user.id || user.role === "admin"}
                         >
-                          <SelectTrigger className="h-10 w-36 ml-auto rounded-xl border-gray-200 font-bold focus:ring-indigo-500">
+                          <SelectTrigger className="h-10 w-36 ml-auto rounded-xl border-gray-200 font-bold focus:ring-gray-400">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl shadow-xl border-gray-100">

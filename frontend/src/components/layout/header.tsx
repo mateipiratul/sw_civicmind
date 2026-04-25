@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
+import { Bell, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, User as UserIcon, LogOut, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "@tanstack/react-router";
 
 export function Header() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -21,88 +22,95 @@ export function Header() {
     navigate({ to: "/" });
   };
 
-  const navItems = [
-    { label: "Feed", href: "/", icon: LayoutDashboard },
-  ];
-
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="font-black text-xl tracking-tighter text-primary">CIVICMIND</span>
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 40,
+        background: "white",
+        borderBottom: "1px solid #e2e2e2",
+        height: 52,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 24px",
+        gap: 32,
+      }}
+    >
+      {/* Logo */}
+      <Link to="/" style={{ display: "flex", alignItems: "center", gap: 7, textDecoration: "none", flexShrink: 0 }}>
+        <span style={{ width: 16, height: 16, background: "#111", borderRadius: 3, display: "block" }} />
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#111", letterSpacing: "-0.2px" }}>CivicMind</span>
+      </Link>
+
+      {/* Nav */}
+      <nav style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
+        {[
+          { label: "Feed", href: "/" },
+          { label: "MPs", href: "/mps" },
+          { label: "Chat", href: "/chat" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            to={item.href}
+            style={{ fontSize: 13.5, color: "#888", textDecoration: "none", padding: "4px 10px", borderRadius: 6 }}
+            activeProps={{ style: { fontSize: 13.5, color: "#111", fontWeight: 600, textDecoration: "none", padding: "4px 10px", borderRadius: 6, background: "#f5f5f5" } }}
+            activeOptions={{ exact: true }}
+          >
+            {item.label}
           </Link>
-          <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:text-foreground [&.active]:font-bold"
-              >
-                <item.icon className="size-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
+        ))}
+      </nav>
 
-        <div className="flex items-center gap-4">
-          {isAuthenticated && user && (
-            <>
-              {user.role === "admin" && (
-                <Link to="/admin">
-                  <Button variant="ghost" size="icon" title="Admin Dashboard">
-                    <Shield className="size-5 text-amber-600" />
-                  </Button>
-                </Link>
-              )}
+      {/* Right side */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <button
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#888", display: "flex", alignItems: "center" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f5f5f5"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; }}
+        >
+          <Bell size={15} />
+        </button>
+        <button
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#888", display: "flex", alignItems: "center" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f5f5f5"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; }}
+        >
+          <Search size={15} />
+        </button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative size-8 rounded-full p-0">
-                    <Avatar className="size-8">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {user.username.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.username}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">
-                      <UserIcon className="mr-2 size-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                    <LogOut className="mr-2 size-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          )}
-
-          {!isAuthenticated && (
-            <div className="flex items-center gap-2">
-              <Link to="/auth/login">
-                <Button variant="ghost" size="sm">Login</Button>
-              </Link>
-              <Link to="/auth/register">
-                <Button size="sm">Get Started</Button>
-              </Link>
-            </div>
-          )}
-        </div>
+        {isAuthenticated && user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" style={{ padding: 0, width: 28, height: 28, borderRadius: "50%", overflow: "hidden" }}>
+                <Avatar style={{ width: 28, height: 28 }}>
+                  <AvatarFallback style={{ background: "#f0f0f0", color: "#111", fontSize: 11, fontWeight: 600 }}>
+                    {user.username.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" style={{ minWidth: 180 }}>
+              <DropdownMenuLabel style={{ fontWeight: 500, fontSize: 13 }}>
+                <div>{user.username}</div>
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 400 }}>{user.email}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/profile" style={{ fontSize: 13 }}>Profil</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} style={{ fontSize: 13, color: "#e53e3e" }}>
+                Ieșire
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link to="/auth/login">
+            <Button size="sm" variant="outline" style={{ fontSize: 12, height: 28, padding: "0 12px" }}>
+              Autentificare
+            </Button>
+          </Link>
+        )}
       </div>
     </header>
   );

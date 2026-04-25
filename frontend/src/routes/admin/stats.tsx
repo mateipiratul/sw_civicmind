@@ -91,8 +91,8 @@ function AdminStatsPage() {
       value: stats.totalUsers,
       subValue: `${stats.activeUsers} active`,
       icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-gray-600",
+      bg: "bg-gray-100",
     },
     {
       title: "Total Bills",

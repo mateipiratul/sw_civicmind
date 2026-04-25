@@ -113,13 +113,13 @@ function ProfilePage() {
 
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-1 space-y-6">
-          <Card className="shadow-lg border-none overflow-hidden">
-            <CardHeader className="text-center bg-indigo-50/50 pb-8">
-              <div className="mx-auto h-24 w-24 rounded-full bg-white shadow-sm border-4 border-white flex items-center justify-center text-4xl text-indigo-700 font-black uppercase mb-3">
+          <Card className="shadow-none border border-[#e2e2e2] overflow-hidden">
+            <CardHeader className="text-center bg-gray-50 pb-8">
+              <div className="mx-auto h-24 w-24 rounded-full bg-white shadow-sm border-4 border-white flex items-center justify-center text-4xl text-gray-600 font-black uppercase mb-3">
                 {user.username?.charAt(0) || "?"}
               </div>
               <CardTitle className="text-2xl font-bold">{user.username || "User"}</CardTitle>
-              <CardDescription className="text-indigo-600/70 font-medium">{user.email}</CardDescription>
+              <CardDescription className="text-gray-500 font-medium">{user.email}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
               <div className="flex justify-between items-center">
@@ -148,7 +148,7 @@ function ProfilePage() {
               {user.role === "admin" && (
                 <Button 
                   variant="secondary" 
-                  className="w-full mt-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold rounded-xl"
+                  className="w-full mt-2 bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold rounded-xl"
                   onClick={() => navigate({ to: "/admin/stats" })}
                 >
                   Admin Panel
@@ -159,7 +159,7 @@ function ProfilePage() {
         </div>
 
         <div className="md:col-span-2 space-y-6">
-          <Card className="shadow-lg border-none rounded-2xl overflow-hidden">
+          <Card className="shadow-none border border-[#e2e2e2] rounded-2xl overflow-hidden">
             <CardHeader className="bg-gray-50/50">
               <CardTitle className="text-2xl font-bold">Profile Information</CardTitle>
               <CardDescription className="text-base">Update your account details to keep your profile current.</CardDescription>
@@ -172,7 +172,7 @@ function ProfilePage() {
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="py-6 rounded-xl border-gray-200 focus:ring-indigo-500 text-lg"
+                    className="py-6 rounded-xl border-gray-200 focus:ring-gray-400 text-lg"
                     required
                   />
                 </div>
@@ -183,7 +183,7 @@ function ProfilePage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="py-6 rounded-xl border-gray-200 focus:ring-indigo-500 text-lg"
+                    className="py-6 rounded-xl border-gray-200 focus:ring-gray-400 text-lg"
                     required
                   />
                 </div>
@@ -204,7 +204,7 @@ function ProfilePage() {
                 <Button 
                   type="submit" 
                   disabled={isUpdating} 
-                  className="px-8 py-6 rounded-xl font-bold text-lg shadow-lg bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all"
+                  className="px-8 py-6 rounded-xl font-bold text-lg shadow-lg bg-[#111] hover:bg-gray-800 active:scale-[0.98] transition-all"
                 >
                   {isUpdating ? "Saving..." : "Save Changes"}
                 </Button>
