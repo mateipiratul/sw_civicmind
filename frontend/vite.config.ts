@@ -20,7 +20,6 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': djangoOrigin,
-        '/auth': djangoOrigin,
       }
     },
     resolve: {
