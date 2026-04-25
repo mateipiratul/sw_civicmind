@@ -3,6 +3,11 @@ const API_BASE_URL =
   configuredApiBaseUrl && configuredApiBaseUrl !== "/"
     ? configuredApiBaseUrl.replace(/\/$/, "")
     : "";
+const configuredAiBaseUrl = import.meta.env.VITE_AI_SERVICE_URL?.trim();
+const AI_BASE_URL =
+  configuredAiBaseUrl && configuredAiBaseUrl !== "/"
+    ? configuredAiBaseUrl.replace(/\/$/, "")
+    : API_BASE_URL;
 
 // Types matching backend/apps/bills/models.py
 export interface AIAnalysis {
@@ -73,6 +78,43 @@ export interface PaginatedBills {
   bills: Bill[];
 }
 
+export interface RagSource {
+  chunk_id: string;
+  document_id: string;
+  source: string | null;
+  external_id?: string | null;
+  bill_idp?: number | null;
+  chunk_index?: number;
+  content: string;
+  source_url?: string | null;
+  title?: string | null;
+  document_type?: string | null;
+  similarity?: number | null;
+  score?: number | null;
+}
+
+export interface RagChatResponse {
+  answer: string;
+  sources: RagSource[];
+  resolved_source?: string | null;
+  agent_mode?: string | null;
+}
+
+export type RagStreamEvent =
+  | { type: "start"; agent_mode?: string | null; resolved_source?: string | null }
+  | { type: "token"; delta: string }
+  | { type: "sources"; items: RagSource[] }
+  | { type: "done"; answer: string; sources: RagSource[]; resolved_source?: string | null; agent_mode?: string | null }
+  | { type: "error"; error: string };
+
+export interface RagChatOptions {
+  source?: string;
+  bill_idp?: number;
+  exclude_bill_idp?: number;
+  top_k?: number;
+  threshold?: number;
+}
+
 // User Profile (Managed by Django)
 export interface User {
   id: number;
@@ -122,9 +164,11 @@ export class ApiError extends Error {
 // API Client
 class ApiClient {
   private baseUrl: string;
+  private aiBaseUrl: string;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, aiBaseUrl: string) {
     this.baseUrl = baseUrl;
+    this.aiBaseUrl = aiBaseUrl;
   }
 
   private getAuthHeader = (): Record<string, string> => {
@@ -133,8 +177,8 @@ class ApiClient {
     return { Authorization: `Bearer ${token}` };
   };
 
-  private request = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-    const url = `${this.baseUrl}${endpoint}`;
+  private requestTo = async <T>(baseUrl: string, endpoint: string, options: RequestInit = {}): Promise<T> => {
+    const url = `${baseUrl}${endpoint}`;
     const headers = {
       "Content-Type": "application/json",
       ...this.getAuthHeader(),
@@ -161,6 +205,10 @@ class ApiClient {
     }
 
     return data as T;
+  };
+
+  private request = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+    return this.requestTo<T>(this.baseUrl, endpoint, options);
   };
 
   private normalizeAuthUser = (response: AuthResponse): User => ({
@@ -218,6 +266,113 @@ class ApiClient {
   getAdminBills = async (page = 1, limit = 20): Promise<PaginatedBills> => {
     return this.request(`/api/admin/bills?page=${page}&limit=${limit}`);
   };
+
+  ragChat = async (question: string, options: RagChatOptions = {}): Promise<RagChatResponse> => {
+    return this.requestTo<RagChatResponse>(this.aiBaseUrl, "/rag/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        question,
+        top_k: options.top_k ?? 8,
+        threshold: options.threshold ?? 0.72,
+        source: options.source,
+        bill_idp: options.bill_idp,
+        exclude_bill_idp: options.exclude_bill_idp,
+      }),
+    });
+  };
+
+  streamRagChat = async (
+    question: string,
+    options: RagChatOptions = {},
+    handlers: {
+      onEvent?: (event: RagStreamEvent) => void;
+    } = {},
+  ): Promise<RagChatResponse> => {
+    const response = await fetch(`${this.aiBaseUrl}/rag/chat/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...this.getAuthHeader(),
+      },
+      body: JSON.stringify({
+        question,
+        top_k: options.top_k ?? 8,
+        threshold: options.threshold ?? 0.72,
+        source: options.source,
+        bill_idp: options.bill_idp,
+        exclude_bill_idp: options.exclude_bill_idp,
+      }),
+    });
+
+    if (!response.ok) {
+      let detail = `API Error: ${response.status}`;
+      try {
+        const data = await response.json();
+        detail = data.detail || data.error || detail;
+      } catch {
+        // Ignore parse failures and keep the generic message.
+      }
+      throw new ApiError(detail, response.status);
+    }
+
+    if (!response.body) {
+      return this.ragChat(question, options);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalResponse: RagChatResponse | null = null;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        const event = JSON.parse(trimmed) as RagStreamEvent;
+        handlers.onEvent?.(event);
+        if (event.type === "error") {
+          throw new ApiError(event.error, 503);
+        }
+        if (event.type === "done") {
+          finalResponse = {
+            answer: event.answer,
+            sources: event.sources,
+            resolved_source: event.resolved_source,
+            agent_mode: event.agent_mode,
+          };
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      const event = JSON.parse(buffer.trim()) as RagStreamEvent;
+      handlers.onEvent?.(event);
+      if (event.type === "done") {
+        finalResponse = {
+          answer: event.answer,
+          sources: event.sources,
+          resolved_source: event.resolved_source,
+          agent_mode: event.agent_mode,
+        };
+      }
+      if (event.type === "error") {
+        throw new ApiError(event.error, 503);
+      }
+    }
+
+    if (!finalResponse) {
+      return this.ragChat(question, options);
+    }
+
+    return finalResponse;
+  };
 }
 
-export const api = new ApiClient(API_BASE_URL);
+export const api = new ApiClient(API_BASE_URL, AI_BASE_URL);

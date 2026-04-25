@@ -1,33 +1,206 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, createFileRoute, Link } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { Link, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { api } from "@/lib/api";
 import type { Bill } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth-context";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { Calendar, FileText, User, MessageSquare, ThumbsUp, ThumbsDown, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ArrowUpRight,
+  Calendar,
+  ChevronLeft,
+  FileText,
+  Mail,
+  MessageSquareText,
+  Scale,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  User,
+} from "lucide-react";
+
+type SourceDocument = {
+  label: string;
+  url: string;
+};
+
+const pageStyle: CSSProperties = {
+  minHeight: "calc(100vh - 52px)",
+  padding: "28px 24px",
+};
+
+const containerStyle: CSSProperties = {
+  maxWidth: 1120,
+  margin: "0 auto",
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+};
+
+const cardStyle: CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #e8e8e8",
+  borderRadius: 10,
+};
+
+const sectionCardStyle: CSSProperties = {
+  ...cardStyle,
+  padding: 18,
+};
+
+const eyebrowStyle: CSSProperties = {
+  fontSize: 10.5,
+  fontWeight: 600,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "#aaa",
+};
+
+function statusStyle(status?: string | null): CSSProperties {
+  const adopted = status?.toLowerCase().includes("adopt");
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "5px 10px",
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 500,
+    background: adopted ? "#dcfce7" : "#f0f0f0",
+    color: adopted ? "#16a34a" : "#666",
+  };
+}
+
+function pillStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "5px 10px",
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 500,
+    background: "#f5f5f5",
+    color: "#555",
+  };
+}
 
 function BillDetailSkeleton() {
   return (
-    <div className="py-8">
-      <div className="max-w-4xl mx-auto px-4 space-y-6">
-        <Skeleton className="h-5 w-48 mb-4" />
-        <Card className="border border-[#e2e2e2] shadow-none rounded-xl">
-          <CardHeader className="space-y-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-16 w-full rounded-lg" />
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Skeleton className="h-36 w-full rounded-lg" />
-              <Skeleton className="h-36 w-full rounded-lg" />
+    <div style={pageStyle}>
+      <div style={containerStyle}>
+        <Skeleton className="h-5 w-40" />
+        <div style={{ ...cardStyle, padding: 22 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-12 w-2/3" />
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Skeleton className="h-9 w-32" />
+              <Skeleton className="h-9 w-32" />
+              <Skeleton className="h-9 w-32" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "minmax(0, 1.7fr) 280px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <Skeleton className="h-64 w-full rounded-[18px]" />
+            <Skeleton className="h-72 w-full rounded-[18px]" />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <Skeleton className="h-72 w-full rounded-[18px]" />
+            <Skeleton className="h-56 w-full rounded-[18px]" />
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Section({
+  eyebrow,
+  title,
+  icon,
+  children,
+}: {
+  eyebrow?: string;
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section style={sectionCardStyle}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, marginBottom: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {eyebrow ? <div style={eyebrowStyle}>{eyebrow}</div> : null}
+          <h2 style={{ fontSize: 14.5, fontWeight: 600, lineHeight: 1.2, color: "#111" }}>{title}</h2>
+        </div>
+        {icon ? (
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 999,
+              background: "#f5f5f5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#151515",
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </div>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function MetaCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        padding: "10px 12px",
+        borderRadius: 8,
+        background: "#fff",
+        border: "1px solid #e8e8e8",
+      }}
+    >
+      <div style={{ marginTop: 1, color: "#7d7d76", flexShrink: 0 }}>{icon}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ ...eyebrowStyle, fontSize: 9, marginBottom: 3 }}>{label}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, noBorder = false }: { label: string; value: string; noBorder?: boolean }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 12,
+        paddingBottom: noBorder ? 0 : 12,
+        borderBottom: noBorder ? "none" : "1px solid #efefe9",
+      }}
+    >
+      <span style={{ color: "#888", fontSize: 12.5 }}>{label}</span>
+      <span style={{ color: "#111", fontSize: 12.5, fontWeight: 600, textAlign: "right" }}>{value}</span>
     </div>
   );
 }
@@ -40,195 +213,442 @@ function BillDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const billId = parseInt(id, 10);
-
-  const loadBill = async (showLoading = true) => {
-    try {
-      if (showLoading) setIsLoading(true);
-      const data = await api.getBill(billId);
-      setBill(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load bill details");
-    } finally {
-      if (showLoading) setIsLoading(false);
-    }
-  };
+  const billId = Number.parseInt(id, 10);
 
   useEffect(() => {
-    loadBill();
+    let active = true;
+
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await api.getBill(billId);
+        if (active) {
+          setBill(data);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Failed to load bill details");
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
   }, [billId]);
 
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-7 w-7 border-2 border-gray-200 border-t-[#111]" />
-      </div>
-    );
-  }
+  const sourceDocuments = useMemo(() => {
+    if (!bill) {
+      return [] as SourceDocument[];
+    }
 
-  if (isLoading) {
+    return [
+      bill.doc_expunere_url ? { label: "Expunere de motive", url: bill.doc_expunere_url } : null,
+      bill.doc_forma_url ? { label: "Forma propusa", url: bill.doc_forma_url } : null,
+      bill.doc_aviz_ces_url ? { label: "Aviz CES", url: bill.doc_aviz_ces_url } : null,
+      bill.doc_aviz_cl_url ? { label: "Aviz Consiliul Legislativ", url: bill.doc_aviz_cl_url } : null,
+      bill.doc_adoptata_url ? { label: "Forma adoptata", url: bill.doc_adoptata_url } : null,
+      bill.source_url ? { label: "Pagina oficiala", url: bill.source_url } : null,
+    ].filter((doc): doc is SourceDocument => Boolean(doc));
+  }, [bill]);
+
+  if (isAuthLoading || isLoading) {
     return <BillDetailSkeleton />;
   }
 
   if (!bill) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-sm w-full px-4">
-          <Card className="border border-[#e2e2e2] shadow-none rounded-xl">
-            <CardContent className="flex flex-col items-center justify-center py-10 gap-4 text-center">
-              <div className="bg-gray-100 p-3 rounded-full">
-                <FileText className="h-6 w-6 text-gray-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-[#111]">Proiect negăsit</h2>
-              <p className="text-gray-500 text-sm">Documentul legislativ nu există sau a fost mutat.</p>
-              <Button onClick={() => navigate({ to: "/" })} className="mt-1 bg-[#111] hover:bg-gray-800">
-                Înapoi la Feed
-              </Button>
-            </CardContent>
-          </Card>
+      <div style={pageStyle}>
+        <div style={containerStyle}>
+          <div style={{ ...cardStyle, padding: 28, maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                margin: "0 auto 18px",
+                borderRadius: "50%",
+                background: "#f4f4f1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#6f6f68",
+              }}
+            >
+              <FileText size={22} />
+            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: "#151515" }}>Bill not found</h1>
+            <p style={{ marginTop: 10, color: "#666660", fontSize: 14, lineHeight: 1.65 }}>
+              {error || "This legislative record is missing or the route is pointing to the wrong bill."}
+            </p>
+            <Button onClick={() => navigate({ to: "/" })} className="mt-6 bg-[#151515] hover:bg-[#222]">
+              Back to feed
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   const ai = bill.ai_analysis;
-  const registeredDate = bill.registered_at ? new Date(bill.registered_at) : null;
+  const title = ai?.title_short || bill.title;
+  const registeredDate = bill.registered_at ? new Date(bill.registered_at).toLocaleDateString("ro-RO") : "Unknown";
+  const adoptedDate = bill.adopted_at ? new Date(bill.adopted_at).toLocaleDateString("ro-RO") : null;
+  const layoutStyle: CSSProperties = {
+    display: "grid",
+    gap: 16,
+    gridTemplateColumns: "minmax(0, 1.7fr) 280px",
+  };
 
   return (
-    <div className="py-8 pb-16">
-      <div className="max-w-4xl mx-auto px-4 space-y-5">
-        <Breadcrumbs
-          items={[
-            { label: "Feed", href: "/" },
-            { label: bill.bill_number }
-          ]}
-        />
+    <div style={pageStyle}>
+      <div style={containerStyle}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <Breadcrumbs items={[{ label: "Feed", href: "/" }, { label: bill.bill_number }]} />
+          <Link
+            to="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "7px 12px",
+              borderRadius: 999,
+              background: "#ffffff",
+              border: "1px solid #e3e3dd",
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: "#111",
+            }}
+          >
+            <ChevronLeft size={14} />
+            Back to feed
+          </Link>
+        </div>
 
-        {/* Main Bill Card */}
-        <Card className="border border-[#e2e2e2] shadow-none rounded-xl bg-white">
-          <CardHeader className="pb-4 pt-6 px-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-gray-600 border-gray-200 font-medium text-xs">
-                  {bill.bill_number}
-                </Badge>
-                <Badge className="bg-[#111] text-white font-medium text-xs border-0">
-                  {bill.status || "În progres"}
-                </Badge>
+        <section style={{ ...cardStyle, padding: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <span style={{ ...pillStyle(), background: "#ffffff", border: "1px solid #dddcd4" }}>{bill.bill_number}</span>
+              <span style={statusStyle(bill.status)}>{bill.status || "In progres"}</span>
+              {bill.procedure ? <span style={pillStyle()}>{bill.procedure}</span> : null}
+            </div>
+
+            <div style={{ display: "grid", gap: 16, gridTemplateColumns: "minmax(0, 1fr) 260px", alignItems: "start" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <h1 style={{ fontSize: 28, lineHeight: 1.15, fontWeight: 600, color: "#111", maxWidth: 620 }}>
+                  {title}
+                </h1>
+                <p style={{ fontSize: 13, lineHeight: 1.55, color: "#666", maxWidth: 560 }}>
+                  {ai?.key_ideas?.[0]
+                    ? ai.key_ideas[0]
+                    : "This page gathers the official status, AI summary, source documents, and impact tags for this legislative initiative."}
+                </p>
               </div>
-              <CardTitle className="text-2xl font-semibold leading-snug text-[#111]">
-                {ai?.title_short || bill.title}
-              </CardTitle>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5 text-gray-400" />
-                  <span>{bill.initiator_type || "Inițiator necunoscut"}</span>
-                </div>
-                {registeredDate && (
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                    <span>Înregistrat: {registeredDate.toLocaleDateString("ro-RO")}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-gray-400" />
-                  <span>{bill.law_type || "Lege"}</span>
-                </div>
+
+              <div
+                style={{
+                  borderRadius: 8,
+                  border: "1px solid #e8e8e8",
+                  background: "#fafafa",
+                  padding: 12,
+                }}
+              >
+                <div style={eyebrowStyle}>Transparency note</div>
+                <p style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.55, color: "#666" }}>
+                  Every summary here should map back to the underlying bill record and official source documents. This page is meant to help someone verify, not just skim.
+                </p>
               </div>
             </div>
-          </CardHeader>
 
-          <CardContent className="px-6 pb-6 space-y-8">
-            {/* AI Synthesis */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-[#111] p-1.5 rounded-lg text-white">
-                  <MessageSquare className="h-4 w-4" />
-                </div>
-                <h3 className="text-base font-semibold text-[#111]">Analiză AI</h3>
-              </div>
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+              <MetaCard icon={<User size={15} />} label="Initiator" value={bill.initiator_name || bill.initiator_type || "Unknown"} />
+              <MetaCard icon={<Calendar size={15} />} label="Registered" value={registeredDate} />
+              <MetaCard icon={<FileText size={15} />} label="Law type" value={bill.law_type || "Proiect de lege"} />
+              <MetaCard icon={<Scale size={15} />} label="Adopted" value={adoptedDate || "Pending"} />
+            </div>
+          </div>
+        </section>
 
-              <div className="space-y-2">
-                {ai?.key_ideas && ai.key_ideas.length > 0 ? (
-                  ai.key_ideas.map((idea, idx) => (
-                    <div key={idx} className="bg-gray-50 p-4 rounded-lg border border-[#e2e2e2] flex gap-3">
-                      <span className="text-lg font-semibold text-gray-300 leading-none mt-0.5">
-                        {String(idx + 1).padStart(2, "0")}
-                      </span>
-                      <p className="text-sm text-[#111] leading-relaxed">{idea}</p>
+        <div style={layoutStyle}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <Section eyebrow="AI synthesis" title="What this bill is trying to do" icon={<Sparkles size={17} />}>
+              {ai?.key_ideas?.length ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {ai.key_ideas.map((idea, index) => (
+                    <div
+                      key={`${index}-${idea}`}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        padding: "12px 14px",
+                        borderRadius: 10,
+                        border: "1px solid #e8e8e8",
+                        background: "#fff",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "#ffffff",
+                          border: "1px solid #ececec",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#999",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <p style={{ fontSize: 13.5, lineHeight: 1.55, color: "#333" }}>{idea}</p>
                     </div>
-                  ))
-                ) : (
-                  <div className="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-200 text-center">
-                    <p className="text-gray-400 text-sm">Analiza AI este în curs de procesare.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Arguments */}
-            {(ai?.pro_arguments?.length || ai?.con_arguments?.length) ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-green-600">
-                    <ThumbsUp className="h-4 w-4" />
-                    <h4 className="text-sm font-semibold uppercase tracking-wide">Argumente Pro</h4>
-                  </div>
-                  <div className="space-y-2">
-                    {ai!.pro_arguments.map((arg, idx) => (
-                      <div key={idx} className="bg-green-50 p-3 rounded-lg border border-green-100 text-green-900 text-sm">
-                        {arg}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-red-500">
-                    <ThumbsDown className="h-4 w-4" />
-                    <h4 className="text-sm font-semibold uppercase tracking-wide">Argumente Contra</h4>
-                  </div>
-                  <div className="space-y-2">
-                    {ai!.con_arguments.map((arg, idx) => (
-                      <div key={idx} className="bg-red-50 p-3 rounded-lg border border-red-100 text-red-900 text-sm">
-                        {arg}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Impact Badges */}
-            {ai?.impact_categories && ai.impact_categories.length > 0 && (
-              <div className="space-y-3 pt-4 border-t border-[#e2e2e2]">
-                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Arii de Impact</h4>
-                <div className="flex flex-wrap gap-2">
-                  {ai.impact_categories.map((cat) => (
-                    <Badge key={cat} variant="secondary" className="bg-gray-100 text-gray-700 border-0 font-medium">
-                      {cat}
-                    </Badge>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Action Bar */}
-            <div className="pt-4 border-t border-[#e2e2e2] flex flex-col md:flex-row gap-3">
-              <Button className="flex-1 bg-[#111] hover:bg-gray-800 text-white font-medium gap-2">
-                <Mail className="h-4 w-4" />
-                Contactează reprezentantul
-              </Button>
-              {bill.source_url && (
-                <Button variant="outline" asChild className="flex-1 border-[#e2e2e2] font-medium gap-2">
-                  <a href={bill.source_url} target="_blank" rel="noopener noreferrer">
-                    <FileText className="h-4 w-4" />
-                    Text original
-                  </a>
-                </Button>
+              ) : (
+                <div
+                  style={{
+                    padding: 14,
+                    borderRadius: 10,
+                    border: "1px dashed #e0e0e0",
+                    background: "#fafafa",
+                    fontSize: 13,
+                    lineHeight: 1.55,
+                    color: "#777",
+                  }}
+                >
+                  The AI summary has not been generated yet. The official documents are still available in the source panel.
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </Section>
+
+            <Section eyebrow="Debate surface" title="Arguments for and against" icon={<MessageSquareText size={17} />}>
+              <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+                <div
+                  style={{
+                    borderRadius: 10,
+                    border: "1px solid #d9efe1",
+                    background: "#f3fbf4",
+                    padding: 14,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#17663e", marginBottom: 10 }}>
+                    <ShieldCheck size={15} />
+                    <h3 style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Arguments pro</h3>
+                  </div>
+                  {ai?.pro_arguments?.length ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {ai.pro_arguments.map((argument, index) => (
+                        <p key={`${index}-${argument}`} style={{ fontSize: 13, lineHeight: 1.55, color: "#1c472d" }}>
+                          {argument}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "#477458" }}>No supporting argument set has been extracted yet.</p>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    borderRadius: 10,
+                    border: "1px solid #f1dddd",
+                    background: "#fff5f5",
+                    padding: 14,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#b73b3b", marginBottom: 10 }}>
+                    <ShieldAlert size={15} />
+                    <h3 style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Arguments contra</h3>
+                  </div>
+                  {ai?.con_arguments?.length ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {ai.con_arguments.map((argument, index) => (
+                        <p key={`${index}-${argument}`} style={{ fontSize: 13, lineHeight: 1.55, color: "#612f2f" }}>
+                          {argument}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "#8a5d5d" }}>No criticism set has been extracted yet.</p>
+                  )}
+                </div>
+              </div>
+            </Section>
+
+            <Section eyebrow="Why it matters" title="Impact tags and affected groups" icon={<Scale size={17} />}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div>
+                  <div style={{ ...eyebrowStyle, marginBottom: 10 }}>Policy areas</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {ai?.impact_categories?.length ? (
+                      ai.impact_categories.map((category) => (
+                        <span
+                          key={category}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "7px 10px",
+                            borderRadius: 999,
+                            background: "#1e1e1b",
+                            color: "#ffffff",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {category}
+                        </span>
+                      ))
+                    ) : (
+                      <span style={{ fontSize: 13, color: "#777" }}>No impact categories yet.</span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ ...eyebrowStyle, marginBottom: 10 }}>Affected profiles</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {ai?.affected_profiles?.length ? (
+                      ai.affected_profiles.map((profile) => (
+                        <span
+                          key={profile}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "7px 10px",
+                            borderRadius: 999,
+                            background: "#fafaf8",
+                            color: "#3f3f3a",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            border: "1px solid #e4e4de",
+                          }}
+                        >
+                          {profile}
+                        </span>
+                      ))
+                    ) : (
+                      <span style={{ fontSize: 13, color: "#777" }}>No profile targeting extracted yet.</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Section>
+          </div>
+
+          <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <Section eyebrow="Official record" title="At a glance" icon={<FileText size={17} />}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <InfoRow label="Bill number" value={bill.bill_number} />
+                <InfoRow label="Status" value={bill.status || "Unknown"} />
+                <InfoRow label="Procedure" value={bill.procedure || "Not listed"} />
+                <InfoRow label="Decision chamber" value={bill.decision_chamber || "Not listed"} />
+                <InfoRow label="Confidence" value={typeof ai?.confidence === "number" ? `${Math.round(ai.confidence * 100)}%` : "Pending"} noBorder />
+              </div>
+            </Section>
+
+            <Section eyebrow="Primary sources" title="Documents and references" icon={<ArrowUpRight size={17} />}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {sourceDocuments.length ? (
+                  sourceDocuments.map((document) => (
+                    <a
+                      key={`${document.label}-${document.url}`}
+                      href={document.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        padding: "9px 10px",
+                        borderRadius: 8,
+                        border: "1px solid #e8e8e8",
+                        background: "#fff",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: 8,
+                            background: "#ffffff",
+                            border: "1px solid #ececec",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#1f1f1c",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <FileText size={14} />
+                        </div>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: "#333" }}>{document.label}</span>
+                      </div>
+                      <ArrowUpRight size={14} color="#7a7a72" />
+                    </a>
+                  ))
+                ) : (
+                  <div
+                    style={{
+                      padding: "14px 12px",
+                      borderRadius: 8,
+                      border: "1px dashed #e0e0e0",
+                      background: "#fafafa",
+                      fontSize: 12.5,
+                      lineHeight: 1.5,
+                      color: "#777",
+                    }}
+                  >
+                    No official document URLs are attached to this bill yet.
+                  </div>
+                )}
+              </div>
+            </Section>
+
+            <section
+              style={{
+                borderRadius: 10,
+                border: "1px solid #151515",
+                background: "#151515",
+                padding: 16,
+                color: "#ffffff",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ ...eyebrowStyle, color: "rgba(255,255,255,0.65)" }}>Citizen action</div>
+                <h2 style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.15 }}>Make the next step obvious</h2>
+                <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "rgba(255,255,255,0.76)" }}>
+                  Once the messaging flow is wired, this panel should help the user contact representatives with context, not panic.
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
+                <Button className="w-full justify-center gap-2 rounded-xl bg-white text-[#151515] hover:bg-[#f1f1ee]">
+                  <Mail className="h-4 w-4" />
+                  Contact representative
+                </Button>
+                {bill.source_url ? (
+                  <Button variant="outline" asChild className="w-full justify-center gap-2 rounded-xl border-white/20 bg-transparent text-white hover:bg-white/8 hover:text-white">
+                    <a href={bill.source_url} target="_blank" rel="noopener noreferrer">
+                      <ArrowUpRight className="h-4 w-4" />
+                      Open official page
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </div>
   );
