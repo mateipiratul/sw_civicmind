@@ -203,7 +203,7 @@ class ApiClient {
   private getAuthHeader = (): Record<string, string> => {
     const token = localStorage.getItem("auth_token");
     if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
+    return { Authorization: `Token ${token}` };
   };
 
   private requestTo = async <T>(baseUrl: string, endpoint: string, options: RequestInit = {}): Promise<T> => {
