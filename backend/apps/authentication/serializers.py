@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from apps.profiles.models import Profile
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,6 +21,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data.get('email', ''),
             password=validated_data['password']
         )
+        Profile.objects.get_or_create(user=user)
         return user
 
 class LoginSerializer(serializers.Serializer):

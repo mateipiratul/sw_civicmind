@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Profile
-from .serializers import ProfileSerializer
+from .serializers import ProfileSerializer, ProfileQuestionnaireSerializer
 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
@@ -25,3 +25,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def questionnaire(self, request):
+        serializer = ProfileQuestionnaireSerializer(instance={})
+        return Response(serializer.data)
