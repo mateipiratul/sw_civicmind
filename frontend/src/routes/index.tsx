@@ -182,7 +182,7 @@ function DashboardPage() {
   return (
     <div style={{ display: "flex", minHeight: "calc(100vh - 52px)" }}>
       {/* Left sidebar */}
-      <aside style={{ width: 200, flexShrink: 0, borderRight: "1px solid #e8e8e8", background: "transparent", padding: "20px 0" }}>
+      <aside style={{ width: 200, flexShrink: 0, borderRight: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 0" }}>
         <div style={{ padding: "0 16px", marginBottom: 8 }}>
           <span style={{ fontSize: 10.5, fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Categorii
@@ -261,7 +261,7 @@ function DashboardPage() {
       </main>
 
       {/* Right panel */}
-      <aside style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e8e8e8", background: "transparent", padding: "20px 16px" }}>
+      <aside style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 16px" }}>
         {localMPs.length > 0 ? (
           <>
             <div style={{ marginBottom: 14 }}>

@@ -473,7 +473,7 @@ function ChatPage() {
         </div>
       </div>
 
-      <aside style={{ width: 320, flexShrink: 0, background: "transparent", overflowY: "auto" }}>
+      <aside style={{ width: 320, flexShrink: 0, background: "rgba(255,255,255,0.75)", borderLeft: "1px solid #e8e8e8", overflowY: "auto" }}>
         <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid #e8e8e8" }}>
           <div
             style={{
