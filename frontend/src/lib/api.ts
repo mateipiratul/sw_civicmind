@@ -164,6 +164,25 @@ export interface PaginatedMPs {
   results: Parliamentarian[];
 }
 
+export interface BillVoteMP {
+  mp_slug: string;
+  mp_name: string;
+  party: string;
+  vote: string;
+}
+
+export interface BillVotesResponse {
+  bill_idp: number;
+  bill_number: string;
+  vote_session: {
+    date: string | null;
+    type: string | null;
+    description: string | null;
+    summary: { present: number; for: number; against: number; abstain: number; absent: number };
+  };
+  votes: { for: BillVoteMP[]; against: BillVoteMP[]; abstain: BillVoteMP[]; absent: BillVoteMP[] };
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -287,6 +306,10 @@ class ApiClient {
 
   getMP = async (slug: string): Promise<Parliamentarian> => {
     return this.request(`/api/mps/${slug}/`);
+  };
+
+  getBillVotes = async (id: number): Promise<BillVotesResponse> => {
+    return this.request(`/api/bills/${id}/votes/`);
   };
 
   getPersonalizedFeed = async (page = 1, limit = 10): Promise<PaginatedBills> => {
