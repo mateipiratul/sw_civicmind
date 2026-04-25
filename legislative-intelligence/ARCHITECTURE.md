@@ -21,14 +21,15 @@ CivicMind is a Romanian civic-tech platform that scrapes legislative data from c
 | Agent 2 — Auditor | ✅ Done | 284 MPs scored, narratives generated; narrative calls retry once on transient failure |
 | Agent 3 — Q&A | ✅ Done | Live Mistral calls, tested |
 | Agent 4 — Messenger | ✅ Done | Live Mistral calls, tested |
-| REST API (FastAPI) | ✅ Done | 26 endpoints, file-based + expanded RAG admin/eval/inspection endpoints available |
+| REST API (FastAPI) | ✅ Done | 34 endpoints — bills, MPs, agents, RAG, profile, feed, follow/unfollow |
 | Test UI | ✅ Done | `index.html` — single file, vanilla JS |
 | Supabase ingestion script | ✅ Done | Pushes bills, votes, AI analyses, impact scores, notification preferences/events/flags/jobs |
 | Supabase SQL migration | ✅ Done | `db/schema.sql` and `db/schema_rag.sql` applied in Supabase |
 | Supabase tables | ✅ Done | `schema.sql` and `schema_rag.sql` applied in Supabase on 2026-04-25 |
 | Agent 5 — Notifications | ✅ MVP Done | Deterministic watchdog + flag classifier + local job queue + dry-run delivery |
 | RAG Agent — Legislative Text Similarity Chat | 🛠️ Infra Live | Supabase vector schema applied, local bills indexed, first 300 discovered 2025 Portal Legislativ acts indexed, baseline eval harness live |
-| React/Next.js frontend | ⏳ Pending | Teammate |
+| Personalization / User Profile Layer | ✅ Feed contract done | `_build_feed_card`, `build_anonymous_feed`, follow/unfollow, `GET /feed` — all live |
+| React/Vite frontend | 🛠️ Started | Vite scaffold + TypeScript initialized; backlog in `frontend/GEMINI.md` |
 | API deployment | ⏳ Pending | Teammate |
 
 ---
@@ -36,9 +37,20 @@ CivicMind is a Romanian civic-tech platform that scrapes legislative data from c
 ## Project Layout
 
 ```
+sw_civicmind/                        # Git repo root (monorepo)
+├── backend/                         # Django 6 + DRF — auth, profiles, admin
+├── frontend/                        # React 19 + TypeScript + Vite — citizen SPA
+└── legislative-intelligence/        # FastAPI + LangGraph — AI agents, scraper, RAG
+    # (detail below)
+```
+
+**Full monorepo expansion:**
+
+```
 civicmind/
 ├── sw_civicmind/            # Git repo root
-│   ├── backend/             # Existing backend app
+│   ├── backend/             # Django + DRF
+│   ├── frontend/            # React + Vite SPA
 │   └── legislative-intelligence/
 │       ├── index.html               # Test UI — open in browser while API is running
 │       ├── main.py                  # Scraper CLI entry point
@@ -46,6 +58,7 @@ civicmind/
 │       ├── run_agents.py            # Agent CLI (scout / auditor / qa / messenger / all)
 │       ├── requirements.txt
 │       ├── eval_rag.py             # baseline RAG retrieval regression runner
+│       ├── personalization.py      # user-profile store + first personalization helper
 │       ├── .env                     # MISTRAL_API_KEY, SUPABASE_URL, SUPABASE_KEY
 │       ├── .env.example
 │       ├── .gitignore               # excludes .env, data/raw/, data/processed/
@@ -88,6 +101,74 @@ civicmind/
 │
 └── move_to_legislative_intelligence.ps1  # One-time move script used for this migration
 ```
+
+---
+
+## Full-System Architecture
+
+Three modules, three processes, one Supabase database.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CITIZEN BROWSER                                                         │
+│  React + Vite SPA  (frontend/)                                           │
+│  ├─ Auth screens  → POST /api/auth/register, /api/auth/login            │
+│  ├─ Onboarding wizard → PUT /api/profiles/me/                           │
+│  ├─ Civic Feed  → GET /api/bills/personalized/                          │
+│  ├─ Bill Detail + Q&A + Messenger → POST /qa  /messenger                │
+│  ├─ MP Scoreboard  → GET /mps                                           │
+│  └─ RAG Chat  → POST /rag/chat                                          │
+└────────────────┬────────────────────────────────────────────────────────┘
+                 │ HTTP  (Vite proxy: /api → :8000,  /rag /bills /mps → :8001)
+   ┌─────────────▼──────────────┐          ┌──────────────────────────────┐
+   │  DJANGO BACKEND  (:8000)   │          │  FASTAPI AI-SERVICE  (:8001) │
+   │  backend/                  │          │  legislative-intelligence/   │
+   │  ├─ POST /auth/register    │          │  api/main.py                 │
+   │  ├─ POST /auth/login       │          │  ├─ GET /bills               │
+   │  ├─ GET/PUT /profiles/{id} │          │  ├─ GET /bills/{idp}         │
+   │  └─ GET /profiles/{id}/    │          │  ├─ GET /mps                 │
+   │       personalization       │          │  ├─ POST /qa                 │
+   └─────────────┬───────────────┘          │  ├─ POST /messenger          │
+                 │                          │  ├─ POST /rag/chat           │
+                 │                          │  └─ GET  /notifications/*    │
+                 │                          └───────────────┬──────────────┘
+                 │                                          │
+   ┌─────────────▼──────────────────────────────────────────▼──────────────┐
+   │  SUPABASE  (PostgreSQL + pgvector)                                     │
+   │  bills · vote_sessions · parliamentarians · mp_votes                   │
+   │  ai_analyses · impact_scores · user_profiles                           │
+   │  notification_preferences · bill_events · bill_flags · jobs            │
+   │  legislation_documents · legislation_chunks (1024-dim vectors)         │
+   │  rag_query_logs                                                        │
+   └────────────────────────────────────────────────────────────────────────┘
+```
+
+**Environment variable boundary:**
+- Django uses `DATABASE_URL` (Supabase pooler) + `SECRET_KEY`
+- FastAPI uses `SUPABASE_URL` + `SUPABASE_KEY` + `MISTRAL_API_KEY`
+- Frontend uses `VITE_API_BASE_URL` (Django) + `VITE_AI_SERVICE_URL` (FastAPI)
+
+---
+
+## Layer 0 — Backend (`backend/`)
+
+**Stack:** Django 6.0, Django REST Framework, psycopg2, dj-database-url  
+**Status:** Auth + Profile endpoints working; Supabase-connected.
+
+### Apps
+
+| App | Models | Key endpoints |
+|-----|--------|--------------|
+| `authentication` | — | `POST /auth/register`, `POST /auth/login` |
+| `profiles` | `Profile` (county, interests, notification prefs) | `GET/PUT /api/profiles/me/` |
+| `bills` | `Bill` (read-only ORM mirror) | — |
+| `parliamentarians` | `Parliamentarian` (name, party, email, county) | — |
+
+### Key technical choices
+- Token-based authentication (DRF `TokenAuthentication`)
+- `django-cors-headers` with origin allowlist for the Vite dev server
+- `dj_database_url` parses `DATABASE_URL` → psycopg2 connection to Supabase pooler
+- `Service Role Key` never exposed to the Django app — only FastAPI uses it for writes
 
 ---
 
@@ -675,6 +756,14 @@ python -m uvicorn api.main:app --reload --port 8000
 | `GET` | `/mps/{mp_slug}` | — | MP detail + full vote history across all bills |
 | `POST` | `/qa` | body: `{idp, question}` | `{answer}` — live Mistral call |
 | `POST` | `/messenger` | body: `{idp, mp_name, user_name, stance}` | `{draft: {subject, body}}` — live Mistral call |
+| `GET` | `/profiles/{user_id}` | — | canonical user profile + notification preference bundle |
+| `PUT` | `/profiles/{user_id}` | body: `{email?, full_name?, email_opt_in?, profile, notification_preferences?}` | create/update canonical user profile |
+| `GET` | `/profiles/{user_id}/personalization` | `limit` | personalization summary and ranked bill recommendations |
+| `POST` | `/profiles/{user_id}/follow/bill/{idp}` | — | add bill to `followed_bills`; returns updated list |
+| `DELETE` | `/profiles/{user_id}/follow/bill/{idp}` | — | remove bill from `followed_bills`; returns updated list |
+| `POST` | `/profiles/{user_id}/follow/mp/{mp_slug}` | — | add MP to `followed_mps`; returns updated list |
+| `DELETE` | `/profiles/{user_id}/follow/mp/{mp_slug}` | — | remove MP from `followed_mps`; returns updated list |
+| `GET` | `/feed` | `user_id?`, `limit`, `category?` | personalized feed when `user_id` is given; anonymous chronological feed otherwise |
 | `GET` | `/rag/health` | — | RAG corpus counts, embedding model, latest indexed source |
 | `POST` | `/rag/search` | body: `{query, top_k, threshold, source?, bill_idp?, document_type?, exclude_bill_idp?}` | raw semantic search results from Supabase pgvector |
 | `POST` | `/rag/chat` | body: `{question, top_k, threshold, source?, bill_idp?, exclude_bill_idp?}` | grounded RAG answer + cited source chunks |
@@ -694,7 +783,7 @@ python -m uvicorn api.main:app --reload --port 8000
 
 CORS is open (`allow_origins=["*"]`). The test UI (`index.html`) calls this API from `file://`.
 
-**Status:** done. 26 endpoints available; expanded RAG endpoints smoke-tested locally.
+**Status:** done. 34 endpoints available.
 
 ---
 
@@ -713,6 +802,7 @@ Ingestion script: reads all JSON files, upserts to Supabase in dependency order.
 | `ai_analyses` | `bill_idp` | Scout output |
 | `impact_scores` | `mp_slug` | Auditor output |
 | `users` | `user_id` | notification recipients + consent state |
+| `user_profiles` | `user_id` | canonical profile, interests, follows, explanation mode |
 | `notification_preferences` | `user_id` | categories/profiles/frequency/min importance |
 | `bill_events` | `event_key` | detected CDEP bill events |
 | `bill_flags` | `event_key` | deterministic flags and importance |
@@ -739,6 +829,51 @@ Notes:
 - Single-file sync skips notification data by default.
 
 **Status:** schema + script done. Blocked on Supabase project creation and running `db/schema.sql`.
+
+---
+
+## Layer 5 — Frontend (`frontend/`)
+
+**Stack:** React 19, TypeScript, Vite 8, Lucide React, TanStack Query / Axios, vanilla CSS  
+**Status:** 🛠️ Scaffold initialized. Main UI implementation in progress by teammate.
+
+### Screens & backlog
+
+| Screen | Features | API surface |
+|--------|----------|------------|
+| **Auth** | Login / Register forms | `POST /auth/login`, `POST /auth/register` |
+| **Onboarding wizard** | County dropdown, interest selection | `PUT /api/profiles/me/` |
+| **Civic Feed** | Personalized bill cards with Impact Badges, status chips, AI summary | `GET /api/bills/personalized/` |
+| **Bill Detail** | Key ideas, PRO/CON cards, vote breakdown, MP vote list, Q&A, email composer modal | `GET /bills/{idp}`, `POST /qa`, `POST /messenger` |
+| **MP Scoreboard** | Score gauge, consistency feed, contact card | `GET /mps`, `GET /mps/{slug}` |
+| **RAG Chat** | Cross-bill legislative Q&A with citations | `POST /rag/chat` |
+
+### Design rules
+- Mobile-first responsive layout
+- Gov-Tech palette: deep blues, clean whites, green (adopted), amber (in progress), red (rejected)
+- Null safety: show "Se procesează..." / "Date în curs" when AI analysis is not yet available; never crash on `null`
+- Skeleton screens for the feed to maintain perceived performance
+
+### Vite dev configuration (pending)
+```ts
+// vite.config.ts — target layout
+proxy: {
+  '/api':  'http://localhost:8000',   // Django (auth, profiles)
+  '/auth': 'http://localhost:8000',
+  '/bills': 'http://localhost:8001',  // FastAPI (bills, MPs, agents, RAG)
+  '/mps':  'http://localhost:8001',
+  '/rag':  'http://localhost:8001',
+}
+```
+
+Environment variables (`.env`):
+- `VITE_API_BASE_URL` — Django base URL
+- `VITE_AI_SERVICE_URL` — FastAPI AI service base URL
+
+### State management
+- React Context for auth/user profile (global)
+- TanStack Query for server state (bills, MPs, feed)
+- Local state only for ephemeral UI (modals, form inputs)
 
 ---
 
@@ -802,6 +937,114 @@ python -m uvicorn api.main:app --reload --port 8000
 
 > Read this section fully before touching any code. Everything in the layers above is working. Don't modify the core agent logic unless a task below specifically says to.
 
+### Current team allocation (recommended)
+
+Current parallel workstreams:
+- **Auth (Teammate A):** Django `POST /auth/register`, `POST /auth/login`, Google OAuth.
+- **Onboarding research (Teammate B):** Defines what the wizard should ask and how answers map to the profile schema.
+- **Feed backend (Teammate C):** `GET /api/bills/personalized/` — Django view or FastAPI endpoint that consumes profile interests.
+- **Frontend (Teammate D):** Scaffold initialized; implementing feed, bill detail, and MP screens against the API surface above.
+- **Personalization contract:** Central lane — connects auth, feed, chat, and notifications (see below).
+
+Best open lane for the next builder:
+- Own the **profile intelligence + personalization contract** across auth, feed, chat, and notifications.
+- Reason: this is central to the product, it is not blocked by the feed backend, and it turns the existing RAG/analysis work into a personalized civic product instead of just a generic legislative dashboard.
+
+Implemented on 2026-04-25:
+- Added `public.user_profiles` to `db/schema.sql` and applied it in Supabase.
+- Added `personalization.py` with canonical profile fetch/upsert, feed card builder, and feed ranking.
+- Ranking strategy `interest_profile_follow_v1`: interest hits (+3×), affected profile hits (+2×), followed bill (+8), followed MP voted (+2).
+- Added `_build_feed_card()` — shared card shape used by both personalized and anonymous feed. Fields: `idp`, `bill_number`, `title`, `title_short`, `status`, `status_label`, `impact_categories`, `affected_profiles`, `controversy_score`, `passed_by`, `vote_date`, `has_ai_analysis`, `key_ideas_preview`, optional `personalization` sub-object.
+- Added `build_anonymous_feed()` — chronological feed (vote_date desc) for unauthenticated users; filterable by category.
+- Added follow/unfollow functions: `follow_bill`, `unfollow_bill`, `follow_mp`, `unfollow_mp` — each does a read-modify-write on the `user_profiles` array column.
+- Added API endpoints:
+  - `GET /profiles/{user_id}`
+  - `PUT /profiles/{user_id}`
+  - `GET /profiles/{user_id}/personalization`
+  - `POST /profiles/{user_id}/follow/bill/{idp}`
+  - `DELETE /profiles/{user_id}/follow/bill/{idp}`
+  - `POST /profiles/{user_id}/follow/mp/{mp_slug}`
+  - `DELETE /profiles/{user_id}/follow/mp/{mp_slug}`
+  - `GET /feed` — dual-mode: personalized when `user_id` is given, anonymous otherwise
+
+What this lane should produce:
+1. Canonical user-profile schema
+- Define a single profile model used across the app:
+  - `user_id`
+  - `full_name` / optional public display name
+  - `email`
+  - `auth_provider`
+  - `city` / `county` / optional constituency
+  - `occupation` / `sector`
+  - `roles` (e.g. student, parent, PFA, employee, employer, pensioner, NGO worker, journalist)
+  - `interests` (mapped to CivicMind impact categories)
+  - `affected_profiles` of interest
+  - `followed_bills`
+  - `followed_mps`
+  - `notification_frequency`
+  - `language`
+- Keep most of this optional at first so auth can ship before full onboarding is finalized.
+
+2. Onboarding-to-profile mapping
+- Turn the login/onboarding research into a backend-ready schema, not just UI copy.
+- Separate:
+  - required auth fields
+  - first-session onboarding fields
+  - optional preference enrichment fields later
+
+3. Personalization contract for the feed
+- Define how the feed backend should consume the profile:
+  - boost bills matching `interests`
+  - boost bills matching `affected_profiles`
+  - boost geographically relevant items later when location data exists
+  - surface followed MPs/bills first
+  - expose a simple explanation field like `why_this_matters_to_you`
+- This lets the feed teammate build ranking/output against a stable interface.
+
+4. Personalization contract for the RAG/chat layer
+- Define what profile context can be passed into `/rag/chat` later:
+  - preferred categories
+  - followed topics
+  - user role/occupation
+  - explanation preference (`brief`, `detailed`, `actionable`)
+- The RAG layer should stay grounded in retrieved text, but can tailor framing and prioritization using profile context.
+
+5. Personalization contract for notifications
+- Align notification preferences with the same profile categories, followed bills, followed MPs, and affected roles.
+- Avoid inventing a second parallel preference system for notifications.
+
+6. Minimal database/API plan
+- Initial schema/API slice is now implemented:
+  - `public.user_profiles`
+  - `GET /profiles/{user_id}`
+  - `PUT /profiles/{user_id}`
+  - `GET /profiles/{user_id}/personalization`
+- Next step is to connect the auth/onboarding flow to this schema instead of inventing a separate profile store.
+
+### Best thing for you to do now
+
+If auth, onboarding research, and feed backend are already owned by teammates, the highest-leverage work for you is:
+
+**Option A — Frontend integration (if you own a screen):**
+1. Wire the Auth screens to `POST /auth/login` and `POST /auth/register`.
+2. Implement the Onboarding wizard and call `PUT /api/profiles/me/`.
+3. Build the Civic Feed consuming `GET /api/bills/personalized/` — skeleton cards first, data second.
+4. Add the Bill Detail screen (key ideas, vote breakdown, Q&A, email composer modal).
+5. Add the MP Scoreboard screen.
+
+**Option B — Personalization contract (cross-cutting lane):**
+1. Define the canonical profile schema in code and in Supabase.
+2. Define how login/onboarding answers map into that schema.
+3. Add minimal profile/preferences endpoints in the API.
+4. Add a first personalization helper used by the feed and later by chat.
+5. Update the architecture doc as those contracts become real.
+
+Why this is the best lane:
+- it connects almost every other workstream
+- it makes the app feel like CivicMind instead of a generic law search tool
+- it avoids duplicating auth work or feed work
+- it unlocks the "alternative to news outlets" and "what matters to me" product promise
+
 ### P0 — Do first (database + deployment unblockers)
 
 **1. Supabase migration and full sync — done**
@@ -816,29 +1059,42 @@ Result: bills, vote sessions, parliamentarians, MP votes, Scout analyses, Audito
 
 ---
 
-**2. Decide monorepo layout before adding frontend**
+**2. Monorepo layout — current state**
 
-Recommendation: use a monorepo for this stage. Keep scraper, agents, API, DB migrations, and frontend in one repo so shared contracts (`bill` shape, `ai_analysis`, categories, flags, API response models) evolve together.
+The monorepo is already set up with `backend/`, `frontend/`, and `legislative-intelligence/` as siblings. Do not restructure until the frontend has enough screens to know which shared contracts need to be extracted.
 
-Suggested target layout:
+When the frontend starts importing types from the API layer, extract them into a `packages/shared/` package. Until then, keep contracts as plain JSON/TypeScript interfaces duplicated across the repo boundary.
 
-```text
-apps/
-  api/                 # FastAPI app
-  web/                 # React/Next.js frontend
-packages/
-  agents/              # LangGraph agents
-  scraper/             # cdep.ro scraper + OCR
-  shared/              # schemas, constants, category/flag definitions
-db/
-  schema.sql
-  migrations/
-data/
-  raw/
-  processed/
+---
+
+**2b. Connect the frontend Vite proxy to both backends**
+
+Before the frontend can call either backend, update `frontend/vite.config.ts` to proxy the relevant prefixes:
+
+```ts
+// frontend/vite.config.ts
+proxy: {
+  '/api':   'http://localhost:8000',   // Django
+  '/auth':  'http://localhost:8000',
+  '/bills': 'http://localhost:8001',   // FastAPI
+  '/mps':   'http://localhost:8001',
+  '/rag':   'http://localhost:8001',
+  '/qa':    'http://localhost:8001',
+  '/messenger': 'http://localhost:8001',
+}
 ```
 
-Do not over-package immediately; first move only when the frontend starts depending on backend contracts.
+Also add path aliases for clean imports:
+
+```ts
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+    '@components': path.resolve(__dirname, './src/components'),
+    '@hooks': path.resolve(__dirname, './src/hooks'),
+  },
+}
+```
 
 ---
 

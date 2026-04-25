@@ -107,6 +107,27 @@ create table if not exists public.users (
     created_at timestamptz not null default now()
 );
 
+create table if not exists public.user_profiles (
+    user_id text primary key references public.users(user_id) on delete cascade,
+    display_name text,
+    auth_provider text,
+    city text,
+    county text,
+    constituency text,
+    occupation text,
+    sector text,
+    roles jsonb not null default '[]'::jsonb,
+    interests jsonb not null default '[]'::jsonb,
+    affected_profiles jsonb not null default '[]'::jsonb,
+    followed_bills jsonb not null default '[]'::jsonb,
+    followed_mps jsonb not null default '[]'::jsonb,
+    language text not null default 'ro',
+    explanation_preference text not null default 'brief',
+    onboarding_completed_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
 create table if not exists public.notification_preferences (
     user_id text primary key references public.users(user_id) on delete cascade,
     categories jsonb not null default '[]'::jsonb,
@@ -190,3 +211,6 @@ create index if not exists idx_bill_events_detected_at on public.bill_events(det
 create index if not exists idx_bill_flags_importance on public.bill_flags(importance);
 create index if not exists idx_notification_jobs_status on public.notification_jobs(status);
 create index if not exists idx_notification_jobs_user_id on public.notification_jobs(user_id);
+create index if not exists idx_user_profiles_interests on public.user_profiles using gin(interests);
+create index if not exists idx_user_profiles_affected_profiles on public.user_profiles using gin(affected_profiles);
+create index if not exists idx_user_profiles_followed_bills on public.user_profiles using gin(followed_bills);
