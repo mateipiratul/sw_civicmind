@@ -1,6 +1,14 @@
 from rest_framework import serializers
 from .models import Bill, AIAnalysis, VoteSession
 
+
+class MPVoteInBillSerializer(serializers.Serializer):
+    """A single MP vote record within a bill's vote breakdown."""
+    mp_slug = serializers.CharField(source='parliamentarian.mp_slug')
+    mp_name = serializers.CharField(source='parliamentarian.mp_name')
+    party = serializers.CharField()
+    vote = serializers.CharField()
+
 class AIAnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIAnalysis

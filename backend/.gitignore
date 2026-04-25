@@ -17,3 +17,6 @@ media/
 
 # Database
 db.sqlite3
+
+# PyRight Configuration File
+pyrightconfig.json
