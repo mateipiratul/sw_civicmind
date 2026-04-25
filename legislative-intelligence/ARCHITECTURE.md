@@ -5,6 +5,41 @@
 
 ---
 
+## Agent Handoff Protocol
+
+This file is the shared working memory for CivicMind. Any agent joining the repo should sync from the top of this document before reading deeper implementation sections.
+
+### Read Order
+
+1. `Current State`
+2. `Immediate Priorities`
+3. the relevant subsystem section only after that
+
+### Update Rules
+
+After any meaningful implementation, update all relevant items here:
+
+1. `Last updated`
+2. the matching row in `Current State`
+3. the matching item in `Immediate Priorities`
+4. the verification note for what was actually tested
+
+### Status Rules
+
+- Mark `Done` only when implemented and verified.
+- Mark `Infra Live` when the system works but still needs tuning, evals, or UX polish.
+- Mark `In Progress` when code is partial or the workflow still depends on follow-up work.
+- If blocked, write the blocker plainly instead of leaving stale status.
+
+### Team Boundaries
+
+- `backend/` owns Django auth, profiles, admin.
+- `frontend/` owns the citizen-facing SPA and product polish.
+- `legislative-intelligence/` owns scraper, agents, RAG, feed builder, notifications.
+- If an API contract changes, update this file the same day.
+
+---
+
 ## What Is Built
 
 CivicMind is a Romanian civic-tech platform that scrapes legislative data from cdep.ro, enriches it with AI analysis, and exposes it to citizens through a transparency dashboard. The first four AI agents are working end-to-end against live Mistral API calls — no mocks. Agent 5 is now implemented as a deterministic notification/watchdog pipeline that flags bill events and queues draft email jobs without sending them.
@@ -21,16 +56,76 @@ CivicMind is a Romanian civic-tech platform that scrapes legislative data from c
 | Agent 2 — Auditor | ✅ Done | 284 MPs scored, narratives generated; narrative calls retry once on transient failure |
 | Agent 3 — Q&A | ✅ Done | Live Mistral calls, tested |
 | Agent 4 — Messenger | ✅ Done | Live Mistral calls, tested |
-| REST API (FastAPI) | ✅ Done | 34 endpoints — bills, MPs, agents, RAG, profile, feed, follow/unfollow |
+| REST API (FastAPI) | ✅ Done | 35 endpoints — bills, MPs, agents, RAG, profile, feed, follow/unfollow, streaming chat |
 | Test UI | ✅ Done | `index.html` — single file, vanilla JS |
 | Supabase ingestion script | ✅ Done | Pushes bills, votes, AI analyses, impact scores, notification preferences/events/flags/jobs |
 | Supabase SQL migration | ✅ Done | `db/schema.sql` and `db/schema_rag.sql` applied in Supabase |
 | Supabase tables | ✅ Done | `schema.sql` and `schema_rag.sql` applied in Supabase on 2026-04-25 |
 | Agent 5 — Notifications | ✅ MVP Done | Deterministic watchdog + flag classifier + local job queue + dry-run delivery |
-| RAG Agent — Legislative Text Similarity Chat | 🛠️ Infra Live | Supabase vector schema applied, local bills indexed, first 300 discovered 2025 Portal Legislativ acts indexed, baseline eval harness live |
+| RAG Agent — Legislative Text Similarity Chat | 🛠️ Infra Live | Supabase vector schema applied, local bills indexed, first 300 discovered 2025 Portal Legislativ acts indexed, LangGraph ReAct chat + streaming endpoint now live |
 | Personalization / User Profile Layer | ✅ Feed contract done | `_build_feed_card`, `build_anonymous_feed`, follow/unfollow, `GET /feed` — all live |
-| React/Vite frontend | ✅ MVP Done | 12 routes live; Feed, MPs, Chat, Bill Detail, Profile, Auth, Admin all implemented; design matches figma |
+| React/Vite frontend | 🛠️ In polish | Core routes are live and wired to real APIs; auth/register call Django; `/chat` now streams live LangGraph RAG and renders markdown output; bill-detail/feed UX still needs product-grade polish |
 | API deployment | ⏳ Pending | Teammate |
+
+---
+
+## Immediate Priorities
+
+Ordered by what is most useful for the team right now.
+
+### P0 - Frontend Product Polish
+
+- Make the citizen SPA feel coherent and trustworthy, not just functional.
+- Current focus:
+  - bill detail page polish
+  - feed card/feed layout consistency
+  - source/citation presentation
+  - clearer personalization cues in feed and profile
+- Definition of done:
+  - no obviously broken or unstyled route
+  - bill detail reads like a legislative brief, not a stretched feed card
+  - desktop experience feels product-grade enough for demos
+
+### P0 - Frontend/Backend Contract Cleanup
+
+- Keep local dev contracts explicit and stable:
+  - Django on `:8000` for `/auth/*` and `/api/*`
+  - FastAPI on `:8001` for agents, RAG, feed builder, legislative intelligence services
+- Keep `frontend/src/lib/api.ts`, Vite proxy config, and docs aligned whenever routes move.
+
+### P0 - Google Auth + Onboarding Join
+
+- One teammate owns Google auth.
+- One teammate owns login/onboarding field research.
+- Follow-up implementation still needed:
+  - map onboarding answers into the canonical profile shape
+  - hand auth completion into profile completion cleanly
+  - keep frontend onboarding contract in sync with stored profile schema
+
+### P1 - Feed + Personalization Integration
+
+- Feed backend exists; next step is tighter integration with the profile layer.
+- Feed ranking should visibly reflect:
+  - `interests`
+  - `affected_profiles`
+  - followed bills / followed MPs
+  - "why this matters to you" explanations
+
+### P1 - RAG Productization
+
+- Vector DB, semantic search, LangGraph ReAct chat, and streaming are live.
+- Next work:
+  - better follow-up behavior across turns
+  - stronger reranking / dedupe for repetitive results
+  - larger eval set than the current baseline
+  - stronger citation display and "open source / exact paragraph" follow-up UX in frontend chat
+
+### P1 - Scraper / Notifications Hardening
+
+- MVP is good enough to build on, but still plan:
+  - explicit bill event semantics
+  - metadata refresh mode
+  - richer notification reasons and dedupe
 
 ---
 
@@ -117,19 +212,20 @@ Three modules, three processes, one Supabase database.
 │  ├─ Civic Feed  → GET /api/bills/personalized/                          │
 │  ├─ Bill Detail + Q&A + Messenger → POST /qa  /messenger                │
 │  ├─ MP Scoreboard  → GET /mps                                           │
-│  └─ RAG Chat  → POST /rag/chat                                          │
+│  └─ RAG Chat  → POST /rag/chat/stream                                   │
 └────────────────┬────────────────────────────────────────────────────────┘
-                 │ HTTP  (Vite proxy: /api → :8000, /auth → :8000 | /mps /rag /feed /qa → :8001 pending)
+                 │ HTTP  (Vite proxy: /api → :8000, /auth → :8000 | /mps /rag /feed /qa /messenger /notifications → :8001)
    ┌─────────────▼──────────────┐          ┌──────────────────────────────┐
    │  DJANGO BACKEND  (:8000)   │          │  FASTAPI AI-SERVICE  (:8001) │
    │  backend/                  │          │  legislative-intelligence/   │
-   │  ├─ POST /auth/register    │          │  api/main.py                 │
-   │  ├─ POST /auth/login       │          │  ├─ GET /bills               │
-   │  ├─ GET/PUT /profiles/{id} │          │  ├─ GET /bills/{idp}         │
-   │  └─ GET /profiles/{id}/    │          │  ├─ GET /mps                 │
-   │       personalization       │          │  ├─ POST /qa                 │
-   └─────────────┬───────────────┘          │  ├─ POST /messenger          │
+│  ├─ POST /auth/register    │          │  api/main.py                 │
+│  ├─ POST /auth/login       │          │  ├─ GET /bills               │
+│  ├─ GET/PUT /profiles/{id} │          │  ├─ GET /bills/{idp}         │
+│  └─ GET /profiles/{id}/    │          │  ├─ GET /mps                 │
+│       personalization       │          │  ├─ POST /qa                 │
+└─────────────┬───────────────┘          │  ├─ POST /messenger          │
                  │                          │  ├─ POST /rag/chat           │
+                 │                          │  ├─ POST /rag/chat/stream    │
                  │                          │  └─ GET  /notifications/*    │
                  │                          └───────────────┬──────────────┘
                  │                                          │
@@ -400,7 +496,7 @@ Implemented:
 - `agents/rag_tools.py` — query embedding, bill-context lookup, bill-to-corpus comparison, document/chunk drill-down, hybrid reranking, result diversification, source inference, and query logging helpers.
 - `agents/rag.py` — grounded chat wrapper plus `build_react_rag_agent()` for the planned LangGraph prebuilt ReAct chatbot.
 - `eval_rag.py` + `evals/rag_queries.json` — repeatable retrieval regression harness plus a small live baseline query set.
-- API endpoints: `GET /rag/health`, `POST /rag/search`, `POST /rag/chat`, `GET /rag/bills/{idp}/context`, `POST /rag/bills/compare`, `GET /rag/chunks/{chunk_id}/excerpt`, `POST /rag/explain-match`, `POST /rag/reindex`, `POST /rag/eval`, `GET /rag/eval-report`.
+- API endpoints: `GET /rag/health`, `POST /rag/search`, `POST /rag/chat`, `POST /rag/chat/stream`, `GET /rag/bills/{idp}/context`, `POST /rag/bills/compare`, `GET /rag/chunks/{chunk_id}/excerpt`, `POST /rag/explain-match`, `POST /rag/reindex`, `POST /rag/eval`, `GET /rag/eval-report`.
 - `env_setup.py` — loads both `legislative-intelligence/.env` and `backend/.env`, and maps `SUPABASE_SERVICE_ROLE_KEY` to `SUPABASE_KEY` for server-side tooling.
 
 Executed on 2026-04-25:
@@ -429,6 +525,11 @@ Executed on 2026-04-25:
 - Added a baseline retrieval eval harness that writes `data/processed/rag_eval_last.json`.
 - Added `POST /rag/eval` and `GET /rag/eval-report` for admin/debug evaluation runs.
 - Verified live chat path with `run_rag_chat()`.
+- Switched the main RAG chat path onto the LangGraph prebuilt ReAct agent instead of the earlier direct wrapper-only path.
+- Added `POST /rag/chat/stream` with NDJSON token streaming from LangGraph (`stream_mode=["messages", "updates"]`).
+- Wired the React `/chat` route to the live streaming RAG endpoint and replaced mock chat/fragments with real answer/source updates.
+- Added markdown rendering for assistant answers in the React chat UI and replaced generic suggestion chips with product-relevant prompts.
+- Added frontend AI-service proxy paths and `VITE_AI_SERVICE_ORIGIN` / `VITE_AI_SERVICE_URL` config support.
 
 Vector DB / semantic search verification on 2026-04-25:
 - `rag_health()` returned a live corpus in Supabase after the 300-act slice expansion: 340 documents, 1901 chunks, latest source `legislatie-just`.
@@ -631,14 +732,15 @@ Current known retrieval limitations:
 - Ranking is still mainly cosine similarity; there is light post-filtering/diversification, but no proper reranker or MMR scoring layer yet.
 - `legislatie-just` text is chunked from API text, not yet from parsed article-level HTML structure.
 - Citation quality is acceptable for debugging but not yet polished for citizen-facing UI.
-- `POST /rag/chat` is currently synchronous; streaming remains planned.
+- `POST /rag/chat` remains useful as the one-shot JSON response.
+- `POST /rag/chat/stream` is now the primary website-chat path for token streaming plus live source updates.
 - Source inference is heuristic right now; it works for obvious cases but is not a learned router.
 
 **Agent/tool plan:**
 
 ```text
 Website Chat
-  → POST /rag/chat
+  → POST /rag/chat/stream
   → agents/rag.py LangGraph prebuilt ReAct chatbot
   → tools:
       search_legislation_chunks(query, filters, top_k)
@@ -658,7 +760,9 @@ ReAct tools:
 - `explain_chunk_match`: shows why one chunk matched one query, including overlap terms and current rank/score. Implemented.
 
 Implementation status of the RAG agent itself:
-- Current live path: `run_rag_chat()` in `agents/rag.py` performs retrieval + grounded answer generation.
+- Current live paths in `agents/rag.py`:
+  - `arun_rag_chat()` / `run_rag_chat()` for one-shot LangGraph ReAct responses
+  - `stream_rag_chat_events()` for frontend token streaming and source updates
 - `run_rag_chat()` now also:
   - infers source in obvious cases
   - switches to bill-comparison mode when the user asks for similar laws from a bill context
@@ -668,8 +772,8 @@ Implementation status of the RAG agent itself:
   - `eval_rag.py`
   - `evals/rag_queries.json`
   - `data/processed/rag_eval_last.json`
-- Current scaffold: `build_react_rag_agent()` exists as the LangGraph prebuilt ReAct entry point and now includes multiple live tools (`search_legislation`, `bill_context`, `compare_bill`, `document_detail`, `chunk_detail`).
-- Therefore the full "agent" is still not done yet; the current product is a working retrieval-backed chatbot plus a partially tooled ReAct scaffold, not yet a fully orchestrated conversational assistant.
+- Current scaffold: `build_react_rag_agent()` exists as the LangGraph prebuilt ReAct entry point and now includes multiple live tools (`search_legislation`, `bill_context`, `compare_bill`, `document_detail`, `chunk_detail`, `chunk_excerpt`, `explain_match`).
+- Therefore the full "agent" is now live for website chat and streaming, but it still needs follow-up memory/routing polish and stronger eval coverage before we should call it fully production-tuned.
 
 RAG agent implementation plan:
 1. Tool expansion
@@ -701,7 +805,8 @@ System prompt requirements:
 
 **Current API surface:**
 - `POST /rag/search` → raw semantic search results for debugging and UI sidebars.
-- `POST /rag/chat` → grounded chat response for the website Chat section.
+- `POST /rag/chat` → one-shot grounded chat response for the website Chat section.
+- `POST /rag/chat/stream` → streaming LangGraph chat events for the website Chat section.
 - `GET /rag/chunks/{chunk_id}/excerpt` → fetches the most relevant sentences from one stored chunk.
 - `POST /rag/explain-match` → explains why a stored chunk matched a given query.
 - `POST /rag/reindex` → admin-only local trigger for changed bills.
@@ -738,8 +843,8 @@ FastAPI server reading core bill/MP data from JSON files. Most non-RAG endpoints
 ### Start
 
 ```bash
-python -m uvicorn api.main:app --reload --port 8000
-# Docs: http://localhost:8000/docs
+python -m uvicorn api.main:app --reload --port 8001
+# Docs: http://localhost:8001/docs
 ```
 
 ### Endpoints
@@ -767,6 +872,7 @@ python -m uvicorn api.main:app --reload --port 8000
 | `GET` | `/rag/health` | — | RAG corpus counts, embedding model, latest indexed source |
 | `POST` | `/rag/search` | body: `{query, top_k, threshold, source?, bill_idp?, document_type?, exclude_bill_idp?}` | raw semantic search results from Supabase pgvector |
 | `POST` | `/rag/chat` | body: `{question, top_k, threshold, source?, bill_idp?, exclude_bill_idp?}` | grounded RAG answer + cited source chunks |
+| `POST` | `/rag/chat/stream` | body: `{question, top_k, threshold, source?, bill_idp?, exclude_bill_idp?}` | NDJSON stream of `start` / `sources` / `token` / `done` chat events |
 | `GET` | `/rag/bills/{idp}/context` | — | structured local Chamber bill context for the RAG agent |
 | `POST` | `/rag/bills/compare` | body: `{idp, top_k, threshold, source?}` | similar corpus matches for a selected Chamber bill |
 | `GET` | `/rag/documents/{document_id}` | — | one indexed legislation document by `document_id` |
@@ -783,7 +889,7 @@ python -m uvicorn api.main:app --reload --port 8000
 
 CORS is open (`allow_origins=["*"]`). The test UI (`index.html`) calls this API from `file://`.
 
-**Status:** done. 34 endpoints available.
+**Status:** done. 35 endpoints available.
 
 ---
 
@@ -835,162 +941,141 @@ Notes:
 ## Layer 5 — Frontend (`frontend/`)
 
 **Stack:** React 19, TypeScript, Vite 8, TanStack Router (file-based), TanStack Query, Tailwind CSS v4, Lucide React  
-**Status:** ✅ MVP Done. All primary screens implemented and styled. Design matched to figma reference.
+**Status:** 🛠️ In polish. Core routes are live; `/chat` is now wired to the streaming LangGraph RAG agent; feed, MPs, and bill-detail polish still need work.
 
 ### Start
 
 ```bash
 cd sw_civicmind/frontend
 npm install
-npm run dev          # → http://localhost:5173
+npm run dev          # -> http://localhost:5173
 ```
 
 ### Design system
 
-- **Palette:** monochrome grey/white — `#111` text, `#efefef` page bg (grid pattern), `#ffffff` cards, `#e2e2e2` borders. No blue, no indigo, no gradients.
-- **CSS:** single source of truth at `src/styles.css`. Loaded once via `__root.tsx` `<link>` tag. CSS vars: `--bg`, `--surface`, `--primary`, `--primary-hover`, `--text`, `--text-muted`, `--border`, `--border-input`, `--radius`, `--radius-lg`, `--shadow-card`.
-- **Figma reference:** `sw_civicmind/../figma/` — React components showing the intended layout and visual language.
-- **Cards:** `border border-[#e2e2e2] shadow-none rounded-xl bg-white`, no Tailwind shadow utilities.
-- **Primary buttons:** `bg-[#111] hover:bg-gray-800 text-white`.
-- **Null safety:** show `—` / `În analiză` / skeleton when `ai_analysis` is null. Never crash on null.
+- **Palette:** monochrome grey/white - `#111` text, `#efefef` page bg (grid pattern), `#ffffff` cards, `#e2e2e2` borders. No blue, no indigo, no gradients.
+- **CSS:** single source of truth at `src/styles.css`. Loaded once via `__root.tsx` `<link>` tag.
+- **Cards:** thin borders, restrained radius, no decorative gradients, no heavy shadows.
+- **Null safety:** show clear fallbacks or skeletons when `ai_analysis` is missing. Never crash on null or slow API responses.
 
 ### Route tree (`src/routes/`)
 
 | Route | File | Description | API wired? |
 |-------|------|-------------|-----------|
-| `/` | `index.tsx` | Feed — 3-panel (sidebar + cards + trending), fetches paginated bills | ✅ `GET /api/bills` |
-| `/bills/:id` | `bills/$id.tsx` | Bill detail — AI synthesis, PRO/CON, action bar | ✅ `GET /api/bills/{id}` |
-| `/mps` | `mps.tsx` | MP Scoreboard — search, party filter, expandable rows | ⚠️ mock data (wire to `GET /mps`) |
-| `/chat` | `chat.tsx` | Legislative chat — bubble UI + "Fragmente Extrase" panel | ⚠️ mock response (wire to `POST /rag/chat`) |
-| `/auth/login` | `auth/login.tsx` | Google-only login card — mock OAuth, navigates to `/` | ⚠️ mock (wire real Google OAuth) |
-| `/auth/register` | `auth/register.tsx` | Email/password register — calls `api.register()` | ✅ wired to Django |
-| `/auth/logout` | `auth/logout.tsx` | Instant logout + redirect to `/auth/login` | ✅ |
-| `/profile` | `profile/index.tsx` | User profile — edit username/email, role badge | ✅ `GET/PATCH /api/profiles/me/` |
-| `/admin` | `admin.tsx` | Admin shell — nested layout with sub-nav | ✅ |
-| `/admin/stats` | `admin/stats.tsx` | Stats cards — users, bills, analyzed count | ✅ `GET /api/admin/stats` |
-| `/admin/users` | `admin/users.tsx` | User table — paginated, status toggle | ✅ `GET /api/admin/users` |
-| `/admin/bills` | `admin/bills.tsx` | Bill inventory — paginated table | ✅ `GET /api/admin/bills` |
+| `/` | `index.tsx` | Feed - paginated bills | ✅ `GET /api/bills` |
+| `/bills/:id` | `bills/$id.tsx` | Bill detail - AI synthesis, documents, action panel | ✅ `GET /api/bills/{id}` |
+| `/mps` | `mps.tsx` | MP Scoreboard - search, party filter, expandable rows | ⚠️ mock data (wire to `GET /mps`) |
+| `/chat` | `chat.tsx` | Legislative chat - streaming markdown answer + live source panel | ✅ `POST /rag/chat/stream` |
+| `/auth/login` | `auth/login.tsx` | Username/password login; Google CTA still pending | ⚠️ Google OAuth pending |
+| `/auth/register` | `auth/register.tsx` | Email/password register | ✅ wired to Django |
+| `/auth/logout` | `auth/logout.tsx` | Instant logout + redirect | ✅ |
+| `/profile` | `profile/index.tsx` | User profile editing | ✅ `GET/PATCH /api/profiles/me/` |
+| `/admin` | `admin.tsx` | Admin shell | ✅ |
+| `/admin/stats` | `admin/stats.tsx` | Admin stats cards | ✅ `GET /api/admin/stats` |
+| `/admin/users` | `admin/users.tsx` | Admin user table | ✅ `GET /api/admin/users` |
+| `/admin/bills` | `admin/bills.tsx` | Admin bill table | ✅ `GET /api/admin/bills` |
 
 ### File structure
 
 ```
 frontend/
 ├── src/
-│   ├── styles.css               # Single stylesheet — design tokens + base reset
-│   ├── main.tsx                 # Entry — RouterProvider + QueryClientProvider
-│   ├── router.tsx               # TanStack Router setup
-│   ├── routeTree.gen.ts         # Auto-generated — DO NOT EDIT
-│   │
-│   ├── routes/                  # File-based routing (one file = one route)
-│   │   ├── __root.tsx           # Root layout — Header + Outlet + error/404 pages
-│   │   ├── index.tsx            # /  — Feed
-│   │   ├── mps.tsx              # /mps
-│   │   ├── chat.tsx             # /chat
-│   │   ├── admin.tsx            # /admin  (layout shell)
+│   ├── styles.css
+│   ├── main.tsx
+│   ├── router.tsx
+│   ├── routeTree.gen.ts         # auto-generated
+│   ├── routes/
+│   │   ├── __root.tsx
+│   │   ├── index.tsx
+│   │   ├── mps.tsx
+│   │   ├── chat.tsx
+│   │   ├── admin.tsx
 │   │   ├── admin/
-│   │   │   ├── stats.tsx
-│   │   │   ├── users.tsx
-│   │   │   └── bills.tsx
 │   │   ├── auth/
-│   │   │   ├── login.tsx
-│   │   │   ├── register.tsx
-│   │   │   └── logout.tsx
 │   │   ├── bills/
-│   │   │   └── $id.tsx
 │   │   └── profile/
-│   │       └── index.tsx
-│   │
 │   ├── components/
-│   │   ├── layout/
-│   │   │   └── header.tsx       # Sticky header — logo + Feed/MPs/Chat nav + user avatar
-│   │   ├── bill-card.tsx        # Bill card for grid layouts (used by admin)
-│   │   ├── bill-card-skeleton.tsx
-│   │   └── ui/                  # Primitive UI library
-│   │       ├── avatar.tsx
-│   │       ├── badge.tsx
-│   │       ├── breadcrumbs.tsx
-│   │       ├── button.tsx
-│   │       ├── card.tsx
-│   │       ├── dropdown-menu.tsx
-│   │       ├── input.tsx
-│   │       ├── label.tsx
-│   │       ├── pagination.tsx
-│   │       ├── select.tsx
-│   │       ├── separator.tsx
-│   │       ├── skeleton.tsx
-│   │       └── textarea.tsx
-│   │
-│   ├── lib/
-│   │   ├── api.ts               # ApiClient class — all HTTP calls, typed responses
-│   │   ├── auth-context.tsx     # AuthProvider — localStorage token, user state
-│   │   └── utils.ts             # cn() helper
-│   │
-│   └── assets/
-│
-├── vite.config.ts               # Proxy: /api → :8000, /auth → :8000
+│   └── lib/
+│       ├── api.ts
+│       ├── auth-context.tsx
+│       └── utils.ts
+├── vite.config.ts
 ├── package.json
 └── tsconfig.json
 ```
 
 ### API client (`src/lib/api.ts`)
 
-`ApiClient` at `http://localhost:8000` (proxied through Vite). All calls go through `private request<T>()` which injects `Authorization: Bearer <token>` from `localStorage`.
+`ApiClient` uses the Vite proxy by default, with optional browser-side overrides via:
+- `VITE_API_URL` for Django
+- `VITE_AI_SERVICE_URL` for FastAPI
+
+Implemented methods now include:
 
 ```
-api.listBills(status?, page, limit)    → GET /api/bills
-api.getBill(id)                        → GET /api/bills/{id}
-api.register(username, email, pass)    → POST /auth/register
-api.login(email, pass)                 → POST /auth/login
-api.getProfile()                       → GET /api/profiles/me/
-api.updateProfile(data)                → PATCH /api/profiles/me/
-api.getAdminStats()                    → GET /api/admin/stats
-api.getAdminUsers(page, limit)         → GET /api/admin/users
-api.updateUserStatus(id, status)       → PATCH /api/admin/users/{id}/status
-api.getAdminBills(page, limit)         → GET /api/admin/bills
+api.listBills(category?, page, limit)    -> GET /api/bills
+api.getBill(id)                          -> GET /api/bills/{id}
+api.register(username, email, pass)      -> POST /auth/register
+api.login(username, pass)                -> POST /auth/login
+api.getProfile()                         -> GET /api/profiles/me/
+api.updateProfile(data)                  -> PATCH /api/profiles/me/
+api.getAdminStats()                      -> GET /api/admin/stats
+api.getAdminUsers(page, limit)           -> GET /api/admin/users
+api.updateUserStatus(id, status)         -> PATCH /api/admin/users/{id}/status
+api.getAdminBills(page, limit)           -> GET /api/admin/bills
+api.ragChat(question)                    -> POST /rag/chat
+api.streamRagChat(question, handlers)    -> POST /rag/chat/stream
 ```
 
-**Not yet wired in the API client:**
-- `POST /rag/chat` — Chat page uses a mock response; needs a `ragChat(question)` method
-- `GET /mps`, `GET /mps/{slug}` — MPs page uses static mock data
-- `POST /qa`, `POST /messenger` — Bill detail action bar stubs
-- `GET /feed` — Feed still calls `/api/bills`; could switch to `/feed?user_id=` for personalization
-- `POST /profiles/{user_id}/follow/bill/{idp}` — Follow buttons not yet in UI
+Still not wired in the API client/UI:
+- `GET /mps`, `GET /mps/{slug}`
+- `POST /qa`, `POST /messenger`
+- `GET /feed`
+- follow/unfollow actions in the citizen UI
 
 ### Auth state (`src/lib/auth-context.tsx`)
 
 `AuthProvider` stores `user` + `token` in `localStorage` keys `auth_user` / `auth_token`. `useAuth()` exposes `{ user, isAuthenticated, isLoading, login, logout, updateUser, refreshUser }`.
 
-Current login flow: the login page calls `login({ username, email, token, role })` directly (mock) — real Google OAuth is not wired yet.
+Current login flow: username/password login is real. Google OAuth is still pending.
 
 ### Vite proxy (`vite.config.ts`)
 
 ```ts
 proxy: {
-  '/api':  'http://localhost:8000',   // Django — bills, profiles, admin
-  '/auth': 'http://localhost:8000',   // Django — register, login
+  '/api': 'http://localhost:8000',          // Django
+  '/auth': 'http://localhost:8000',
+  '/rag': 'http://localhost:8001',          // FastAPI
+  '/mps': 'http://localhost:8001',
+  '/feed': 'http://localhost:8001',
+  '/qa': 'http://localhost:8001',
+  '/messenger': 'http://localhost:8001',
+  '/notifications': 'http://localhost:8001',
 }
 ```
 
-FastAPI (`localhost:8001`) endpoints (`/mps`, `/rag`, `/feed`, `/qa`, `/messenger`) are **not yet proxied**. Add them to `vite.config.ts` when wiring those pages.
+Local env support:
+- `VITE_DJANGO_API_ORIGIN`
+- `VITE_AI_SERVICE_ORIGIN`
+- `VITE_API_URL`
+- `VITE_AI_SERVICE_URL`
 
 ### What needs wiring next
 
 | Priority | Task | Files to touch |
 |----------|------|---------------|
-| 🔴 High | Wire `/chat` to `POST /rag/chat` (FastAPI) | `routes/chat.tsx`, `lib/api.ts`, `vite.config.ts` |
 | 🔴 High | Wire `/mps` to `GET /mps` (FastAPI) | `routes/mps.tsx`, `lib/api.ts`, `vite.config.ts` |
-| 🔴 High | Implement real Google OAuth (replace mock login) | `routes/auth/login.tsx`, `lib/auth-context.tsx` |
+| 🔴 High | Implement real Google OAuth | `routes/auth/login.tsx`, `lib/auth-context.tsx` |
 | 🟡 Med | Add Q&A + Messenger buttons on bill detail | `routes/bills/$id.tsx`, `lib/api.ts` |
 | 🟡 Med | Wire feed to personalized `/feed?user_id=` | `routes/index.tsx`, `lib/api.ts` |
 | 🟡 Med | Add follow/unfollow buttons on feed cards | `routes/index.tsx`, `lib/api.ts` |
 | 🟢 Low | Onboarding wizard (county + interests) | new route `routes/onboarding.tsx` |
-| 🟢 Low | Add `/rag` proxy to `vite.config.ts` + `/mps` proxy | `vite.config.ts` |
+| 🟢 Low | Add richer source drill-down in chat UI (`excerpt` / `explain-match`) | `routes/chat.tsx`, `lib/api.ts` |
 
 ### Known non-issues (intentional)
 
-- `routeTree.gen.ts` is auto-generated by `@tanstack/router-vite-plugin` on every save — do not edit manually.
-- `src/assets/` contains Vite default assets; safe to delete if unused.
-- `src/lib/api.ts` points to `:8000` for all calls — Django only. FastAPI calls need explicit proxy additions.
+- `routeTree.gen.ts` is auto-generated by `@tanstack/router-vite-plugin` on every save - do not edit manually.
+- `src/assets/` contains Vite default assets and can be deleted if unused.
 
 ### State management
 - React Context for auth/user profile (global)
@@ -1033,7 +1118,7 @@ python run_agents.py --notifications      # detect events + queue local notifica
 python run_agents.py --deliver-notifications # dry-run notification delivery
 python db/push_to_supabase.py             # push to Supabase (needs credentials)
 
-python -m uvicorn api.main:app --reload --port 8000
+python -m uvicorn api.main:app --reload --port 8001
 # Open index.html in browser
 ```
 
@@ -1263,7 +1348,7 @@ The script must be idempotent using content hashes.
 
 ---
 
-**5. Add LangGraph ReAct RAG chatbot — skeleton done, tuning pending**
+**5. Add LangGraph ReAct RAG chatbot — live, continue tuning**
 
 Created:
 - `agents/rag.py`
@@ -1273,14 +1358,17 @@ Use LangGraph's prebuilt ReAct chatbot (`create_react_agent`) with tools for:
 - semantic chunk search
 - bill context lookup
 - selected-bill similarity search
+- chunk/document inspection
+- streamed answer tokens plus live source updates
 
 Exposed through FastAPI:
 - `POST /rag/search`
 - `POST /rag/chat`
+- `POST /rag/chat/stream`
 - `POST /rag/reindex`
 - `GET /rag/health`
 
-The website Chat section should call `/rag/chat` and render citations.
+The website Chat section now calls `/rag/chat/stream`, while `/rag/chat` remains the one-shot JSON fallback/debug path.
 
 ---
 
@@ -1441,3 +1529,5 @@ Every Monday, reads all bills scraped in the past 7 days, generates a 5-sentence
 | Bug | Location | Fix |
 |-----|----------|-----|
 | `adopted_at` is often `null` | `scraper/parsers.py:_extract_dates` | The regex only matches dates before "adoptare/lege nr." keywords; those strings don't appear for bills still in progress — correct behaviour, not a bug |
+
+

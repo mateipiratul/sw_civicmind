@@ -1,95 +1,297 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Send, ExternalLink } from "lucide-react";
+import { ExternalLink, Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+import { ApiError, api, type RagSource } from "@/lib/api";
 
 interface Message {
+  id: string;
   role: "user" | "assistant";
   content: string;
 }
 
 interface Fragment {
   id: string;
-  date: string;
-  excerpt: string;
+  label: string;
   law: string;
+  excerpt: string;
   href?: string;
+  similarity?: string;
 }
 
 const WELCOME: Message = {
+  id: "welcome",
   role: "assistant",
-  content: "Salut! Sunt asistentul tău legislativ. Te pot ajuta să înțelegi proiectele de lege, să cauți informații specifice sau să compari inițiative legislative. Ce te pot ajuta?",
+  content:
+    "Salut. Pot să te ajut să găsești texte similare, să compari acte și să verifici rapid fragmente relevante din sursele legislative oficiale.",
 };
 
 const SUGGESTIONS = [
-  "Găsește proiecte similare despre sănătate",
-  "Explică PL-x nr. 123/2025",
-  "Ce legi noi au fost adoptate în educație?",
+  "Găsește acte similare despre achiziții publice și explică ce au în comun.",
+  "Compară texte despre concedii medicale și arată diferențele importante.",
+  "Ce acte din 2025 despre sănătate și asigurări sociale sunt cele mai apropiate?",
+  "Caută texte similare despre PFA și obligații fiscale.",
 ];
+
+const createId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const formatSimilarity = (value?: number | null) =>
+  typeof value === "number" ? `${Math.round(value * 100)}% potrivire` : undefined;
+
+const toFragment = (source: RagSource, index: number): Fragment => ({
+  id: source.chunk_id || `${source.document_id}-${index}`,
+  label: `Sursa ${index + 1}`,
+  law: source.title || source.document_id || "Document legislativ",
+  excerpt:
+    (source.content || "").slice(0, 340).trim() +
+      ((source.content || "").length > 340 ? "..." : "") ||
+    "Fragment indisponibil.",
+  href: source.source_url || undefined,
+  similarity: formatSimilarity(source.score ?? source.similarity ?? null),
+});
+
+function buildErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return `Conversația nu a reușit: ${error.message}`;
+  }
+  if (error instanceof Error && error.message) {
+    return `Conversația nu a reușit: ${error.message}`;
+  }
+  return "Conversația nu a reușit. Verifică dacă serviciul AI rulează pe portul configurat și încearcă din nou.";
+}
+
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => (
+          <p style={{ margin: "0 0 10px", lineHeight: 1.62 }}>{children}</p>
+        ),
+        ul: ({ children }) => (
+          <ul style={{ margin: "0 0 10px 18px", padding: 0, lineHeight: 1.62 }}>{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol style={{ margin: "0 0 10px 18px", padding: 0, lineHeight: 1.62 }}>{children}</ol>
+        ),
+        li: ({ children }) => <li style={{ marginBottom: 4 }}>{children}</li>,
+        h1: ({ children }) => (
+          <h1 style={{ margin: "0 0 10px", fontSize: 20, lineHeight: 1.3 }}>{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 style={{ margin: "0 0 10px", fontSize: 17, lineHeight: 1.35 }}>{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 style={{ margin: "0 0 8px", fontSize: 15, lineHeight: 1.35 }}>{children}</h3>
+        ),
+        strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
+        em: ({ children }) => <em style={{ fontStyle: "italic" }}>{children}</em>,
+        code: ({ children }) => (
+          <code
+            style={{
+              background: "#f3f3f1",
+              border: "1px solid #e7e7e2",
+              borderRadius: 6,
+              padding: "1px 5px",
+              fontSize: "0.92em",
+            }}
+          >
+            {children}
+          </code>
+        ),
+        pre: ({ children }) => (
+          <pre
+            style={{
+              background: "#f7f7f4",
+              border: "1px solid #e7e7e2",
+              borderRadius: 10,
+              padding: "10px 12px",
+              overflowX: "auto",
+              margin: "0 0 10px",
+              lineHeight: 1.55,
+            }}
+          >
+            {children}
+          </pre>
+        ),
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#2457d6", textDecoration: "underline" }}
+          >
+            {children}
+          </a>
+        ),
+        hr: () => <hr style={{ border: 0, borderTop: "1px solid #e7e7e2", margin: "12px 0" }} />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
 
 function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [fragments, setFragments] = useState<Fragment[]>([]);
+  const [resolvedSource, setResolvedSource] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, fragments, isLoading]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
-    const userMsg: Message = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+  const canSend = useMemo(() => input.trim().length > 0 && !isLoading, [input, isLoading]);
+
+  const sendMessage = async (rawText: string) => {
+    const text = rawText.trim();
+    if (!text) return;
+
+    const userMessage: Message = { id: createId(), role: "user", content: text };
+    const assistantId = createId();
+    let assistantStarted = false;
+    let streamedText = "";
+
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setFragments([]);
+    setResolvedSource(null);
 
-    // Simulate response — wire to real API later
-    await new Promise((r) => setTimeout(r, 900));
-    const reply: Message = {
-      role: "assistant",
-      content: "Conform modificărilor recente propuse și adoptate, iată principalele schimbări relevante pentru întrebarea ta. Informațiile sunt extrase din documentele oficiale ale Camerei Deputaților.",
-    };
-    setMessages((prev) => [...prev, reply]);
-    setFragments([
-      {
-        id: "1",
-        date: "1 Iul 2024, Art. 18",
-        excerpt: "...se reduce impozitul aplicat microîntreprinderilor la 1% din cifra de afaceri anuală, cu condiția menținerii...",
-        law: "Legea nr. 296/2023",
-      },
-      {
-        id: "2",
-        date: "EMD 110/2023",
-        excerpt: "...obligativitatea platformei de raportare online pentru unitățile cu peste 10 angajați, cu implementare în termen de 90 de zile...",
-        law: "OUG 57/2019",
-      },
-    ]);
-    setIsLoading(false);
+    try {
+      const result = await api.streamRagChat(
+        text,
+        {},
+        {
+          onEvent: (event) => {
+            if (event.type === "start") {
+              setResolvedSource(event.resolved_source ?? null);
+              return;
+            }
+
+            if (event.type === "sources") {
+              setFragments(event.items.map(toFragment));
+              return;
+            }
+
+            if (event.type === "token") {
+              streamedText += event.delta;
+              if (!assistantStarted) {
+                assistantStarted = true;
+                setMessages((prev) => [
+                  ...prev,
+                  { id: assistantId, role: "assistant", content: event.delta },
+                ]);
+              } else {
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.id === assistantId
+                      ? { ...message, content: message.content + event.delta }
+                      : message,
+                  ),
+                );
+              }
+              return;
+            }
+
+            if (event.type === "done") {
+              setResolvedSource(event.resolved_source ?? null);
+              setFragments(event.sources.map(toFragment));
+              if (!assistantStarted) {
+                assistantStarted = true;
+                streamedText = event.answer;
+                setMessages((prev) => [
+                  ...prev,
+                  { id: assistantId, role: "assistant", content: event.answer },
+                ]);
+              } else if (event.answer && event.answer !== streamedText) {
+                streamedText = event.answer;
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.id === assistantId ? { ...message, content: event.answer } : message,
+                  ),
+                );
+              }
+            }
+          },
+        },
+      );
+
+      if (!assistantStarted) {
+        setMessages((prev) => [
+          ...prev,
+          { id: assistantId, role: "assistant", content: result.answer },
+        ]);
+      }
+
+      setFragments(result.sources.map(toFragment));
+      setResolvedSource(result.resolved_source ?? null);
+    } catch (error) {
+      const errorMessage = buildErrorMessage(error);
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: errorMessage },
+      ]);
+      setFragments([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div style={{ display: "flex", height: "calc(100vh - 52px)", overflow: "hidden" }}>
-      {/* Chat panel */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, borderRight: "1px solid #e8e8e8" }}>
-        {/* Chat header */}
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", background: "white", flexShrink: 0 }}>
-          <h1 style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>Asistent Legislativ</h1>
-          <p style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>Întreabă despre legislația din România</p>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          borderRight: "1px solid #e8e8e8",
+          background: "#fcfcfa",
+        }}
+      >
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid #e8e8e8",
+            background: "white",
+            flexShrink: 0,
+          }}
+        >
+          <h1 style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>Chat legislativ</h1>
+          <p style={{ fontSize: 12, color: "#7d7d7d", marginTop: 2 }}>
+            Răspunsuri cu streaming și surse din corpusul legislativ indexat.
+          </p>
         </div>
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {messages.map((msg, i) => (
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          {messages.map((message) => (
             <div
-              key={i}
+              key={message.id}
               style={{
                 display: "flex",
-                justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                justifyContent: message.role === "user" ? "flex-end" : "flex-start",
                 gap: 10,
               }}
             >
-              {msg.role === "assistant" && (
+              {message.role === "assistant" && (
                 <div
                   style={{
                     width: 28,
@@ -111,73 +313,107 @@ function ChatPage() {
               )}
               <div
                 style={{
-                  maxWidth: "72%",
+                  maxWidth: "74%",
                   padding: "10px 14px",
-                  borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                  background: msg.role === "user" ? "#111" : "white",
-                  color: msg.role === "user" ? "white" : "#111",
+                  borderRadius: message.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                  background: message.role === "user" ? "#111" : "white",
+                  color: message.role === "user" ? "white" : "#111",
                   fontSize: 13.5,
-                  lineHeight: 1.55,
-                  border: msg.role === "assistant" ? "1px solid #e8e8e8" : "none",
+                  lineHeight: 1.58,
+                  border: message.role === "assistant" ? "1px solid #e8e8e8" : "none",
+                  overflowWrap: "anywhere",
                 }}
               >
-                {msg.content}
+                {message.role === "assistant" ? (
+                  <MarkdownContent content={message.content} />
+                ) : (
+                  <div style={{ whiteSpace: "pre-wrap" }}>{message.content}</div>
+                )}
               </div>
             </div>
           ))}
 
           {isLoading && (
             <div style={{ display: "flex", gap: 10 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#111", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "#111",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
                 AI
               </div>
-              <div style={{ padding: "10px 14px", borderRadius: "14px 14px 14px 4px", background: "white", border: "1px solid #e8e8e8", display: "flex", gap: 4, alignItems: "center" }}>
-                {[0, 1, 2].map((d) => (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "14px 14px 14px 4px",
+                  background: "white",
+                  border: "1px solid #e8e8e8",
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "center",
+                }}
+              >
+                {[0, 1, 2].map((dot) => (
                   <span
-                    key={d}
+                    key={dot}
                     style={{
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
                       background: "#ccc",
                       display: "block",
-                      animation: `bounce 1.2s ${d * 0.2}s ease-in-out infinite`,
+                      animation: `bounce 1.2s ${dot * 0.2}s ease-in-out infinite`,
                     }}
                   />
                 ))}
               </div>
             </div>
           )}
+
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggestions */}
         {messages.length === 1 && (
-          <div style={{ padding: "0 20px 12px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {SUGGESTIONS.map((s) => (
+          <div
+            style={{
+              padding: "0 20px 14px",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 10,
+            }}
+          >
+            {SUGGESTIONS.map((suggestion) => (
               <button
-                key={s}
-                onClick={() => sendMessage(s)}
+                key={suggestion}
+                onClick={() => sendMessage(suggestion)}
                 style={{
-                  padding: "6px 12px",
+                  padding: "12px 14px",
                   fontSize: 12.5,
                   border: "1px solid #e2e2e2",
-                  borderRadius: 20,
+                  borderRadius: 12,
                   background: "white",
-                  color: "#555",
+                  color: "#444",
                   cursor: "pointer",
-                  transition: "border-color 0.1s",
+                  textAlign: "left",
+                  lineHeight: 1.45,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#aaa"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e2e2e2"; }}
               >
-                {s}
+                {suggestion}
               </button>
             ))}
           </div>
         )}
 
-        {/* Input */}
         <div
           style={{
             padding: "12px 20px 16px",
@@ -189,14 +425,14 @@ function ChatPage() {
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage(input);
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendMessage(input);
                 }
               }}
-              placeholder="Scrie întrebarea ta..."
+              placeholder="Scrie întrebarea ta despre legislație..."
               rows={2}
               style={{
                 flex: 1,
@@ -212,81 +448,117 @@ function ChatPage() {
               }}
             />
             <button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isLoading}
+              onClick={() => void sendMessage(input)}
+              disabled={!canSend}
               style={{
                 width: 38,
                 height: 38,
                 borderRadius: 9,
-                background: input.trim() && !isLoading ? "#111" : "#e0e0e0",
-                color: input.trim() && !isLoading ? "white" : "#aaa",
+                background: canSend ? "#111" : "#e0e0e0",
+                color: canSend ? "white" : "#aaa",
                 border: "none",
-                cursor: input.trim() && !isLoading ? "pointer" : "default",
+                cursor: canSend ? "pointer" : "default",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                transition: "background 0.15s",
               }}
             >
               <Send size={15} />
             </button>
           </div>
-          <p style={{ fontSize: 11, color: "#bbb", marginTop: 8, textAlign: "center" }}>
-            Date din Camera Deputaților României. Verifică întotdeauna informațiile în documentele oficiale.
+          <p style={{ fontSize: 11, color: "#9a9a9a", marginTop: 8, textAlign: "center" }}>
+            Răspunsurile sunt generate cu streaming și trebuie verificate în documentele oficiale citate.
           </p>
         </div>
       </div>
 
-      {/* Fragments panel */}
-      <aside style={{ width: 300, flexShrink: 0, background: "white", overflowY: "auto" }}>
+      <aside style={{ width: 320, flexShrink: 0, background: "white", overflowY: "auto" }}>
         <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid #e8e8e8" }}>
-          <span style={{ fontSize: 10.5, fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-            Fragmente Extrase
-          </span>
+          <div
+            style={{
+              fontSize: 10.5,
+              fontWeight: 600,
+              color: "#8b8b8b",
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+            }}
+          >
+            Fragmente și surse
+          </div>
+          <div style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
+            {resolvedSource
+              ? `Sursa predominantă: ${resolvedSource}`
+              : "Agentul alege sursa în funcție de întrebare."}
+          </div>
         </div>
 
         {fragments.length === 0 ? (
-          <div style={{ padding: "24px 16px", color: "#bbb", fontSize: 12.5, lineHeight: 1.6 }}>
-            Fragmentele relevante din documentele legislative vor apărea aici după ce trimiți o întrebare.
+          <div style={{ padding: "24px 16px", color: "#8f8f8f", fontSize: 12.5, lineHeight: 1.6 }}>
+            Fragmentele legislative extrase vor apărea aici după prima întrebare.
           </div>
         ) : (
           <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-            {fragments.map((f, i) => (
+            {fragments.map((fragment) => (
               <div
-                key={f.id}
+                key={fragment.id}
                 style={{
                   background: "#fafafa",
                   border: "1px solid #ebebeb",
-                  borderRadius: 8,
+                  borderRadius: 10,
                   padding: "10px 12px",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: "#888",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    Sursa {i + 1}
-                  </span>
-                  <span style={{ fontSize: 10.5, color: "#bbb" }}>{f.date}</span>
-                </div>
-                <p style={{ fontSize: 12, color: "#444", lineHeight: 1.55, marginBottom: 8 }}>
-                  {f.excerpt}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>{f.law}</span>
-                  {f.href && (
-                    <a href={f.href} target="_blank" rel="noopener noreferrer" style={{ color: "#888" }}>
-                      <ExternalLink size={12} />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 8,
+                    marginBottom: 6,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: "#888",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {fragment.label}
+                    </div>
+                    {fragment.similarity && (
+                      <div style={{ fontSize: 10.5, color: "#9b9b9b", marginTop: 3 }}>
+                        {fragment.similarity}
+                      </div>
+                    )}
+                  </div>
+                  {fragment.href && (
+                    <a
+                      href={fragment.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#888", flexShrink: 0 }}
+                    >
+                      <ExternalLink size={13} />
                     </a>
                   )}
                 </div>
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    color: "#404040",
+                    fontWeight: 600,
+                    lineHeight: 1.45,
+                    marginBottom: 8,
+                  }}
+                >
+                  {fragment.law}
+                </div>
+                <p style={{ fontSize: 12, color: "#4f4f4f", lineHeight: 1.55 }}>{fragment.excerpt}</p>
               </div>
             ))}
           </div>

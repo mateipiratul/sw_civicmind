@@ -9,6 +9,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const djangoOrigin = env.VITE_DJANGO_API_ORIGIN || 'http://localhost:8000'
+  const aiOrigin = env.VITE_AI_SERVICE_ORIGIN || 'http://localhost:8001'
 
   return {
     plugins: [
@@ -21,6 +22,12 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': djangoOrigin,
         '/auth': djangoOrigin,
+        '/rag': aiOrigin,
+        '/mps': aiOrigin,
+        '/feed': aiOrigin,
+        '/qa': aiOrigin,
+        '/messenger': aiOrigin,
+        '/notifications': aiOrigin,
       }
     },
     resolve: {

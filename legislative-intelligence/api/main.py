@@ -4,7 +4,7 @@ Reads from data/raw/ and data/processed/ JSON files.
 No database required — swap to Supabase queries later.
 
 Run:
-    uvicorn api.main:app --reload --port 8000
+    uvicorn api.main:app --reload --port 8001
 """
 import json
 import subprocess
@@ -16,6 +16,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 DATA_RAW       = Path("data/raw")
@@ -617,12 +618,12 @@ def rag_search(req: RAGSearchRequest):
 
 
 @app.post("/rag/chat")
-def rag_chat(req: RAGChatRequest):
+async def rag_chat(req: RAGChatRequest):
     if not req.question.strip():
         raise HTTPException(status_code=422, detail="question cannot be empty")
     try:
-        from agents.rag import run_rag_chat
-        return run_rag_chat(
+        from agents.rag import arun_rag_chat
+        return await arun_rag_chat(
             req.question,
             top_k=req.top_k,
             threshold=req.threshold,
@@ -632,6 +633,39 @@ def rag_chat(req: RAGChatRequest):
         )
     except Exception as exc:
         raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/rag/chat/stream")
+async def rag_chat_stream(req: RAGChatRequest):
+    if not req.question.strip():
+        raise HTTPException(status_code=422, detail="question cannot be empty")
+
+    async def event_stream():
+        from agents.rag import stream_rag_chat_events
+
+        try:
+            async for event in stream_rag_chat_events(
+                req.question,
+                top_k=req.top_k,
+                threshold=req.threshold,
+                source=req.source,
+                bill_idp=req.bill_idp,
+                exclude_bill_idp=req.exclude_bill_idp,
+            ):
+                yield json.dumps(event, ensure_ascii=False) + "\n"
+        except Exception as exc:
+            yield json.dumps(
+                {
+                    "type": "error",
+                    "error": str(exc),
+                },
+                ensure_ascii=False,
+            ) + "\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="application/x-ndjson; charset=utf-8",
+    )
 
 
 @app.get("/rag/bills/{idp}/context")
