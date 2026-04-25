@@ -4,3 +4,11 @@ django-cors-headers
 psycopg2-binary
 python-dotenv
 dj-database-url
+
+# Type stubs (dev)
+django-stubs
+django-stubs-ext
+djangorestframework-stubs
+types-psycopg2
+dj-rest-auth
+django-allauth

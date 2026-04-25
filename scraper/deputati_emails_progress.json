@@ -1,0 +1,2972 @@
+[
+  {
+    "idm": "1",
+    "name": "Adomnicăi Mirela Elena",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=1&cam=2&leg=2024"
+  },
+  {
+    "idm": "3",
+    "name": "Albu Dumitriţa",
+    "electoral_district": "43 / DIASPORA",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=3&cam=2&leg=2024"
+  },
+  {
+    "idm": "4",
+    "name": "Alecsandru Marius-Nicolae",
+    "electoral_district": "10 / BUZĂU",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=4&cam=2&leg=2024"
+  },
+  {
+    "idm": "5",
+    "name": "Alecu Robert",
+    "electoral_district": "4 / BACĂU",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": "robert.alecu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=5&cam=2&leg=2024"
+  },
+  {
+    "idm": "6",
+    "name": "Amet Varol",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=6&cam=2&leg=2024"
+  },
+  {
+    "idm": "7",
+    "name": "Andrei Alexandru-Ioan",
+    "electoral_district": "19 / GIURGIU",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=7&cam=2&leg=2024"
+  },
+  {
+    "idm": "8",
+    "name": "Andrei Cosmin",
+    "electoral_district": "38 / TULCEA",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=8&cam=2&leg=2024"
+  },
+  {
+    "idm": "9",
+    "name": "Andronache Gabriel",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "gabriel.andronache@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=9&cam=2&leg=2024"
+  },
+  {
+    "idm": "10",
+    "name": "Andruşcă Lucian-Nicolae",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=10&cam=2&leg=2024"
+  },
+  {
+    "idm": "12",
+    "name": "Atanasiu Corina",
+    "electoral_district": "41 / VRANCEA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=12&cam=2&leg=2024"
+  },
+  {
+    "idm": "13",
+    "name": "Avrămescu Ştefăniţă-Alin",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "stefanita.avramescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=13&cam=2&leg=2024"
+  },
+  {
+    "idm": "14",
+    "name": "Baciu Romică-Andrei",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "andrei.baciu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=14&cam=2&leg=2024"
+  },
+  {
+    "idm": "15",
+    "name": "Badea Nelu-Valentin",
+    "electoral_district": "36 / TELEORMAN",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "nelu.badea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=15&cam=2&leg=2024"
+  },
+  {
+    "idm": "16",
+    "name": "Badiu Georgel",
+    "electoral_district": "41 / VRANCEA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "georgebadiu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=16&cam=2&leg=2024"
+  },
+  {
+    "idm": "17",
+    "name": "Balan Ioan",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "ioan.balan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=17&cam=2&leg=2024"
+  },
+  {
+    "idm": "18",
+    "name": "Bara Nicolae-Adrian",
+    "electoral_district": "1 / ALBA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=18&cam=2&leg=2024"
+  },
+  {
+    "idm": "19",
+    "name": "Barbu Florin-Ionuţ",
+    "electoral_district": "30 / OLT",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "florin.barbu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=19&cam=2&leg=2024"
+  },
+  {
+    "idm": "20",
+    "name": "Barstan Tiberiu-Claudiu",
+    "electoral_district": "22 / HUNEDOARA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "tiberiu.barstan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=20&cam=2&leg=2024"
+  },
+  {
+    "idm": "21",
+    "name": "Baş Ana-Marcela",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=21&cam=2&leg=2024"
+  },
+  {
+    "idm": "22",
+    "name": "Băişanu Ştefan-Alexandru",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=22&cam=2&leg=2024"
+  },
+  {
+    "idm": "23",
+    "name": "Becali George",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": "george.becali@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=23&cam=2&leg=2024"
+  },
+  {
+    "idm": "24",
+    "name": "Bejinariu Eugen",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "eugen.bejinariu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=24&cam=2&leg=2024"
+  },
+  {
+    "idm": "25",
+    "name": "Bende Sándor",
+    "electoral_district": "21 / HARGHITA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=25&cam=2&leg=2024"
+  },
+  {
+    "idm": "26",
+    "name": "Berescu Monica-Elena",
+    "electoral_district": "24 / IAŞI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "monica.berescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=26&cam=2&leg=2024"
+  },
+  {
+    "idm": "27",
+    "name": "Biro Daniel-Răzvan",
+    "electoral_district": "28 / MUREŞ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=27&cam=2&leg=2024"
+  },
+  {
+    "idm": "28",
+    "name": "Biró Rozália-Ibolya",
+    "electoral_district": "5 / BIHOR",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": "rozalia.biro@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=28&cam=2&leg=2024"
+  },
+  {
+    "idm": "29",
+    "name": "Blaga Daniel-Codruţ",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "daniel.blaga@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=29&cam=2&leg=2024"
+  },
+  {
+    "idm": "30",
+    "name": "Bode Lucian Nicolae",
+    "electoral_district": "33 / SĂLAJ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "lucian.bode@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=30&cam=2&leg=2024"
+  },
+  {
+    "idm": "31",
+    "name": "Bogdan Ionel-Ovidiu",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=31&cam=2&leg=2024"
+  },
+  {
+    "idm": "32",
+    "name": "Bogdănel Lucian-Gabriel",
+    "electoral_district": "4 / BACĂU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=32&cam=2&leg=2024"
+  },
+  {
+    "idm": "33",
+    "name": "Bordian Alexandru",
+    "electoral_district": "18 / GALAŢI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "alexandru.bordian@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=33&cam=2&leg=2024"
+  },
+  {
+    "idm": "34",
+    "name": "Borş George-Mădălin",
+    "electoral_district": "36 / TELEORMAN",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "madalin.bors@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=34&cam=2&leg=2024"
+  },
+  {
+    "idm": "35",
+    "name": "Boşutar Tiberiu-Nicolae",
+    "electoral_district": "6 / BISTRIŢA-NĂSĂUD",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "tiberiu.bosutar@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=35&cam=2&leg=2024"
+  },
+  {
+    "idm": "36",
+    "name": "Botez Mihai-Cătălin",
+    "electoral_district": "39 / VASLUI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "mihai.botez@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=36&cam=2&leg=2024"
+  },
+  {
+    "idm": "37",
+    "name": "Bouda Ştefan",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=37&cam=2&leg=2024"
+  },
+  {
+    "idm": "38",
+    "name": "Bruynseels Ramona-Ioana",
+    "electoral_district": "13 / CLUJ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "ramona.bruynseels@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=38&cam=2&leg=2024"
+  },
+  {
+    "idm": "39",
+    "name": "Bucur Ariana-Oana",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=39&cam=2&leg=2024"
+  },
+  {
+    "idm": "40",
+    "name": "Bucura-Oprescu Simona",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "simona.bucuraoprescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=40&cam=2&leg=2024"
+  },
+  {
+    "idm": "41",
+    "name": "Budacă Vasile",
+    "electoral_district": "4 / BACĂU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=41&cam=2&leg=2024"
+  },
+  {
+    "idm": "42",
+    "name": "Budăi Marius-Constantin",
+    "electoral_district": "7 / BOTOŞANI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "marius.budai@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=42&cam=2&leg=2024"
+  },
+  {
+    "idm": "43",
+    "name": "Buican Cristian",
+    "electoral_district": "40 / VÂLCEA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "cristian.buican@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=43&cam=2&leg=2024"
+  },
+  {
+    "idm": "44",
+    "name": "Bulai Iulian",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "iulian.bulai@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=44&cam=2&leg=2024"
+  },
+  {
+    "idm": "45",
+    "name": "Bulearcă Marius-Felix",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=45&cam=2&leg=2024"
+  },
+  {
+    "idm": "46",
+    "name": "Burduja Sebastian-Ioan",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "sebastian.burduja@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=46&cam=2&leg=2024"
+  },
+  {
+    "idm": "47",
+    "name": "Butură Cristina-Irina",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "cristina.butura@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=47&cam=2&leg=2024"
+  },
+  {
+    "idm": "48",
+    "name": "Buzoianu Diana-Anda",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "diana.buzoianu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=48&cam=2&leg=2024"
+  },
+  {
+    "idm": "49",
+    "name": "Cadar Răzvan-Olimpiu",
+    "electoral_district": "2 / ARAD",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=49&cam=2&leg=2024"
+  },
+  {
+    "idm": "50",
+    "name": "Caragaţă Florin",
+    "electoral_district": "23 / IALOMIŢA",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=50&cam=2&leg=2024"
+  },
+  {
+    "idm": "51",
+    "name": "Câciu Adrian",
+    "electoral_district": "17 / DOLJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=51&cam=2&leg=2024"
+  },
+  {
+    "idm": "52",
+    "name": "Cernit Maria",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "maria.cernit@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=52&cam=2&leg=2024"
+  },
+  {
+    "idm": "53",
+    "name": "Chilat Crina-Fiorela",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "crina.chilat@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=53&cam=2&leg=2024"
+  },
+  {
+    "idm": "54",
+    "name": "Chirilă Virgil Alin",
+    "electoral_district": "27 / MEHEDINŢI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "deputat.alinchirila@gmail.com",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=54&cam=2&leg=2024"
+  },
+  {
+    "idm": "55",
+    "name": "Chiriţă Răzvan-Mirel",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "razvan.chirita@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=55&cam=2&leg=2024"
+  },
+  {
+    "idm": "56",
+    "name": "Ciobanu Adrian-Virgil",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=56&cam=2&leg=2024"
+  },
+  {
+    "idm": "57",
+    "name": "Ciobotaru Dragoş-Fănică",
+    "electoral_district": "41 / VRANCEA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=57&cam=2&leg=2024"
+  },
+  {
+    "idm": "58",
+    "name": "Ciocan Doiniţa",
+    "electoral_district": "9 / BRĂILA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=58&cam=2&leg=2024"
+  },
+  {
+    "idm": "60",
+    "name": "Ciornei Daniel-Cătălin",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "daniel.ciornei@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=60&cam=2&leg=2024"
+  },
+  {
+    "idm": "61",
+    "name": "Ciortea Răzvan-Iulian",
+    "electoral_district": "13 / CLUJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=61&cam=2&leg=2024"
+  },
+  {
+    "idm": "62",
+    "name": "Ciubuc Ciprian",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": "ciprian.ciubuc@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=62&cam=2&leg=2024"
+  },
+  {
+    "idm": "63",
+    "name": "Ciucă Liviu-Bogdan",
+    "electoral_district": "18 / GALAŢI",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=63&cam=2&leg=2024"
+  },
+  {
+    "idm": "64",
+    "name": "Ciunt Ionel",
+    "electoral_district": "33 / SĂLAJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=64&cam=2&leg=2024"
+  },
+  {
+    "idm": "65",
+    "name": "Cîmpan Cristian-Emanuel",
+    "electoral_district": "5 / BIHOR",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "cristian.cimpan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=65&cam=2&leg=2024"
+  },
+  {
+    "idm": "66",
+    "name": "Cîmpean Ovidiu-Vasile",
+    "electoral_district": "13 / CLUJ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=66&cam=2&leg=2024"
+  },
+  {
+    "idm": "67",
+    "name": "Cîmpianu Andreea-Petronela",
+    "electoral_district": "43 / DIASPORA",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=67&cam=2&leg=2024"
+  },
+  {
+    "idm": "68",
+    "name": "Cîrligea Florin-Eugen",
+    "electoral_district": "9 / BRĂILA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "florin.cirligea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=68&cam=2&leg=2024"
+  },
+  {
+    "idm": "69",
+    "name": "Cîrligeanu Ariadna-Elena",
+    "electoral_district": "7 / BOTOŞANI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "ariadna.cirligeanu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=69&cam=2&leg=2024"
+  },
+  {
+    "idm": "70",
+    "name": "Coarnă Dumitru",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": "dumitru.coarna@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=70&cam=2&leg=2024"
+  },
+  {
+    "idm": "71",
+    "name": "Cojocaru Petru-Bogdan",
+    "electoral_district": "24 / IAŞI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=71&cam=2&leg=2024"
+  },
+  {
+    "idm": "72",
+    "name": "Coleşa Ilie-Alin",
+    "electoral_district": "13 / CLUJ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "alin.colesa@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=72&cam=2&leg=2024"
+  },
+  {
+    "idm": "73",
+    "name": "Coliban Allen",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "allen.coliban@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=73&cam=2&leg=2024"
+  },
+  {
+    "idm": "74",
+    "name": "Coman Dragoş-Florin",
+    "electoral_district": "12 / CĂLĂRAŞI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "dragos.coman@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=74&cam=2&leg=2024"
+  },
+  {
+    "idm": "75",
+    "name": "Constantinescu Andra-Claudia",
+    "electoral_district": "9 / BRĂILA",
+    "party": "AUR afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=75&cam=2&leg=2024"
+  },
+  {
+    "idm": "76",
+    "name": "Constantinescu Sergiu-Mircea",
+    "electoral_district": "38 / TULCEA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=76&cam=2&leg=2024"
+  },
+  {
+    "idm": "77",
+    "name": "Corcheş Codruţa-Maria",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "codruta.corches@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=77&cam=2&leg=2024"
+  },
+  {
+    "idm": "78",
+    "name": "Corendea Cosmin-Ioan",
+    "electoral_district": "19 / GIURGIU",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=78&cam=2&leg=2024"
+  },
+  {
+    "idm": "79",
+    "name": "Cotinescu Ilie-Aurelian",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=79&cam=2&leg=2024"
+  },
+  {
+    "idm": "80",
+    "name": "Cotîrleţ Paul-Claudiu",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=80&cam=2&leg=2024"
+  },
+  {
+    "idm": "81",
+    "name": "Cozma Adrian-Felician",
+    "electoral_district": "32 / SATU-MARE",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "adrian.cozma@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=81&cam=2&leg=2024"
+  },
+  {
+    "idm": "82",
+    "name": "Cristian Brian",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "brian.cristian@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=82&cam=2&leg=2024"
+  },
+  {
+    "idm": "83",
+    "name": "Crîstici Ognean",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "ognean.cristici@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=83&cam=2&leg=2024"
+  },
+  {
+    "idm": "84",
+    "name": "Cruşoveanu Marian",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=84&cam=2&leg=2024"
+  },
+  {
+    "idm": "85",
+    "name": "Csép Éva-Andrea",
+    "electoral_district": "28 / MUREŞ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=85&cam=2&leg=2024"
+  },
+  {
+    "idm": "86",
+    "name": "Csillag Andrei",
+    "electoral_district": "6 / BISTRIŢA-NĂSĂUD",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "andrei.csillag@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=86&cam=2&leg=2024"
+  },
+  {
+    "idm": "87",
+    "name": "Csoma Botond",
+    "electoral_district": "13 / CLUJ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": "botond.csoma@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=87&cam=2&leg=2024"
+  },
+  {
+    "idm": "88",
+    "name": "Culeafă Mihai",
+    "electoral_district": "27 / MEHEDINŢI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=88&cam=2&leg=2024"
+  },
+  {
+    "idm": "89",
+    "name": "Dascălu Cristina-Emanuela",
+    "electoral_district": "24 / IAŞI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "cristina.dascalu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=89&cam=2&leg=2024"
+  },
+  {
+    "idm": "90",
+    "name": "Dimitriu Alexandru-Paul",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=90&cam=2&leg=2024"
+  },
+  {
+    "idm": "91",
+    "name": "Doboş Elena",
+    "electoral_district": "38 / TULCEA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "elena.dobos@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=91&cam=2&leg=2024"
+  },
+  {
+    "idm": "92",
+    "name": "Dobre Ciprian-Minodor",
+    "electoral_district": "28 / MUREŞ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=92&cam=2&leg=2024"
+  },
+  {
+    "idm": "93",
+    "name": "Dolineaschi Andrei",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "sector5@psd.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=93&cam=2&leg=2024"
+  },
+  {
+    "idm": "94",
+    "name": "Drăgoescu Cezar-Mihail",
+    "electoral_district": "17 / DOLJ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "cezar.dragoescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=94&cam=2&leg=2024"
+  },
+  {
+    "idm": "95",
+    "name": "Drinceanu Vlad-Florentin",
+    "electoral_district": "36 / TELEORMAN",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=95&cam=2&leg=2024"
+  },
+  {
+    "idm": "96",
+    "name": "Drulă Cătălin",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "catalin.drula@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=96&cam=2&leg=2024"
+  },
+  {
+    "idm": "97",
+    "name": "Dunava Costel Neculai",
+    "electoral_district": "4 / BACĂU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=97&cam=2&leg=2024"
+  },
+  {
+    "idm": "98",
+    "name": "Echert Adrian",
+    "electoral_district": "34 / SIBIU",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=98&cam=2&leg=2024"
+  },
+  {
+    "idm": "99",
+    "name": "Enache Diana",
+    "electoral_district": "4 / BACĂU",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "enache.diana@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=99&cam=2&leg=2024"
+  },
+  {
+    "idm": "100",
+    "name": "Enache Mihai-Adrian",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "mihai.enache@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=100&cam=2&leg=2024"
+  },
+  {
+    "idm": "101",
+    "name": "Enachi Raisa",
+    "electoral_district": "39 / VASLUI",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": "raisa.enachi@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=101&cam=2&leg=2024"
+  },
+  {
+    "idm": "102",
+    "name": "Ene Gabriela-Corina",
+    "electoral_district": "5 / BIHOR",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=102&cam=2&leg=2024"
+  },
+  {
+    "idm": "103",
+    "name": "Făget Mădălin-Laurenţiu",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=103&cam=2&leg=2024"
+  },
+  {
+    "idm": "104",
+    "name": "Fechet Mircea",
+    "electoral_district": "4 / BACĂU",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "mircea.fechet@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=104&cam=2&leg=2024"
+  },
+  {
+    "idm": "105",
+    "name": "Feodor Silviu",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=105&cam=2&leg=2024"
+  },
+  {
+    "idm": "106",
+    "name": "Fifor Mihai-Viorel",
+    "electoral_district": "2 / ARAD",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=106&cam=2&leg=2024"
+  },
+  {
+    "idm": "107",
+    "name": "Firczak Iulius Marian",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "iulius.firczak@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=107&cam=2&leg=2024"
+  },
+  {
+    "idm": "108",
+    "name": "Florea Gabriel-Florinel",
+    "electoral_district": "36 / TELEORMAN",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "gabriel.florea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=108&cam=2&leg=2024"
+  },
+  {
+    "idm": "109",
+    "name": "Furtună Mirela",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "mirela.furtuna@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=109&cam=2&leg=2024"
+  },
+  {
+    "idm": "110",
+    "name": "Gal Călin-Graţian",
+    "electoral_district": "5 / BIHOR",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=110&cam=2&leg=2024"
+  },
+  {
+    "idm": "111",
+    "name": "Gál Károly",
+    "electoral_district": "15 / COVASNA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=111&cam=2&leg=2024"
+  },
+  {
+    "idm": "112",
+    "name": "Ganţ Ovidiu Victor",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "ovidiu.gant@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=112&cam=2&leg=2024"
+  },
+  {
+    "idm": "113",
+    "name": "Gavrilă Anamaria",
+    "electoral_district": "22 / HUNEDOARA",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "anamaria.gavrila@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=113&cam=2&leg=2024"
+  },
+  {
+    "idm": "114",
+    "name": "Gavrilă Bianca-Eugenia",
+    "electoral_district": "1 / ALBA",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "bianca.gavrila@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=114&cam=2&leg=2024"
+  },
+  {
+    "idm": "115",
+    "name": "Gavrilescu Graţiela Leocadia",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": "gratiela.gavrilescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=115&cam=2&leg=2024"
+  },
+  {
+    "idm": "116",
+    "name": "Geamănu Aurora-Adela",
+    "electoral_district": "17 / DOLJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=116&cam=2&leg=2024"
+  },
+  {
+    "idm": "117",
+    "name": "Georgescu Gheorghe-Daniel",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=117&cam=2&leg=2024"
+  },
+  {
+    "idm": "118",
+    "name": "Gheorghe Andrei Daniel",
+    "electoral_district": "25 / ILFOV",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "daniel.gheorghe@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=118&cam=2&leg=2024"
+  },
+  {
+    "idm": "119",
+    "name": "Gheorghe Ionel",
+    "electoral_district": "17 / DOLJ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=119&cam=2&leg=2024"
+  },
+  {
+    "idm": "120",
+    "name": "Gheorghe Mihai-Claudiu",
+    "electoral_district": "12 / CĂLĂRAŞI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "mihai.gheorghe@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=120&cam=2&leg=2024"
+  },
+  {
+    "idm": "121",
+    "name": "Gheorghiu Andrei-Florin",
+    "electoral_district": "40 / VÂLCEA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=121&cam=2&leg=2024"
+  },
+  {
+    "idm": "122",
+    "name": "Ghera Giureci-Slobodan",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "slobodan.ghera@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=122&cam=2&leg=2024"
+  },
+  {
+    "idm": "123",
+    "name": "Gherasim Laura",
+    "electoral_district": "39 / VASLUI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "laura.gherasim@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=123&cam=2&leg=2024"
+  },
+  {
+    "idm": "124",
+    "name": "Ghigiu Alexandru-Mihai",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=124&cam=2&leg=2024"
+  },
+  {
+    "idm": "125",
+    "name": "Gima George",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=125&cam=2&leg=2024"
+  },
+  {
+    "idm": "126",
+    "name": "Giurgiu Adrian",
+    "electoral_district": "28 / MUREŞ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "adrian.giurgiu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=126&cam=2&leg=2024"
+  },
+  {
+    "idm": "127",
+    "name": "Gliga Dumitriţa",
+    "electoral_district": "28 / MUREŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=127&cam=2&leg=2024"
+  },
+  {
+    "idm": "128",
+    "name": "Goidescu Ionel",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=128&cam=2&leg=2024"
+  },
+  {
+    "idm": "129",
+    "name": "Gorghiu Alina-Ştefania",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=129&cam=2&leg=2024"
+  },
+  {
+    "idm": "130",
+    "name": "Govor Mircea-Vasile",
+    "electoral_district": "32 / SATU-MARE",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=130&cam=2&leg=2024"
+  },
+  {
+    "idm": "131",
+    "name": "Grindeanu Sorin-Mihai",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=131&cam=2&leg=2024"
+  },
+  {
+    "idm": "132",
+    "name": "Grofu Daniel",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "daniel.grofu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=132&cam=2&leg=2024"
+  },
+  {
+    "idm": "133",
+    "name": "Grosaru Ioana",
+    "electoral_district": "",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=133&cam=2&leg=2024"
+  },
+  {
+    "idm": "134",
+    "name": "Grosu Veronica",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "veronica.grosu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=134&cam=2&leg=2024"
+  },
+  {
+    "idm": "135",
+    "name": "Groza Călin-Florin",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "calin.groza@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=135&cam=2&leg=2024"
+  },
+  {
+    "idm": "136",
+    "name": "Gurlui Silviu-Octavian",
+    "electoral_district": "24 / IAŞI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "silviu.gurlui@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=136&cam=2&leg=2024"
+  },
+  {
+    "idm": "137",
+    "name": "Guşă Andrei-Cosmin",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=137&cam=2&leg=2024"
+  },
+  {
+    "idm": "138",
+    "name": "Hagiu Augustin-Florin",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "augustin.hagiu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=138&cam=2&leg=2024"
+  },
+  {
+    "idm": "139",
+    "name": "Hajdu Gábor",
+    "electoral_district": "21 / HARGHITA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": "gabor.hajdu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=139&cam=2&leg=2024"
+  },
+  {
+    "idm": "140",
+    "name": "Hangan Pollyanna-Hanellore",
+    "electoral_district": "22 / HUNEDOARA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "pollyanna.hangan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=140&cam=2&leg=2024"
+  },
+  {
+    "idm": "141",
+    "name": "Holban Georgeta-Carmen",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=141&cam=2&leg=2024"
+  },
+  {
+    "idm": "142",
+    "name": "Hristu Cosmin",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "cosmin.hristu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=142&cam=2&leg=2024"
+  },
+  {
+    "idm": "143",
+    "name": "Huţucă Bogdan-Iulian",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=143&cam=2&leg=2024"
+  },
+  {
+    "idm": "144",
+    "name": "Iagăr Monica",
+    "electoral_district": "32 / SATU-MARE",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "monica.iagar@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=144&cam=2&leg=2024"
+  },
+  {
+    "idm": "145",
+    "name": "Iancu Marius-Ionel",
+    "electoral_district": "30 / OLT",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "marius.iancu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=145&cam=2&leg=2024"
+  },
+  {
+    "idm": "147",
+    "name": "Intotero Natalia-Elena",
+    "electoral_district": "22 / HUNEDOARA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=147&cam=2&leg=2024"
+  },
+  {
+    "idm": "148",
+    "name": "Ion Nicolae-Mirel",
+    "electoral_district": "34 / SIBIU",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=148&cam=2&leg=2024"
+  },
+  {
+    "idm": "149",
+    "name": "Ion Stelian-Cristian",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "stelian.ion@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=149&cam=2&leg=2024"
+  },
+  {
+    "idm": "150",
+    "name": "Ionescu Monica",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=150&cam=2&leg=2024"
+  },
+  {
+    "idm": "151",
+    "name": "Ionescu Radu-Mihail",
+    "electoral_district": "4 / BACĂU",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=151&cam=2&leg=2024"
+  },
+  {
+    "idm": "152",
+    "name": "Ionescu Tudor",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=152&cam=2&leg=2024"
+  },
+  {
+    "idm": "153",
+    "name": "Iordache Ion",
+    "electoral_district": "20 / GORJ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=153&cam=2&leg=2024"
+  },
+  {
+    "idm": "154",
+    "name": "Iosub Cosmin-Teodor",
+    "electoral_district": "17 / DOLJ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "cosmin.iosub@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=154&cam=2&leg=2024"
+  },
+  {
+    "idm": "155",
+    "name": "Irimia Ancuţa-Florina",
+    "electoral_district": "24 / IAŞI",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "ancuta.irimia@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=155&cam=2&leg=2024"
+  },
+  {
+    "idm": "156",
+    "name": "Isac Marius-Adrian",
+    "electoral_district": "11 / CARAŞ-SEVERIN",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=156&cam=2&leg=2024"
+  },
+  {
+    "idm": "157",
+    "name": "Ivan Bogdan-Gruia",
+    "electoral_district": "6 / BISTRIŢA-NĂSĂUD",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "bogdan.ivan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=157&cam=2&leg=2024"
+  },
+  {
+    "idm": "158",
+    "name": "Jianu Iosif-Florin",
+    "electoral_district": "18 / GALAŢI",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=158&cam=2&leg=2024"
+  },
+  {
+    "idm": "159",
+    "name": "Kántor Boglárka",
+    "electoral_district": "39 / VASLUI",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=159&cam=2&leg=2024"
+  },
+  {
+    "idm": "160",
+    "name": "Kelemen Hunor",
+    "electoral_district": "21 / HARGHITA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": "kelemenhunor@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=160&cam=2&leg=2024"
+  },
+  {
+    "idm": "161",
+    "name": "Kolcsár Anquetil-Károly",
+    "electoral_district": "28 / MUREŞ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=161&cam=2&leg=2024"
+  },
+  {
+    "idm": "162",
+    "name": "Koler Eduard-Virgil",
+    "electoral_district": "27 / MEHEDINŢI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "eduard.koler@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=162&cam=2&leg=2024"
+  },
+  {
+    "idm": "163",
+    "name": "Könczei Csaba",
+    "electoral_district": "15 / COVASNA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=163&cam=2&leg=2024"
+  },
+  {
+    "idm": "164",
+    "name": "Kroncsiş Sebastian-Andrei",
+    "electoral_district": "34 / SIBIU",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "sebastian.kroncsis@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=164&cam=2&leg=2024"
+  },
+  {
+    "idm": "165",
+    "name": "Kulcsár-Terza József-György",
+    "electoral_district": "15 / COVASNA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=165&cam=2&leg=2024"
+  },
+  {
+    "idm": "166",
+    "name": "Ladányi László-Zsolt",
+    "electoral_district": "21 / HARGHITA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=166&cam=2&leg=2024"
+  },
+  {
+    "idm": "167",
+    "name": "Lazăr Teodor",
+    "electoral_district": "4 / BACĂU",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "teodor.lazar@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=167&cam=2&leg=2024"
+  },
+  {
+    "idm": "168",
+    "name": "Lăpuşan Remus-Gabriel",
+    "electoral_district": "13 / CLUJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=168&cam=2&leg=2024"
+  },
+  {
+    "idm": "169",
+    "name": "Lăzăroi Ioan",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=169&cam=2&leg=2024"
+  },
+  {
+    "idm": "170",
+    "name": "Lipă Elisabeta",
+    "electoral_district": "7 / BOTOŞANI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=170&cam=2&leg=2024"
+  },
+  {
+    "idm": "171",
+    "name": "Longher Ghervazen",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=171&cam=2&leg=2024"
+  },
+  {
+    "idm": "172",
+    "name": "Lőrincz Ştefan-Iulian",
+    "electoral_district": "43 / DIASPORA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "iulian.lorincz@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=172&cam=2&leg=2024"
+  },
+  {
+    "idm": "173",
+    "name": "Lovin Ramona",
+    "electoral_district": "43 / DIASPORA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "ramona.lovin@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=173&cam=2&leg=2024"
+  },
+  {
+    "idm": "174",
+    "name": "Lungu Romeo-Daniel",
+    "electoral_district": "10 / BUZĂU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=174&cam=2&leg=2024"
+  },
+  {
+    "idm": "175",
+    "name": "Macovei Ilie Simona-Elena",
+    "electoral_district": "24 / IAŞI",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=175&cam=2&leg=2024"
+  },
+  {
+    "idm": "176",
+    "name": "Magyar Loránd-Bálint",
+    "electoral_district": "32 / SATU-MARE",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=176&cam=2&leg=2024"
+  },
+  {
+    "idm": "177",
+    "name": "Manole Petre-Florin",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=177&cam=2&leg=2024"
+  },
+  {
+    "idm": "178",
+    "name": "Manta Claudiu",
+    "electoral_district": "20 / GORJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=178&cam=2&leg=2024"
+  },
+  {
+    "idm": "179",
+    "name": "Marinescu Radu",
+    "electoral_district": "17 / DOLJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=179&cam=2&leg=2024"
+  },
+  {
+    "idm": "180",
+    "name": "Markó Attila-Gábor",
+    "electoral_district": "28 / MUREŞ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=180&cam=2&leg=2024"
+  },
+  {
+    "idm": "181",
+    "name": "Marussi George-Nicolae",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=181&cam=2&leg=2024"
+  },
+  {
+    "idm": "334",
+    "name": "Matache Oana",
+    "electoral_district": "10 / BUZĂU",
+    "party": "PSD",
+    "member_since_note": "23.12.2025",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=334&cam=2&leg=2024"
+  },
+  {
+    "idm": "182",
+    "name": "Matei Aneta",
+    "electoral_district": "19 / GIURGIU",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=182&cam=2&leg=2024"
+  },
+  {
+    "idm": "183",
+    "name": "Matei Sergiu-Lucian",
+    "electoral_district": "25 / ILFOV",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "sergiu.matei@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=183&cam=2&leg=2024"
+  },
+  {
+    "idm": "184",
+    "name": "Matichescu Mirela-Florenţa",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=184&cam=2&leg=2024"
+  },
+  {
+    "idm": "185",
+    "name": "Matieş Călin-Gheorghe",
+    "electoral_district": "1 / ALBA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "calin.maties@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=185&cam=2&leg=2024"
+  },
+  {
+    "idm": "186",
+    "name": "Mărgărit Mitică-Marius",
+    "electoral_district": "18 / GALAŢI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=186&cam=2&leg=2024"
+  },
+  {
+    "idm": "187",
+    "name": "Merka Adrian-Miroslav",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=187&cam=2&leg=2024"
+  },
+  {
+    "idm": "188",
+    "name": "Miclău Samuel-Virgil",
+    "electoral_district": "11 / CARAŞ-SEVERIN",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "samuel.miclau@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=188&cam=2&leg=2024"
+  },
+  {
+    "idm": "189",
+    "name": "Mihaiu Radu-Nicolae",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=189&cam=2&leg=2024"
+  },
+  {
+    "idm": "190",
+    "name": "Mihalcea Ioan",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=190&cam=2&leg=2024"
+  },
+  {
+    "idm": "191",
+    "name": "Mihalcea Remus-Gabriel",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=191&cam=2&leg=2024"
+  },
+  {
+    "idm": "192",
+    "name": "Mihalcea Silvia-Claudia",
+    "electoral_district": "11 / CARAŞ-SEVERIN",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "silvia.mihalcea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=192&cam=2&leg=2024"
+  },
+  {
+    "idm": "193",
+    "name": "Mihăescu Mugur",
+    "electoral_district": "30 / OLT",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "mugur.mihaescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=193&cam=2&leg=2024"
+  },
+  {
+    "idm": "194",
+    "name": "Mihuţi Bogdan-Florian",
+    "electoral_district": "30 / OLT",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=194&cam=2&leg=2024"
+  },
+  {
+    "idm": "195",
+    "name": "Miklós Zoltán",
+    "electoral_district": "15 / COVASNA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": "zoltan.miklos@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=195&cam=2&leg=2024"
+  },
+  {
+    "idm": "196",
+    "name": "Mina Marian",
+    "electoral_district": "19 / GIURGIU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "marian.mina@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=196&cam=2&leg=2024"
+  },
+  {
+    "idm": "198",
+    "name": "Miruţă Radu-Dinel",
+    "electoral_district": "20 / GORJ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "radu.miruta@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=198&cam=2&leg=2024"
+  },
+  {
+    "idm": "199",
+    "name": "Mititelu Eduard-Tatian",
+    "electoral_district": "7 / BOTOŞANI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=199&cam=2&leg=2024"
+  },
+  {
+    "idm": "200",
+    "name": "Mitrea Dumitrina",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "dumitrina.mitrea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=200&cam=2&leg=2024"
+  },
+  {
+    "idm": "201",
+    "name": "Mîndrescu Nicolae",
+    "electoral_district": "40 / VÂLCEA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "nicolae.mindrescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=201&cam=2&leg=2024"
+  },
+  {
+    "idm": "202",
+    "name": "Mîndroc Cătălin-Viorel",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=202&cam=2&leg=2024"
+  },
+  {
+    "idm": "203",
+    "name": "Mocanu Adrian",
+    "electoral_district": "10 / BUZĂU",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=203&cam=2&leg=2024"
+  },
+  {
+    "idm": "204",
+    "name": "Moiseev Alexandrin",
+    "electoral_district": "7 / BOTOŞANI",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=204&cam=2&leg=2024"
+  },
+  {
+    "idm": "205",
+    "name": "Moisin Radu-Marin",
+    "electoral_district": "13 / CLUJ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "radu.moisin@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=205&cam=2&leg=2024"
+  },
+  {
+    "idm": "206",
+    "name": "Molnar Andrei",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=206&cam=2&leg=2024"
+  },
+  {
+    "idm": "207",
+    "name": "Morar Lucian-Ioan-Titus",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=207&cam=2&leg=2024"
+  },
+  {
+    "idm": "208",
+    "name": "Moş Patricia-Simina-Arina",
+    "electoral_district": "5 / BIHOR",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=208&cam=2&leg=2024"
+  },
+  {
+    "idm": "209",
+    "name": "Moşteanu Liviu-Ionuţ",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "ionut.mosteanu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=209&cam=2&leg=2024"
+  },
+  {
+    "idm": "210",
+    "name": "Muncaciu Sorin-Titus",
+    "electoral_district": "10 / BUZĂU",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "sorin.muncaciu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=210&cam=2&leg=2024"
+  },
+  {
+    "idm": "211",
+    "name": "Munteanu Valeriu",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "valeriu.munteanu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=211&cam=2&leg=2024"
+  },
+  {
+    "idm": "212",
+    "name": "Murad Mohammad",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "mohammad.murad@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=212&cam=2&leg=2024"
+  },
+  {
+    "idm": "213",
+    "name": "Murariu Oana",
+    "electoral_district": "13 / CLUJ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "oana.murariu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=213&cam=2&leg=2024"
+  },
+  {
+    "idm": "214",
+    "name": "Muraru Iulian-Alexandru",
+    "electoral_district": "24 / IAŞI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "alexandru.muraru@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=214&cam=2&leg=2024"
+  },
+  {
+    "idm": "215",
+    "name": "Muşat Doru-Lucian",
+    "electoral_district": "33 / SĂLAJ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "doru.musat@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=215&cam=2&leg=2024"
+  },
+  {
+    "idm": "216",
+    "name": "Nacov Gheorghe",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=216&cam=2&leg=2024"
+  },
+  {
+    "idm": "217",
+    "name": "Nagy Szabolcs",
+    "electoral_district": "32 / SATU-MARE",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=217&cam=2&leg=2024"
+  },
+  {
+    "idm": "218",
+    "name": "Nagy Vasile",
+    "electoral_district": "2 / ARAD",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": "vasile.nagy@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=218&cam=2&leg=2024"
+  },
+  {
+    "idm": "219",
+    "name": "Nassar Rodica",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=219&cam=2&leg=2024"
+  },
+  {
+    "idm": "332",
+    "name": "Năcuţă Sorin",
+    "electoral_district": "24 / IAŞI",
+    "party": "PNL",
+    "member_since_note": "3.02.2025",
+    "email": "sorin.nacuta@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=332&cam=2&leg=2024"
+  },
+  {
+    "idm": "220",
+    "name": "Năsui Claudiu-Iulius-Gavril",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "claudiu.nasui@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=220&cam=2&leg=2024"
+  },
+  {
+    "idm": "221",
+    "name": "Neacşu Andreea-Firuţa",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "andreea.neacsu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=221&cam=2&leg=2024"
+  },
+  {
+    "idm": "222",
+    "name": "Neacşu Marian",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=222&cam=2&leg=2024"
+  },
+  {
+    "idm": "223",
+    "name": "Neagu Petre-Emanoil",
+    "electoral_district": "10 / BUZĂU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=223&cam=2&leg=2024"
+  },
+  {
+    "idm": "224",
+    "name": "Neamţu George-Mihail",
+    "electoral_district": "5 / BIHOR",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "george.neamtu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=224&cam=2&leg=2024"
+  },
+  {
+    "idm": "225",
+    "name": "Neaţă Eugen",
+    "electoral_district": "40 / VÂLCEA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=225&cam=2&leg=2024"
+  },
+  {
+    "idm": "226",
+    "name": "Neculaescu Laurenţiu Adrian",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=226&cam=2&leg=2024"
+  },
+  {
+    "idm": "227",
+    "name": "Negoescu Mihai-Bogdan",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "mihai.negoescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=227&cam=2&leg=2024"
+  },
+  {
+    "idm": "228",
+    "name": "Negrea Petru-Gabriel",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "petru.negrea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=228&cam=2&leg=2024"
+  },
+  {
+    "idm": "229",
+    "name": "Nicolae Dan-Mihai",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "dan.nicolae@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=229&cam=2&leg=2024"
+  },
+  {
+    "idm": "230",
+    "name": "Oancea Silviu-Florin",
+    "electoral_district": "23 / IALOMIŢA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "silviu.oancea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=230&cam=2&leg=2024"
+  },
+  {
+    "idm": "231",
+    "name": "Oltenaşu Sorin-George",
+    "electoral_district": "23 / IALOMIŢA",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=231&cam=2&leg=2024"
+  },
+  {
+    "idm": "232",
+    "name": "Oprea Octavian",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=232&cam=2&leg=2024"
+  },
+  {
+    "idm": "233",
+    "name": "Pambuccian Varujan",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "varujan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=233&cam=2&leg=2024"
+  },
+  {
+    "idm": "234",
+    "name": "Pandea Ciprian",
+    "electoral_district": "12 / CĂLĂRAŞI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=234&cam=2&leg=2024"
+  },
+  {
+    "idm": "235",
+    "name": "Paraschiv Ciprian-Constantin",
+    "electoral_district": "24 / IAŞI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "ciprian.paraschiv@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=235&cam=2&leg=2024"
+  },
+  {
+    "idm": "236",
+    "name": "Paraschivescu Ovidiu-Romulus",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=236&cam=2&leg=2024"
+  },
+  {
+    "idm": "237",
+    "name": "Pascalini Nini-Alexandru",
+    "electoral_district": "4 / BACĂU",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=237&cam=2&leg=2024"
+  },
+  {
+    "idm": "238",
+    "name": "Pascariu Mihai-Cosmin",
+    "electoral_district": "2 / ARAD",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "mihai.pascariu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=238&cam=2&leg=2024"
+  },
+  {
+    "idm": "239",
+    "name": "Păun Nicolae",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=239&cam=2&leg=2024"
+  },
+  {
+    "idm": "240",
+    "name": "Păunescu Silviu-Titus",
+    "electoral_district": "14 / CONSTANŢA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "titus.paunescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=240&cam=2&leg=2024"
+  },
+  {
+    "idm": "241",
+    "name": "Petreţchi Nicolae-Miroslav",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=241&cam=2&leg=2024"
+  },
+  {
+    "idm": "242",
+    "name": "Peţa-Ştefănescu Eliza-Mădălina",
+    "electoral_district": "17 / DOLJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "eliza.peta@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=242&cam=2&leg=2024"
+  },
+  {
+    "idm": "243",
+    "name": "Pirtea Marilen - Gabriel",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "marilen.pirtea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=243&cam=2&leg=2024"
+  },
+  {
+    "idm": "244",
+    "name": "Pistru-Popa Simona-Geanina",
+    "electoral_district": "2 / ARAD",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=244&cam=2&leg=2024"
+  },
+  {
+    "idm": "245",
+    "name": "Pîclişan Gheorghe-Petru",
+    "electoral_district": "7 / BOTOŞANI",
+    "party": "POT",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=245&cam=2&leg=2024"
+  },
+  {
+    "idm": "246",
+    "name": "Plopeanu Rodica",
+    "electoral_district": "10 / BUZĂU",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=246&cam=2&leg=2024"
+  },
+  {
+    "idm": "247",
+    "name": "Plujar Andrei George",
+    "electoral_district": "11 / CARAŞ-SEVERIN",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=247&cam=2&leg=2024"
+  },
+  {
+    "idm": "248",
+    "name": "Ponta Victor-Viorel",
+    "electoral_district": "16 / DÂMBOVIŢA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=248&cam=2&leg=2024"
+  },
+  {
+    "idm": "249",
+    "name": "Popa Alexandru",
+    "electoral_district": "9 / BRĂILA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=249&cam=2&leg=2024"
+  },
+  {
+    "idm": "250",
+    "name": "Popa Cristian-Alexandru",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "cristian.popa@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=250&cam=2&leg=2024"
+  },
+  {
+    "idm": "251",
+    "name": "Popa Dorin",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=251&cam=2&leg=2024"
+  },
+  {
+    "idm": "252",
+    "name": "Popa George-Adrian",
+    "electoral_district": "4 / BACĂU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=252&cam=2&leg=2024"
+  },
+  {
+    "idm": "253",
+    "name": "Popa Maricel",
+    "electoral_district": "24 / IAŞI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=253&cam=2&leg=2024"
+  },
+  {
+    "idm": "254",
+    "name": "Popa Ştefan-Ovidiu",
+    "electoral_district": "40 / VÂLCEA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "stefan.popa@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=254&cam=2&leg=2024"
+  },
+  {
+    "idm": "255",
+    "name": "Popescu Antonio-Gabi",
+    "electoral_district": "40 / VÂLCEA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "antonio.popescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=255&cam=2&leg=2024"
+  },
+  {
+    "idm": "256",
+    "name": "Popovici Florin-Cornel",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "florin.popovici@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=256&cam=2&leg=2024"
+  },
+  {
+    "idm": "257",
+    "name": "Porumboiu Gabriela",
+    "electoral_district": "17 / DOLJ",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "gabriela.porumboiu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=257&cam=2&leg=2024"
+  },
+  {
+    "idm": "333",
+    "name": "Priceputu Vasilică",
+    "electoral_district": "9 / BRĂILA",
+    "party": "PSD",
+    "member_since_note": "10.11.2025",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=333&cam=2&leg=2024"
+  },
+  {
+    "idm": "258",
+    "name": "Priescu Ionelia-Florenţa",
+    "electoral_district": "20 / GORJ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "ionelia.priescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=258&cam=2&leg=2024"
+  },
+  {
+    "idm": "259",
+    "name": "Prişcă Răzvan Sorin",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=259&cam=2&leg=2024"
+  },
+  {
+    "idm": "260",
+    "name": "Prună Cristina-Mădălina",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "cristina.pruna@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=260&cam=2&leg=2024"
+  },
+  {
+    "idm": "261",
+    "name": "Puşcaşu Lucian-Florin",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "florin.puscasu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=261&cam=2&leg=2024"
+  },
+  {
+    "idm": "262",
+    "name": "Puşcaşu Petre",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=262&cam=2&leg=2024"
+  },
+  {
+    "idm": "263",
+    "name": "Radu Fabian-Cristian",
+    "electoral_district": "34 / SIBIU",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "fabian.radu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=263&cam=2&leg=2024"
+  },
+  {
+    "idm": "264",
+    "name": "Rafila Alexandru",
+    "electoral_district": "24 / IAŞI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "alexandru.rafila@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=264&cam=2&leg=2024"
+  },
+  {
+    "idm": "265",
+    "name": "Răducanu Sebastian",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=265&cam=2&leg=2024"
+  },
+  {
+    "idm": "266",
+    "name": "Răducea Gheorghe-Valentin",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "POT",
+    "member_since_note": "",
+    "email": "gheorghe.raducea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=266&cam=2&leg=2024"
+  },
+  {
+    "idm": "267",
+    "name": "Rigman Ciprian-Doru",
+    "electoral_district": "13 / CLUJ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=267&cam=2&leg=2024"
+  },
+  {
+    "idm": "268",
+    "name": "Rinder Ana-Smaranda",
+    "electoral_district": "39 / VASLUI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=268&cam=2&leg=2024"
+  },
+  {
+    "idm": "269",
+    "name": "Rodeanu Bogdan-Ionel",
+    "electoral_district": "18 / GALAŢI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "bogdan.rodeanu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=269&cam=2&leg=2024"
+  },
+  {
+    "idm": "270",
+    "name": "Rogobete Alexandru-Florin",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=270&cam=2&leg=2024"
+  },
+  {
+    "idm": "271",
+    "name": "Roman Florin-Claudiu",
+    "electoral_district": "1 / ALBA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "florin.roman@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=271&cam=2&leg=2024"
+  },
+  {
+    "idm": "272",
+    "name": "Roşca Mircea",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=272&cam=2&leg=2024"
+  },
+  {
+    "idm": "273",
+    "name": "Rusu Sebastian-Mihai",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=273&cam=2&leg=2024"
+  },
+  {
+    "idm": "274",
+    "name": "Samoilă Ion",
+    "electoral_district": "12 / CĂLĂRAŞI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "ion.samoila@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=274&cam=2&leg=2024"
+  },
+  {
+    "idm": "275",
+    "name": "Sandu Viorica",
+    "electoral_district": "18 / GALAŢI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "viorica.sandu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=275&cam=2&leg=2024"
+  },
+  {
+    "idm": "276",
+    "name": "Scarlat George",
+    "electoral_district": "18 / GALAŢI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=276&cam=2&leg=2024"
+  },
+  {
+    "idm": "277",
+    "name": "Seres Dénes",
+    "electoral_district": "33 / SĂLAJ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": "denes.seres@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=277&cam=2&leg=2024"
+  },
+  {
+    "idm": "278",
+    "name": "Sighiartău Robert-Ionatan",
+    "electoral_district": "6 / BISTRIŢA-NĂSĂUD",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=278&cam=2&leg=2024"
+  },
+  {
+    "idm": "279",
+    "name": "Simion George-Nicolae",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "george.simion@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=279&cam=2&leg=2024"
+  },
+  {
+    "idm": "280",
+    "name": "Simu Aurora-Tasica",
+    "electoral_district": "13 / CLUJ",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=280&cam=2&leg=2024"
+  },
+  {
+    "idm": "281",
+    "name": "Solomon Adrian",
+    "electoral_district": "39 / VASLUI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "adrian.solomon@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=281&cam=2&leg=2024"
+  },
+  {
+    "idm": "282",
+    "name": "Stancu Ionel",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=282&cam=2&leg=2024"
+  },
+  {
+    "idm": "283",
+    "name": "Stănescu Vetuţa",
+    "electoral_district": "22 / HUNEDOARA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "vetuta.stanescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=283&cam=2&leg=2024"
+  },
+  {
+    "idm": "284",
+    "name": "Stoenică Irina-Florentina",
+    "electoral_district": "17 / DOLJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=284&cam=2&leg=2024"
+  },
+  {
+    "idm": "285",
+    "name": "Stoica Alin-Bogdan",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=285&cam=2&leg=2024"
+  },
+  {
+    "idm": "286",
+    "name": "Stoica Bogdan-Alin",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "bogdan.stoica@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=286&cam=2&leg=2024"
+  },
+  {
+    "idm": "287",
+    "name": "Stoica Diana",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "diana.stoica@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=287&cam=2&leg=2024"
+  },
+  {
+    "idm": "288",
+    "name": "Stoica Ştefan-Bucur",
+    "electoral_district": "17 / DOLJ",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=288&cam=2&leg=2024"
+  },
+  {
+    "idm": "289",
+    "name": "Stroe Ionuţ-Marian",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "ionut.stroe@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=289&cam=2&leg=2024"
+  },
+  {
+    "idm": "290",
+    "name": "Suciu Vasile-Daniel",
+    "electoral_district": "6 / BISTRIŢA-NĂSĂUD",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "suciuvd@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=290&cam=2&leg=2024"
+  },
+  {
+    "idm": "291",
+    "name": "Szabó Ödön",
+    "electoral_district": "5 / BIHOR",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=291&cam=2&leg=2024"
+  },
+  {
+    "idm": "292",
+    "name": "Szőke Ecaterina-Mariana",
+    "electoral_district": "18 / GALAŢI",
+    "party": "PSD afiliat",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=292&cam=2&leg=2024"
+  },
+  {
+    "idm": "293",
+    "name": "Şendroiu Vlad-Ioan",
+    "electoral_district": "37 / TIMIŞ",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=293&cam=2&leg=2024"
+  },
+  {
+    "idm": "294",
+    "name": "Şerban Ciprian-Constantin",
+    "electoral_district": "29 / NEAMŢ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=294&cam=2&leg=2024"
+  },
+  {
+    "idm": "295",
+    "name": "Şerban George Cătălin",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=295&cam=2&leg=2024"
+  },
+  {
+    "idm": "296",
+    "name": "Şerban Gianina",
+    "electoral_district": "25 / ILFOV",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "gianina.serban@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=296&cam=2&leg=2024"
+  },
+  {
+    "idm": "297",
+    "name": "Ştirbu Gigel-Sorinel",
+    "electoral_district": "30 / OLT",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=297&cam=2&leg=2024"
+  },
+  {
+    "idm": "298",
+    "name": "Tanasă Dan",
+    "electoral_district": "8 / BRAŞOV",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "dan.tanasa@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=298&cam=2&leg=2024"
+  },
+  {
+    "idm": "299",
+    "name": "Tanasă Ştefan",
+    "electoral_district": "24 / IAŞI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=299&cam=2&leg=2024"
+  },
+  {
+    "idm": "300",
+    "name": "Teslariu Andrei-Ionuţ",
+    "electoral_district": "39 / VASLUI",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=300&cam=2&leg=2024"
+  },
+  {
+    "idm": "301",
+    "name": "Tilea Dumitru",
+    "electoral_district": "36 / TELEORMAN",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "dumitru.tilea@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=301&cam=2&leg=2024"
+  },
+  {
+    "idm": "302",
+    "name": "Tîlvăr Angel",
+    "electoral_district": "41 / VRANCEA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=302&cam=2&leg=2024"
+  },
+  {
+    "idm": "303",
+    "name": "Toader Bogdan-Andrei",
+    "electoral_district": "31 / PRAHOVA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "bogdan.toader@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=303&cam=2&leg=2024"
+  },
+  {
+    "idm": "304",
+    "name": "Toader Elena-Laura",
+    "electoral_district": "38 / TULCEA",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=304&cam=2&leg=2024"
+  },
+  {
+    "idm": "305",
+    "name": "Toma Ilie",
+    "electoral_district": "22 / HUNEDOARA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=305&cam=2&leg=2024"
+  },
+  {
+    "idm": "306",
+    "name": "Tomoescu Ion-Alin",
+    "electoral_district": "27 / MEHEDINŢI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=306&cam=2&leg=2024"
+  },
+  {
+    "idm": "307",
+    "name": "Trif Bogdan Gheorghe",
+    "electoral_district": "34 / SIBIU",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=307&cam=2&leg=2024"
+  },
+  {
+    "idm": "308",
+    "name": "Turcan Raluca",
+    "electoral_district": "34 / SIBIU",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": "raluca.turcan@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=308&cam=2&leg=2024"
+  },
+  {
+    "idm": "309",
+    "name": "Tuşa Adriana Diana",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "diana.tusa@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=309&cam=2&leg=2024"
+  },
+  {
+    "idm": "310",
+    "name": "Ţintă Ştefan",
+    "electoral_district": "23 / IALOMIŢA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "stefan.tinta@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=310&cam=2&leg=2024"
+  },
+  {
+    "idm": "311",
+    "name": "Ţiplea Dumitru",
+    "electoral_district": "5 / BIHOR",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=311&cam=2&leg=2024"
+  },
+  {
+    "idm": "312",
+    "name": "Ţiu Mihai-Adrian",
+    "electoral_district": "30 / OLT",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=312&cam=2&leg=2024"
+  },
+  {
+    "idm": "313",
+    "name": "Ţoiu Oana-Silvia",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "oana.toiu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=313&cam=2&leg=2024"
+  },
+  {
+    "idm": "314",
+    "name": "Ungureanu Emanuel-Dumitru",
+    "electoral_district": "35 / SUCEAVA",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "emanuel.ungureanu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=314&cam=2&leg=2024"
+  },
+  {
+    "idm": "315",
+    "name": "Vadim-Tudor Lidia",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "lidia.vadim@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=315&cam=2&leg=2024"
+  },
+  {
+    "idm": "316",
+    "name": "Vass Levente",
+    "electoral_district": "28 / MUREŞ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=316&cam=2&leg=2024"
+  },
+  {
+    "idm": "317",
+    "name": "Văduva Dumitru",
+    "electoral_district": "25 / ILFOV",
+    "party": "USR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=317&cam=2&leg=2024"
+  },
+  {
+    "idm": "335",
+    "name": "Vărşan Ciprian-Nicolae",
+    "electoral_district": "2 / ARAD",
+    "party": "AUR",
+    "member_since_note": "22.04.2026",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=335&cam=2&leg=2024"
+  },
+  {
+    "idm": "318",
+    "name": "Vârgă Mariana",
+    "electoral_district": "42 / BUCUREŞTI",
+    "party": "Neafiliaţi",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=318&cam=2&leg=2024"
+  },
+  {
+    "idm": "319",
+    "name": "Vedinaş Verginia",
+    "electoral_district": "41 / VRANCEA",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=319&cam=2&leg=2024"
+  },
+  {
+    "idm": "320",
+    "name": "Vela Ion-Marcel",
+    "electoral_district": "11 / CARAŞ-SEVERIN",
+    "party": "PNL",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=320&cam=2&leg=2024"
+  },
+  {
+    "idm": "321",
+    "name": "Velcescu Florin-Bogdan",
+    "electoral_district": "3 / ARGEŞ",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "florin.velcescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=321&cam=2&leg=2024"
+  },
+  {
+    "idm": "322",
+    "name": "Vexler Silviu",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "silviu.vexler@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=322&cam=2&leg=2024"
+  },
+  {
+    "idm": "323",
+    "name": "Vidra Vlad-Andrei",
+    "electoral_district": "5 / BIHOR",
+    "party": "SOS RO",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=323&cam=2&leg=2024"
+  },
+  {
+    "idm": "324",
+    "name": "Vulpescu Ioan",
+    "electoral_district": "25 / ILFOV",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": "ioan.vulpescu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=324&cam=2&leg=2024"
+  },
+  {
+    "idm": "325",
+    "name": "Vulpoiu Dorel",
+    "electoral_district": "18 / GALAŢI",
+    "party": "AUR",
+    "member_since_note": "",
+    "email": "dorel.vulpoiu@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=325&cam=2&leg=2024"
+  },
+  {
+    "idm": "326",
+    "name": "Vuşcan Voicu",
+    "electoral_district": "1 / ALBA",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=326&cam=2&leg=2024"
+  },
+  {
+    "idm": "327",
+    "name": "Weber Mihai",
+    "electoral_district": "20 / GORJ",
+    "party": "PSD",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=327&cam=2&leg=2024"
+  },
+  {
+    "idm": "328",
+    "name": "Wiener Adrian",
+    "electoral_district": "2 / ARAD",
+    "party": "USR",
+    "member_since_note": "",
+    "email": "adrian.wiener@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=328&cam=2&leg=2024"
+  },
+  {
+    "idm": "329",
+    "name": "Zahoranszki Brigitta-Eva",
+    "electoral_district": "26 / MARAMUREŞ",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=329&cam=2&leg=2024"
+  },
+  {
+    "idm": "330",
+    "name": "Zakarias Zoltán",
+    "electoral_district": "21 / HARGHITA",
+    "party": "UDMR",
+    "member_since_note": "",
+    "email": null,
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=330&cam=2&leg=2024"
+  },
+  {
+    "idm": "331",
+    "name": "Zisopol Dragoş Gabriel",
+    "electoral_district": "",
+    "party": "Minoritati",
+    "member_since_note": "",
+    "email": "gabriel.zisopol@cdep.ro",
+    "profile_url": "https://www.cdep.ro/pls/parlam/structura2015.mp?idm=331&cam=2&leg=2024"
+  }
+]
