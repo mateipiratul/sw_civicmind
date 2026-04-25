@@ -7,7 +7,7 @@
   🛠️ Tech Stack
    * Framework: React (TypeScript)
    * Build Tool: Vite
-   * Styling: Vanilla CSS (Modular preferred). Avoid Tailwind unless requested.
+   * Styling: Vanilla CSS (Modular preferred); use TailWind for more complex visuals, where needed, but moderately
    * Icons: Lucide React
    * Data Fetching: TanStack Query (React Query) or Axios
    * State Management: React Context (for Auth/User Profile)
@@ -73,7 +73,6 @@
    * VITE_AI_SERVICE_URL: Base URL for FastAPI agents.
 
   ⚠️ Implementation Rules
-   1. Mobile First: Ensure the layout is responsive for citizens on the go.
-   2. Null Safety: AI analysis and Impact Scores may be null. Show "Processing..." or "Data Pending" states instead of crashing.
-   3. Skeleton Screens: Use loading skeletons for the feed to maintain high perceived performance.
-   4. Aesthetics: Use a professional "Gov-Tech" palette: Deep blues, clean whites, and high-contrast status colors (Green for adopted, Amber for in-progress).
+   1. Null Safety: AI analysis and Impact Scores may be null. Show "Processing..." or "Data Pending" states instead of crashing.
+   2. Skeleton Screens: Use loading skeletons for the feed to maintain high perceived performance.
+   3. Aesthetics: Use a professional "Gov-Tech" palette: Deep blues, clean whites, and high-contrast status colors (Green for adopted, Amber for in-progress).
