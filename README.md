@@ -109,6 +109,18 @@ CivicMind integrates a multi-agent architecture (using selfhosted Qwen 3.5 & Lan
 
 ---
 
+## 🖥️ Local Development
+
+This repo currently runs as two backend services plus the frontend:
+
+* **Django** on `http://localhost:8000` for auth, profiles, and the frontend-facing `/api/*` routes.
+* **FastAPI** on `http://localhost:8001` for the legislative intelligence service, agents, RAG, and scraping tooling.
+* **Vite** on `http://localhost:5173` for the web frontend.
+
+Important detail: the frontend should usually call Django through the Vite proxy, not by hardcoding `http://localhost:8000` in the browser. See [RUN.md](RUN.md) for the exact startup steps and port overrides.
+
+---
+
 ## 🔁 Dev Process (AI-driven 💥)
 
 ### 📌 Backlog & Planning

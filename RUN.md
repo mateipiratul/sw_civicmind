@@ -62,12 +62,23 @@ python manage.py runserver 8000
 
 ```bash
 cd frontend
+copy .env.example .env
 npm run dev
 ```
 
 - App: http://localhost:5173
 
-> Still a Vite scaffold — no CivicMind screens yet. Skip unless you are building UI.
+The frontend talks to Django through the Vite proxy by default:
+- browser requests stay on `http://localhost:5173`
+- `/api/*` and `/auth/*` are proxied to Django on `http://localhost:8000`
+
+If Django must run on a different port, update `frontend/.env`:
+
+```bash
+VITE_DJANGO_API_ORIGIN=http://localhost:8002
+```
+
+Only set `VITE_API_URL` if you deliberately want the browser to call Django directly.
 
 ---
 
@@ -105,7 +116,14 @@ python db/push_to_supabase.py                # push everything to Supabase
 | Django | 8000 | Auth + profiles |
 | Vite | 5173 | React dev server |
 
-If 8001 is blocked by Windows, use 8002:
+If Django port 8000 is busy, run it on 8002 and update `frontend/.env`:
+
 ```bash
-python -m uvicorn api.main:app --reload --port 8002
+cd backend
+python manage.py runserver 8002
+```
+
+If FastAPI port 8001 is blocked by Windows, use 8003:
+```bash
+python -m uvicorn api.main:app --reload --port 8003
 ```

@@ -102,7 +102,6 @@ function RegisterPage() {
                       type={name.toLowerCase().includes("password") ? "password" : name === "email" ? "email" : "text"}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
                       disabled={isLoading}
                       style={{
                         padding: "9px 12px",

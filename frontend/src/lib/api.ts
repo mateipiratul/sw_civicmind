@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const configuredApiBaseUrl = import.meta.env.VITE_API_URL?.trim();
+const API_BASE_URL =
+  configuredApiBaseUrl && configuredApiBaseUrl !== "/"
+    ? configuredApiBaseUrl.replace(/\/$/, "")
+    : "";
 
 // Types matching backend/apps/bills/models.py
 export interface AIAnalysis {
@@ -84,6 +88,11 @@ export interface User {
   token?: string;
 }
 
+interface AuthResponse {
+  user: User;
+  token: string;
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -154,23 +163,36 @@ class ApiClient {
     return data as T;
   };
 
+  private normalizeAuthUser = (response: AuthResponse): User => ({
+    ...response.user,
+    token: response.token,
+  });
+
   // Auth
   register = async (username: string, email: string, password: string): Promise<User> => {
-    return this.request("/auth/register", { method: "POST", body: JSON.stringify({ username, email, password }) });
+    const response = await this.request<AuthResponse>("/auth/register/", {
+      method: "POST",
+      body: JSON.stringify({ username, email, password }),
+    });
+    return this.normalizeAuthUser(response);
   };
-  login = async (email: string, password: string): Promise<User> => {
-    return this.request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+  login = async (username: string, password: string): Promise<User> => {
+    const response = await this.request<AuthResponse>("/auth/login/", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+    return this.normalizeAuthUser(response);
   };
 
   // Bills
-  listBills = async (status?: string, page = 1, limit = 20): Promise<PaginatedBills> => {
+  listBills = async (category?: string, page = 1, limit = 20): Promise<PaginatedBills> => {
     const q = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (status) q.append("status", status);
-    return this.request(`/api/bills?${q}`);
+    if (category) q.append("category", category);
+    return this.request(`/api/bills/?${q}`);
   };
 
   getBill = async (id: number): Promise<Bill> => {
-    return this.request(`/api/bills/${id}`);
+    return this.request(`/api/bills/${id}/`);
   };
 
   getMetadata = async (): Promise<{ impact_categories: string[], affected_profiles: string[], counties: string[] }> => {
@@ -186,7 +208,7 @@ class ApiClient {
   logout = async (): Promise<void> => { localStorage.removeItem("auth_token"); };
 
   // Admin
-  getAdminStats = async (): Promise<AdminStats> => { return this.request("/api/admin/stats"); };
+  getAdminStats = async (): Promise<AdminStats> => { return this.request("/api/admin/stats/"); };
   getAdminUsers = async (page = 1, limit = 20): Promise<PaginatedUsers> => {
     return this.request(`/api/admin/users?page=${page}&limit=${limit}`);
   };

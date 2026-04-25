@@ -1,7 +1,7 @@
 # CivicMind — Architecture & Implementation Status
 
 > Last updated: 2026-04-25  
-> Stack: Python 3.11 · Mistral AI · LangGraph · FastAPI · Supabase · React (pending)
+> Stack: Python 3.11 · Mistral AI · LangGraph · FastAPI · Django 6 · Supabase · React 19 · Vite 8 · TanStack Router
 
 ---
 
@@ -29,7 +29,7 @@ CivicMind is a Romanian civic-tech platform that scrapes legislative data from c
 | Agent 5 — Notifications | ✅ MVP Done | Deterministic watchdog + flag classifier + local job queue + dry-run delivery |
 | RAG Agent — Legislative Text Similarity Chat | 🛠️ Infra Live | Supabase vector schema applied, local bills indexed, first 300 discovered 2025 Portal Legislativ acts indexed, baseline eval harness live |
 | Personalization / User Profile Layer | ✅ Feed contract done | `_build_feed_card`, `build_anonymous_feed`, follow/unfollow, `GET /feed` — all live |
-| React/Vite frontend | 🛠️ Started | Vite scaffold + TypeScript initialized; backlog in `frontend/GEMINI.md` |
+| React/Vite frontend | ✅ MVP Done | 12 routes live; Feed, MPs, Chat, Bill Detail, Profile, Auth, Admin all implemented; design matches figma |
 | API deployment | ⏳ Pending | Teammate |
 
 ---
@@ -119,7 +119,7 @@ Three modules, three processes, one Supabase database.
 │  ├─ MP Scoreboard  → GET /mps                                           │
 │  └─ RAG Chat  → POST /rag/chat                                          │
 └────────────────┬────────────────────────────────────────────────────────┘
-                 │ HTTP  (Vite proxy: /api → :8000,  /rag /bills /mps → :8001)
+                 │ HTTP  (Vite proxy: /api → :8000, /auth → :8000 | /mps /rag /feed /qa → :8001 pending)
    ┌─────────────▼──────────────┐          ┌──────────────────────────────┐
    │  DJANGO BACKEND  (:8000)   │          │  FASTAPI AI-SERVICE  (:8001) │
    │  backend/                  │          │  legislative-intelligence/   │
@@ -834,41 +834,163 @@ Notes:
 
 ## Layer 5 — Frontend (`frontend/`)
 
-**Stack:** React 19, TypeScript, Vite 8, Lucide React, TanStack Query / Axios, vanilla CSS  
-**Status:** 🛠️ Scaffold initialized. Main UI implementation in progress by teammate.
+**Stack:** React 19, TypeScript, Vite 8, TanStack Router (file-based), TanStack Query, Tailwind CSS v4, Lucide React  
+**Status:** ✅ MVP Done. All primary screens implemented and styled. Design matched to figma reference.
 
-### Screens & backlog
+### Start
 
-| Screen | Features | API surface |
-|--------|----------|------------|
-| **Auth** | Login / Register forms | `POST /auth/login`, `POST /auth/register` |
-| **Onboarding wizard** | County dropdown, interest selection | `PUT /api/profiles/me/` |
-| **Civic Feed** | Personalized bill cards with Impact Badges, status chips, AI summary | `GET /api/bills/personalized/` |
-| **Bill Detail** | Key ideas, PRO/CON cards, vote breakdown, MP vote list, Q&A, email composer modal | `GET /bills/{idp}`, `POST /qa`, `POST /messenger` |
-| **MP Scoreboard** | Score gauge, consistency feed, contact card | `GET /mps`, `GET /mps/{slug}` |
-| **RAG Chat** | Cross-bill legislative Q&A with citations | `POST /rag/chat` |
+```bash
+cd sw_civicmind/frontend
+npm install
+npm run dev          # → http://localhost:5173
+```
 
-### Design rules
-- Mobile-first responsive layout
-- Gov-Tech palette: deep blues, clean whites, green (adopted), amber (in progress), red (rejected)
-- Null safety: show "Se procesează..." / "Date în curs" when AI analysis is not yet available; never crash on `null`
-- Skeleton screens for the feed to maintain perceived performance
+### Design system
 
-### Vite dev configuration (pending)
+- **Palette:** monochrome grey/white — `#111` text, `#efefef` page bg (grid pattern), `#ffffff` cards, `#e2e2e2` borders. No blue, no indigo, no gradients.
+- **CSS:** single source of truth at `src/styles.css`. Loaded once via `__root.tsx` `<link>` tag. CSS vars: `--bg`, `--surface`, `--primary`, `--primary-hover`, `--text`, `--text-muted`, `--border`, `--border-input`, `--radius`, `--radius-lg`, `--shadow-card`.
+- **Figma reference:** `sw_civicmind/../figma/` — React components showing the intended layout and visual language.
+- **Cards:** `border border-[#e2e2e2] shadow-none rounded-xl bg-white`, no Tailwind shadow utilities.
+- **Primary buttons:** `bg-[#111] hover:bg-gray-800 text-white`.
+- **Null safety:** show `—` / `În analiză` / skeleton when `ai_analysis` is null. Never crash on null.
+
+### Route tree (`src/routes/`)
+
+| Route | File | Description | API wired? |
+|-------|------|-------------|-----------|
+| `/` | `index.tsx` | Feed — 3-panel (sidebar + cards + trending), fetches paginated bills | ✅ `GET /api/bills` |
+| `/bills/:id` | `bills/$id.tsx` | Bill detail — AI synthesis, PRO/CON, action bar | ✅ `GET /api/bills/{id}` |
+| `/mps` | `mps.tsx` | MP Scoreboard — search, party filter, expandable rows | ⚠️ mock data (wire to `GET /mps`) |
+| `/chat` | `chat.tsx` | Legislative chat — bubble UI + "Fragmente Extrase" panel | ⚠️ mock response (wire to `POST /rag/chat`) |
+| `/auth/login` | `auth/login.tsx` | Google-only login card — mock OAuth, navigates to `/` | ⚠️ mock (wire real Google OAuth) |
+| `/auth/register` | `auth/register.tsx` | Email/password register — calls `api.register()` | ✅ wired to Django |
+| `/auth/logout` | `auth/logout.tsx` | Instant logout + redirect to `/auth/login` | ✅ |
+| `/profile` | `profile/index.tsx` | User profile — edit username/email, role badge | ✅ `GET/PATCH /api/profiles/me/` |
+| `/admin` | `admin.tsx` | Admin shell — nested layout with sub-nav | ✅ |
+| `/admin/stats` | `admin/stats.tsx` | Stats cards — users, bills, analyzed count | ✅ `GET /api/admin/stats` |
+| `/admin/users` | `admin/users.tsx` | User table — paginated, status toggle | ✅ `GET /api/admin/users` |
+| `/admin/bills` | `admin/bills.tsx` | Bill inventory — paginated table | ✅ `GET /api/admin/bills` |
+
+### File structure
+
+```
+frontend/
+├── src/
+│   ├── styles.css               # Single stylesheet — design tokens + base reset
+│   ├── main.tsx                 # Entry — RouterProvider + QueryClientProvider
+│   ├── router.tsx               # TanStack Router setup
+│   ├── routeTree.gen.ts         # Auto-generated — DO NOT EDIT
+│   │
+│   ├── routes/                  # File-based routing (one file = one route)
+│   │   ├── __root.tsx           # Root layout — Header + Outlet + error/404 pages
+│   │   ├── index.tsx            # /  — Feed
+│   │   ├── mps.tsx              # /mps
+│   │   ├── chat.tsx             # /chat
+│   │   ├── admin.tsx            # /admin  (layout shell)
+│   │   ├── admin/
+│   │   │   ├── stats.tsx
+│   │   │   ├── users.tsx
+│   │   │   └── bills.tsx
+│   │   ├── auth/
+│   │   │   ├── login.tsx
+│   │   │   ├── register.tsx
+│   │   │   └── logout.tsx
+│   │   ├── bills/
+│   │   │   └── $id.tsx
+│   │   └── profile/
+│   │       └── index.tsx
+│   │
+│   ├── components/
+│   │   ├── layout/
+│   │   │   └── header.tsx       # Sticky header — logo + Feed/MPs/Chat nav + user avatar
+│   │   ├── bill-card.tsx        # Bill card for grid layouts (used by admin)
+│   │   ├── bill-card-skeleton.tsx
+│   │   └── ui/                  # Primitive UI library
+│   │       ├── avatar.tsx
+│   │       ├── badge.tsx
+│   │       ├── breadcrumbs.tsx
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── dropdown-menu.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── pagination.tsx
+│   │       ├── select.tsx
+│   │       ├── separator.tsx
+│   │       ├── skeleton.tsx
+│   │       └── textarea.tsx
+│   │
+│   ├── lib/
+│   │   ├── api.ts               # ApiClient class — all HTTP calls, typed responses
+│   │   ├── auth-context.tsx     # AuthProvider — localStorage token, user state
+│   │   └── utils.ts             # cn() helper
+│   │
+│   └── assets/
+│
+├── vite.config.ts               # Proxy: /api → :8000, /auth → :8000
+├── package.json
+└── tsconfig.json
+```
+
+### API client (`src/lib/api.ts`)
+
+`ApiClient` at `http://localhost:8000` (proxied through Vite). All calls go through `private request<T>()` which injects `Authorization: Bearer <token>` from `localStorage`.
+
+```
+api.listBills(status?, page, limit)    → GET /api/bills
+api.getBill(id)                        → GET /api/bills/{id}
+api.register(username, email, pass)    → POST /auth/register
+api.login(email, pass)                 → POST /auth/login
+api.getProfile()                       → GET /api/profiles/me/
+api.updateProfile(data)                → PATCH /api/profiles/me/
+api.getAdminStats()                    → GET /api/admin/stats
+api.getAdminUsers(page, limit)         → GET /api/admin/users
+api.updateUserStatus(id, status)       → PATCH /api/admin/users/{id}/status
+api.getAdminBills(page, limit)         → GET /api/admin/bills
+```
+
+**Not yet wired in the API client:**
+- `POST /rag/chat` — Chat page uses a mock response; needs a `ragChat(question)` method
+- `GET /mps`, `GET /mps/{slug}` — MPs page uses static mock data
+- `POST /qa`, `POST /messenger` — Bill detail action bar stubs
+- `GET /feed` — Feed still calls `/api/bills`; could switch to `/feed?user_id=` for personalization
+- `POST /profiles/{user_id}/follow/bill/{idp}` — Follow buttons not yet in UI
+
+### Auth state (`src/lib/auth-context.tsx`)
+
+`AuthProvider` stores `user` + `token` in `localStorage` keys `auth_user` / `auth_token`. `useAuth()` exposes `{ user, isAuthenticated, isLoading, login, logout, updateUser, refreshUser }`.
+
+Current login flow: the login page calls `login({ username, email, token, role })` directly (mock) — real Google OAuth is not wired yet.
+
+### Vite proxy (`vite.config.ts`)
+
 ```ts
-// vite.config.ts — target layout
 proxy: {
-  '/api':  'http://localhost:8000',   // Django (auth, profiles)
-  '/auth': 'http://localhost:8000',
-  '/bills': 'http://localhost:8001',  // FastAPI (bills, MPs, agents, RAG)
-  '/mps':  'http://localhost:8001',
-  '/rag':  'http://localhost:8001',
+  '/api':  'http://localhost:8000',   // Django — bills, profiles, admin
+  '/auth': 'http://localhost:8000',   // Django — register, login
 }
 ```
 
-Environment variables (`.env`):
-- `VITE_API_BASE_URL` — Django base URL
-- `VITE_AI_SERVICE_URL` — FastAPI AI service base URL
+FastAPI (`localhost:8001`) endpoints (`/mps`, `/rag`, `/feed`, `/qa`, `/messenger`) are **not yet proxied**. Add them to `vite.config.ts` when wiring those pages.
+
+### What needs wiring next
+
+| Priority | Task | Files to touch |
+|----------|------|---------------|
+| 🔴 High | Wire `/chat` to `POST /rag/chat` (FastAPI) | `routes/chat.tsx`, `lib/api.ts`, `vite.config.ts` |
+| 🔴 High | Wire `/mps` to `GET /mps` (FastAPI) | `routes/mps.tsx`, `lib/api.ts`, `vite.config.ts` |
+| 🔴 High | Implement real Google OAuth (replace mock login) | `routes/auth/login.tsx`, `lib/auth-context.tsx` |
+| 🟡 Med | Add Q&A + Messenger buttons on bill detail | `routes/bills/$id.tsx`, `lib/api.ts` |
+| 🟡 Med | Wire feed to personalized `/feed?user_id=` | `routes/index.tsx`, `lib/api.ts` |
+| 🟡 Med | Add follow/unfollow buttons on feed cards | `routes/index.tsx`, `lib/api.ts` |
+| 🟢 Low | Onboarding wizard (county + interests) | new route `routes/onboarding.tsx` |
+| 🟢 Low | Add `/rag` proxy to `vite.config.ts` + `/mps` proxy | `vite.config.ts` |
+
+### Known non-issues (intentional)
+
+- `routeTree.gen.ts` is auto-generated by `@tanstack/router-vite-plugin` on every save — do not edit manually.
+- `src/assets/` contains Vite default assets; safe to delete if unused.
+- `src/lib/api.ts` points to `:8000` for all calls — Django only. FastAPI calls need explicit proxy additions.
 
 ### State management
 - React Context for auth/user profile (global)

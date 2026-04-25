@@ -16,11 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 from apps.bills.views import AdminStatsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('auth/register', RedirectView.as_view(url='/auth/register/', permanent=False)),
+    path('auth/login', RedirectView.as_view(url='/auth/login/', permanent=False)),
+    path('auth/google', RedirectView.as_view(url='/auth/google/', permanent=False)),
     path('auth/', include('apps.authentication.urls')),
+    path('api/bills', RedirectView.as_view(url='/api/bills/', permanent=False)),
+    path('api/mps', RedirectView.as_view(url='/api/mps/', permanent=False)),
+    path('api/profiles', RedirectView.as_view(url='/api/profiles/', permanent=False)),
+    path('api/admin/stats', RedirectView.as_view(url='/api/admin/stats/', permanent=False)),
     path('api/admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
     path('api/bills/', include('apps.bills.urls')),
     path('api/mps/', include('apps.parliamentarians.urls')),
