@@ -81,9 +81,9 @@ function NotFoundComponent() {
 function RootComponent() {
   return (
     <RootDocument>
-      <div className="relative flex min-h-screen flex-col">
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
         <Header />
-        <main className="flex-1">
+        <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <Outlet />
         </main>
       </div>

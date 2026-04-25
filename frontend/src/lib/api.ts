@@ -135,6 +135,35 @@ interface AuthResponse {
   token: string;
 }
 
+export interface ImpactScore {
+  score: number;
+  total_votes: number;
+  for_count: number;
+  against_count: number;
+  abstain_count: number;
+  absent_count: number;
+  categories_voted: string[];
+  narrative: string;
+  calculated_at: string;
+}
+
+export interface Parliamentarian {
+  mp_slug: string;
+  mp_name: string;
+  party: string;
+  county: string;
+  chamber: string;
+  email?: string;
+  impact_score?: ImpactScore | null;
+}
+
+export interface PaginatedMPs {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Parliamentarian[];
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -245,6 +274,23 @@ class ApiClient {
 
   getMetadata = async (): Promise<{ impact_categories: string[], affected_profiles: string[], counties: string[] }> => {
     return this.request("/api/bills/metadata/");
+  };
+
+  // Parliamentarians
+  listMPs = async (params: { search?: string; county?: string; page?: number } = {}): Promise<PaginatedMPs> => {
+    const q = new URLSearchParams();
+    if (params.search) q.append("search", params.search);
+    if (params.county) q.append("county", params.county);
+    if (params.page && params.page > 1) q.append("page", String(params.page));
+    return this.request(`/api/mps/?${q}`);
+  };
+
+  getMP = async (slug: string): Promise<Parliamentarian> => {
+    return this.request(`/api/mps/${slug}/`);
+  };
+
+  getPersonalizedFeed = async (page = 1, limit = 10): Promise<PaginatedBills> => {
+    return this.request(`/api/bills/personalized/?page=${page}&limit=${limit}`);
   };
 
   // User

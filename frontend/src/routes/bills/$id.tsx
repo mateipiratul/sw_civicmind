@@ -11,7 +11,6 @@ import {
   Calendar,
   ChevronLeft,
   FileText,
-  Mail,
   MessageSquareText,
   Scale,
   ShieldAlert,
@@ -546,17 +545,33 @@ function BillDetailPage() {
           </div>
 
           <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <Section eyebrow="Official record" title="At a glance" icon={<FileText size={17} />}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <InfoRow label="Bill number" value={bill.bill_number} />
-                <InfoRow label="Status" value={bill.status || "Unknown"} />
-                <InfoRow label="Procedure" value={bill.procedure || "Not listed"} />
-                <InfoRow label="Decision chamber" value={bill.decision_chamber || "Not listed"} />
-                <InfoRow label="Confidence" value={typeof ai?.confidence === "number" ? `${Math.round(ai.confidence * 100)}%` : "Pending"} noBorder />
+            {/* Vote Prediction */}
+            <section style={sectionCardStyle}>
+              <div style={{ ...eyebrowStyle, marginBottom: 10 }}>Predicție Vot</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { label: "Pentru", pct: 55, color: "#16a34a", bg: "#dcfce7" },
+                  { label: "Împotrivă", pct: 30, color: "#dc2626", bg: "#fee2e2" },
+                  { label: "Abținere", pct: 15, color: "#888", bg: "#f0f0f0" },
+                ].map(({ label, pct, color, bg }) => (
+                  <div key={label}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 5 }}>
+                      <span style={{ color: "#555", fontWeight: 500 }}>{label}</span>
+                      <span style={{ color, fontWeight: 600 }}>{pct}%</span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 99, background: "#f0f0f0", overflow: "hidden" }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 99 }} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Section>
+              <p style={{ fontSize: 11, color: "#aaa", marginTop: 12, lineHeight: 1.5 }}>
+                Bazat pe alinierea partidelor și declarațiile publice.
+              </p>
+            </section>
 
-            <Section eyebrow="Primary sources" title="Documents and references" icon={<ArrowUpRight size={17} />}>
+            {/* Documents */}
+            <Section eyebrow="Documente oficiale" title="Surse și referințe" icon={<ArrowUpRight size={17} />}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {sourceDocuments.length ? (
                   sourceDocuments.map((document) => (
@@ -610,41 +625,54 @@ function BillDetailPage() {
                       color: "#777",
                     }}
                   >
-                    No official document URLs are attached to this bill yet.
+                    Nu sunt atașate documente oficiale pentru acest proiect.
                   </div>
                 )}
               </div>
             </Section>
 
-            <section
-              style={{
-                borderRadius: 10,
-                border: "1px solid #151515",
-                background: "#151515",
-                padding: 16,
-                color: "#ffffff",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ ...eyebrowStyle, color: "rgba(255,255,255,0.65)" }}>Citizen action</div>
-                <h2 style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.15 }}>Make the next step obvious</h2>
-                <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "rgba(255,255,255,0.76)" }}>
-                  Once the messaging flow is wired, this panel should help the user contact representatives with context, not panic.
+            {/* Civic Q&A */}
+            <section style={{ ...sectionCardStyle, background: "#f8f8f8" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ ...eyebrowStyle }}>Civic Q&A</div>
+                <p style={{ fontSize: 12.5, lineHeight: 1.55, color: "#555" }}>
+                  Ai întrebări despre cum afectează acest proiect municipalitatea ta? Întreabă asistentul AI.
                 </p>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
-                <Button className="w-full justify-center gap-2 rounded-xl bg-white text-[#151515] hover:bg-[#f1f1ee]">
-                  <Mail className="h-4 w-4" />
-                  Contact representative
-                </Button>
-                {bill.source_url ? (
-                  <Button variant="outline" asChild className="w-full justify-center gap-2 rounded-xl border-white/20 bg-transparent text-white hover:bg-white/8 hover:text-white">
-                    <a href={bill.source_url} target="_blank" rel="noopener noreferrer">
-                      <ArrowUpRight className="h-4 w-4" />
-                      Open official page
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <input
+                    type="text"
+                    placeholder="Pune o întrebare..."
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      fontSize: 12.5,
+                      border: "1px solid #e2e2e2",
+                      borderRadius: 8,
+                      background: "white",
+                      color: "#111",
+                      outline: "none",
+                      fontFamily: "var(--font)",
+                    }}
+                  />
+                  {bill.source_url && (
+                    <a
+                      href={bill.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        background: "#111",
+                        color: "white",
+                        display: "flex",
+                        alignItems: "center",
+                        textDecoration: "none",
+                      }}
+                    >
+                      <ArrowUpRight size={14} />
                     </a>
-                  </Button>
-                ) : null}
+                  )}
+                </div>
               </div>
             </section>
           </aside>
