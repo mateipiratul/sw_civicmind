@@ -1,4 +1,4 @@
-# 🤖 GEMINI.md: Hybrid Backend Architect Context (Tech 1)
+# 🤖 GEMINI.md: Hybrid Backend Architect Context
 
 ## 🎯 Project Vision
 **CivicMind** is an intelligent civic engine designed to combat political misinformation. It transforms fragmented legislative data into a simplified, personalized feed for citizens, featuring AI-generated summaries and **Impact Scores** for politicians.
