@@ -19,7 +19,7 @@ class ProfileModelTest(APITestCase):
             {
                 "username": "ana",
                 "email": "ana@example.com",
-                "password": "pass12345",
+                "password": "StrongPass1!",
             },
             format="json",
         )
