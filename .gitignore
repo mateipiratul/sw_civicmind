@@ -1,7 +1,6 @@
 # IDE
 .idea/
 .vscode/
-<<<<<<< HEAD
 *.sublime-project
 *.sublime-workspace
 
@@ -35,9 +34,6 @@ backend/media/
 # Legislative Intelligence
 legislative-intelligence/data/raw/
 legislative-intelligence/data/processed/
-=======
-node_modules/
-__pycache__/
-*.env
-.gitignore
->>>>>>> 25fc61890e22efb4e8fa4e13b61a18498e629402
+
+# ignore claude
+.claude/
