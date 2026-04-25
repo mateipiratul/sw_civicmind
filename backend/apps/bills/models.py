@@ -96,3 +96,37 @@ class VoteSession(models.Model):
 
     def __str__(self):
         return f"Vote {self.idv} for {self.pk}"
+
+class BillEvent(models.Model):
+    event_key = models.CharField(primary_key=True, max_length=255)
+    event_type = models.CharField(max_length=100)
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, db_column='idp', related_name='events')
+    idv = models.IntegerField(blank=True, null=True)
+    bill_number = models.CharField(max_length=50, blank=True, null=True)
+    source = models.CharField(max_length=50, default='cdep')
+    chamber = models.CharField(max_length=50, default='deputies')
+    vote_date = models.DateField(blank=True, null=True)
+    summary = models.JSONField(default=dict)
+    detected_at = models.DateTimeField()
+
+    class Meta:
+        db_table = 'bill_events'
+        managed = False
+        verbose_name = "Bill Event"
+        verbose_name_plural = "Bill Events"
+
+class BillFlag(models.Model):
+    event_key = models.OneToOneField(BillEvent, on_delete=models.CASCADE, primary_key=True, db_column='event_key', related_name='flag')
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, db_column='idp', related_name='flags')
+    idv = models.IntegerField(blank=True, null=True)
+    bill_number = models.CharField(max_length=50, blank=True, null=True)
+    event_type = models.CharField(max_length=100)
+    importance = models.CharField(max_length=50)
+    flags = models.JSONField(default=list)
+    classified_at = models.DateTimeField()
+
+    class Meta:
+        db_table = 'bill_flags'
+        managed = False
+        verbose_name = "Bill Flag"
+        verbose_name_plural = "Bill Flags"

@@ -5,6 +5,7 @@ class Parliamentarian(models.Model):
     mp_slug = models.CharField(primary_key=True, max_length=255)
     mp_name = models.CharField(max_length=255, blank=True, null=True)
     party = models.CharField(max_length=100, blank=True, null=True)
+    chamber = models.CharField(max_length=100, blank=True, null=True)
     
     # Enriched fields
     email = models.EmailField(blank=True, null=True)
@@ -56,6 +57,8 @@ class ImpactScore(models.Model):
     against_count = models.IntegerField(default=0)
     abstain_count = models.IntegerField(default=0)
     absent_count = models.IntegerField(default=0)
+    mp_name = models.TextField(blank=True, null=True)
+    party = models.CharField(max_length=100, blank=True, null=True)
     categories_voted = models.JSONField(default=list)
     narrative = models.TextField(blank=True, null=True)
     calculated_at = models.DateTimeField(blank=True, null=True)
