@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db.utils import OperationalError, ProgrammingError
 from rest_framework import serializers
 
 from .models import Profile
@@ -24,6 +25,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "county",
+            "preferred_party",
             "interests",
             "persona_tags",
             "work_domain",
@@ -40,6 +42,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
+        preferred_party = attrs.get("preferred_party")
+        if preferred_party is not None:
+            attrs["preferred_party"] = preferred_party.strip() or None
 
         for field_name, allowed_values in VALID_SINGLE_VALUE_FIELDS.items():
             value = attrs.get(field_name)
@@ -89,6 +94,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def _merge_with_existing(instance: Profile | None, validated_data: dict) -> dict:
         base_data = {
             "county": getattr(instance, "county", None),
+            "preferred_party": getattr(instance, "preferred_party", None),
             "interests": list(getattr(instance, "interests", [])),
             "persona_tags": list(getattr(instance, "persona_tags", [])),
             "work_domain": getattr(instance, "work_domain", None),
@@ -107,6 +113,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class ProfileQuestionnaireSerializer(serializers.Serializer):
     county_label = serializers.SerializerMethodField()
+    party_label = serializers.SerializerMethodField()
+    party_options = serializers.SerializerMethodField()
     work_domains = serializers.SerializerMethodField()
     employment_statuses = serializers.SerializerMethodField()
     personal_interest_areas = serializers.SerializerMethodField()
@@ -119,6 +127,25 @@ class ProfileQuestionnaireSerializer(serializers.Serializer):
 
     def get_county_label(self, obj):
         return "Judet / localitate aproximativa"
+
+    def get_party_label(self, obj):
+        return "Partidul votat / preferat"
+
+    def get_party_options(self, obj):
+        from apps.parliamentarians.models import Parliamentarian
+
+        try:
+            parties = (
+                Parliamentarian.objects
+                .filter(chamber__icontains="deput")
+                .exclude(party__isnull=True)
+                .exclude(party="")
+                .values_list("party", flat=True)
+                .distinct()
+            )
+            return [{"value": party, "label": party} for party in sorted(parties)]
+        except (OperationalError, ProgrammingError):
+            return []
 
     def get_work_domains(self, obj):
         return PROFILE_QUESTIONNAIRE["work_domains"]

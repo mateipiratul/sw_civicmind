@@ -5,6 +5,7 @@ from django.db import models
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     county = models.CharField(max_length=100, blank=True, null=True)
+    preferred_party = models.CharField(max_length=100, blank=True, null=True)
     interests = models.JSONField(default=list, blank=True)
     persona_tags = models.JSONField(default=list, blank=True)
     work_domain = models.CharField(max_length=100, blank=True, null=True)

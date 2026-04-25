@@ -1,4 +1,5 @@
 import math
+from collections import Counter
 
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -22,7 +23,7 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['mp_name', 'party', 'county']
 
     def get_queryset(self):
-        if self.action == 'vote_map':
+        if self.action in {'vote_map', 'my_representatives'}:
             vote_queryset = (
                 MPVote.objects
                 .select_related(
@@ -38,7 +39,7 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 .prefetch_related(Prefetch('votes', queryset=vote_queryset, to_attr='prefetched_votes'))
                 .order_by('mp_name')
             )
-        if self.action == 'list':
+        if self.action in {'list', 'directory', 'metadata'}:
             # For the list view, only prefetch the impact_score (1 extra query total)
             return Parliamentarian.objects.select_related('impact_score').order_by('mp_name')
         # For the detail view, also prefetch the vote chain to avoid N+1
@@ -52,36 +53,96 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
     def get_serializer_class(self):
-        if self.action == 'vote_map':
+        if self.action in {'vote_map', 'my_representatives'}:
             return ParliamentarianVoteMapSerializer
-        if self.action == 'list':
+        if self.action in {'list', 'directory', 'metadata'}:
             return ParliamentarianListSerializer
         return ParliamentarianDetailSerializer
 
-    @action(detail=False, methods=['get'], url_path='vote-map')
-    def vote_map(self, request):
+    @staticmethod
+    def _parse_page(request):
         try:
-            page = max(1, int(request.query_params.get('page', 1)))
+            return max(1, int(request.query_params.get('page', 1)))
         except (TypeError, ValueError):
-            page = 1
+            return 1
 
+    @staticmethod
+    def _parse_limit(request, default=25, maximum=100):
         try:
-            limit = max(1, min(100, int(request.query_params.get('limit', 25))))
+            return max(1, min(maximum, int(request.query_params.get('limit', default))))
         except (TypeError, ValueError):
-            limit = 25
+            return default
 
+    @staticmethod
+    def _parse_vote_limit(request):
         vote_limit_param = request.query_params.get('vote_limit')
         try:
-            vote_limit = None if vote_limit_param in (None, '', 'all') else max(1, int(vote_limit_param))
+            return None if vote_limit_param in (None, '', 'all') else max(1, int(vote_limit_param))
         except (TypeError, ValueError):
-            vote_limit = 50
+            return 50
 
-        queryset = (
-            self.filter_queryset(self.get_queryset())
-            .filter(chamber__icontains='deput')
-            .order_by('mp_name')
+    @staticmethod
+    def _paginated_response(*, queryset, serializer, page, limit, extra=None):
+        total = queryset.count()
+        offset = (page - 1) * limit
+        items = queryset[offset:offset + limit]
+        payload = {
+            'page': page,
+            'limit': limit,
+            'total': total,
+            'totalPages': math.ceil(total / limit) if total else 1,
+            'parliamentarians': serializer(items, many=True).data,
+        }
+        if extra:
+            payload.update(extra)
+        return Response(payload)
+
+    def _base_deputies_queryset(self):
+        return self.filter_queryset(self.get_queryset()).filter(chamber__icontains='deput').order_by('mp_name')
+
+    @action(detail=False, methods=['get'], url_path='directory')
+    def directory(self, request):
+        page = self._parse_page(request)
+        limit = self._parse_limit(request)
+        queryset = self._base_deputies_queryset()
+
+        return self._paginated_response(
+            queryset=queryset,
+            serializer=self.get_serializer,
+            page=page,
+            limit=limit,
         )
 
+    @action(detail=False, methods=['get'], url_path='metadata')
+    def metadata(self, request):
+        deputies = Parliamentarian.objects.filter(chamber__icontains='deput')
+        counties = sorted(
+            county
+            for county in deputies.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct()
+        )
+        parties = sorted(
+            party
+            for party in deputies.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct()
+        )
+        chamber_counts = Counter(
+            chamber or 'unknown'
+            for chamber in Parliamentarian.objects.values_list('chamber', flat=True)
+        )
+
+        return Response({
+            'counties': counties,
+            'parties': parties,
+            'chambers': dict(chamber_counts),
+            'hasCountyData': bool(counties),
+        })
+
+    @action(detail=False, methods=['get'], url_path='vote-map')
+    def vote_map(self, request):
+        page = self._parse_page(request)
+        limit = self._parse_limit(request)
+        vote_limit = self._parse_vote_limit(request)
+
+        queryset = self._base_deputies_queryset()
         total = queryset.count()
         offset = (page - 1) * limit
         parliamentarians = queryset[offset:offset + limit]
@@ -95,6 +156,48 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             'page': page,
             'limit': limit,
             'voteLimit': vote_limit,
+            'total': total,
+            'totalPages': math.ceil(total / limit) if total else 1,
+            'parliamentarians': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='my-representatives')
+    def my_representatives(self, request):
+        profile = getattr(request.user, 'profile', None) if getattr(request.user, 'is_authenticated', False) else None
+        county = (request.query_params.get('county') or getattr(profile, 'county', '') or '').strip()
+        if not county:
+            return Response(
+                {'detail': 'Query parameter "county" is required.'},
+                status=400,
+            )
+
+        party = (request.query_params.get('party') or getattr(profile, 'preferred_party', '') or '').strip()
+        page = self._parse_page(request)
+        limit = self._parse_limit(request, default=20)
+        vote_limit = self._parse_vote_limit(request)
+
+        queryset = self._base_deputies_queryset().filter(county__icontains=county)
+        if party:
+            queryset = queryset.filter(party__iexact=party)
+
+        total = queryset.count()
+        offset = (page - 1) * limit
+        parliamentarians = queryset[offset:offset + limit]
+        serializer = ParliamentarianVoteMapSerializer(
+            parliamentarians,
+            many=True,
+            context={**self.get_serializer_context(), 'vote_limit': vote_limit},
+        )
+
+        return Response({
+            'page': page,
+            'limit': limit,
+            'voteLimit': vote_limit,
+            'filters': {
+                'county': county,
+                'party': party or None,
+                'chamber': 'deputies',
+            },
             'total': total,
             'totalPages': math.ceil(total / limit) if total else 1,
             'parliamentarians': serializer.data,

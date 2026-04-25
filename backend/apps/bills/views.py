@@ -1,4 +1,5 @@
 import math
+from django.db.models import Prefetch, Q
 from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,6 +10,9 @@ from .models import Bill, AIAnalysis, VoteSession
 from .filters import BillFilterSet
 from apps.parliamentarians.models import MPVote
 from .serializers import BillListSerializer, BillDetailSerializer, MPVoteInBillSerializer
+from apps.parliamentarians.serializers import ParliamentarianVoteMapSerializer
+from apps.parliamentarians.models import Parliamentarian, MPVote as ParliamentarianVote
+from apps.profiles.models import Profile
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bill.objects.all().order_by('-registered_at')
@@ -25,16 +29,24 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return Bill.objects.all().order_by('-registered_at')
 
+    @staticmethod
+    def _parse_page(request):
+        try:
+            return max(1, int(request.query_params.get('page', 1)))
+        except (ValueError, TypeError):
+            return 1
+
+    @staticmethod
+    def _parse_limit(request, default=20, maximum=100):
+        try:
+            return max(1, min(maximum, int(request.query_params.get('limit', default))))
+        except (ValueError, TypeError):
+            return default
+
     def list(self, request, *args, **kwargs):
         """Return paginated bills in the shape the frontend expects."""
-        try:
-            page = max(1, int(request.query_params.get('page', 1)))
-        except (ValueError, TypeError):
-            page = 1
-        try:
-            limit = max(1, min(100, int(request.query_params.get('limit', 20))))
-        except (ValueError, TypeError):
-            limit = 20
+        page = self._parse_page(request)
+        limit = self._parse_limit(request)
 
         queryset = self.filter_queryset(self.get_queryset())
         total = queryset.count()
@@ -148,26 +160,91 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
-        user_interests = getattr(request.user.profile, 'interests', [])
-        
-        if not user_interests:
-            return Response({"results": []})
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        page = self._parse_page(request)
+        limit = self._parse_limit(request)
 
-        from django.db.models import Q
-        
+        user_interests = list(getattr(profile, 'interests', []) or [])
+        persona_tags = list(getattr(profile, 'persona_tags', []) or [])
+        preferred_party = (getattr(profile, 'preferred_party', None) or '').strip() or None
+        county = (getattr(profile, 'county', None) or '').strip() or None
+
         query = Q()
         for interest in user_interests:
             query |= Q(ai_analysis__impact_categories__contains=[interest])
-        
-        queryset = self.filter_queryset(self.get_queryset()).filter(query)
-        
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = BillListSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        for persona in persona_tags:
+            query |= Q(ai_analysis__affected_profiles__contains=[persona])
 
-        serializer = BillListSerializer(queryset, many=True)
-        return Response(serializer.data)
+        queryset = self.filter_queryset(self.get_queryset())
+        if query.children:
+            queryset = queryset.filter(query).distinct()
+        else:
+            queryset = queryset.none()
+
+        total = queryset.count()
+        offset = (page - 1) * limit
+        bills = queryset[offset:offset + limit]
+        serializer = BillListSerializer(bills, many=True)
+
+        vote_limit = 5
+        representatives_queryset = self._get_representatives_queryset(county=county, preferred_party=preferred_party)
+        representatives_serializer = ParliamentarianVoteMapSerializer(
+            representatives_queryset[:6],
+            many=True,
+            context={**self.get_serializer_context(), 'vote_limit': vote_limit},
+        )
+
+        return Response({
+            'page': page,
+            'limit': limit,
+            'total': total,
+            'totalPages': math.ceil(total / limit) if total else 1,
+            'bills': serializer.data,
+            'profile': {
+                'county': county,
+                'preferredParty': preferred_party,
+                'interests': user_interests,
+                'personaTags': persona_tags,
+                'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
+            },
+            'appliedFilters': {
+                'impactCategories': user_interests,
+                'affectedProfiles': persona_tags,
+                'county': county,
+                'party': preferred_party,
+            },
+            'myRepresentatives': {
+                'total': representatives_queryset.count(),
+                'voteLimit': vote_limit,
+                'parliamentarians': representatives_serializer.data,
+            },
+        })
+
+    @staticmethod
+    def _get_representatives_queryset(*, county, preferred_party):
+        vote_queryset = (
+            ParliamentarianVote.objects
+            .select_related(
+                'vote_session',
+                'vote_session__bill',
+                'vote_session__bill__ai_analysis',
+            )
+            .order_by('-vote_session__date')
+        )
+        queryset = (
+            Parliamentarian.objects
+            .filter(chamber__icontains='deput')
+            .select_related('impact_score')
+            .prefetch_related(
+                Prefetch('votes', queryset=vote_queryset, to_attr='prefetched_votes')
+            )
+            .order_by('mp_name')
+        )
+        if county:
+            queryset = queryset.filter(county__icontains=county)
+        if preferred_party:
+            queryset = queryset.filter(party__iexact=preferred_party)
+        return queryset
 
 class AdminStatsView(APIView):
     permission_classes = [permissions.IsAdminUser]

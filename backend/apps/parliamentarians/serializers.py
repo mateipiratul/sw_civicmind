@@ -64,7 +64,7 @@ class ParliamentarianListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Parliamentarian
-        fields = ('mp_slug', 'mp_name', 'party', 'county', 'chamber', 'impact_score')
+        fields = ('mp_slug', 'mp_name', 'party', 'county', 'chamber', 'email', 'impact_score')
 
 
 class ParliamentarianDetailSerializer(serializers.ModelSerializer):

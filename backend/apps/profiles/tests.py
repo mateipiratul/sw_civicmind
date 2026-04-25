@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from unittest.mock import patch
 
 from .models import Profile
 
@@ -49,6 +50,7 @@ class ProfileViewSetTests(APITestCase):
             reverse("profile-me"),
             {
                 "county": "Cluj",
+                "preferred_party": "USR",
                 "work_domain": "it",
                 "employment_status": "freelancer_pfa",
                 "personal_interest_areas": ["digitalization", "taxes"],
@@ -64,6 +66,7 @@ class ProfileViewSetTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["county"], "Cluj")
+        self.assertEqual(response.data["preferred_party"], "USR")
         self.assertEqual(response.data["work_domain"], "it")
         self.assertIn("it", response.data["interests"])
         self.assertIn("fiscal", response.data["interests"])
@@ -72,13 +75,19 @@ class ProfileViewSetTests(APITestCase):
         self.assertIn("it", response.data["persona_tags"])
         self.assertTrue(response.data["questionnaire_completed"])
 
-    def test_questionnaire_metadata_endpoint_returns_form_options(self):
+    @patch("apps.parliamentarians.models.Parliamentarian.objects")
+    def test_questionnaire_metadata_endpoint_returns_form_options(self, mock_manager):
+        deputies = mock_manager.filter.return_value
+        deputies.exclude.return_value.exclude.return_value.values_list.return_value.distinct.return_value = ["USR", "PSD"]
+
         response = self.client.get(reverse("profile-questionnaire"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("party_options", response.data)
         self.assertIn("work_domains", response.data)
         self.assertIn("employment_statuses", response.data)
         self.assertIn("personal_interest_areas", response.data)
+        self.assertEqual(response.data["party_options"], [{"value": "PSD", "label": "PSD"}, {"value": "USR", "label": "USR"}])
         self.assertGreater(len(response.data["work_domains"]), 0)
 
     def test_me_rejects_invalid_questionnaire_values(self):
