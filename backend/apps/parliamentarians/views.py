@@ -1,13 +1,16 @@
 from rest_framework import viewsets, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Parliamentarian
+from .filters import ParliamentarianFilterSet
 from .serializers import ParliamentarianListSerializer, ParliamentarianDetailSerializer
 
 
 class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = ParliamentarianFilterSet
     search_fields = ['mp_name', 'party', 'county']
 
     def get_queryset(self):

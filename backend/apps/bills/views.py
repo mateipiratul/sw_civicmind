@@ -3,15 +3,18 @@ from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
 from .models import Bill, AIAnalysis, VoteSession
+from .filters import BillFilterSet
 from apps.parliamentarians.models import MPVote
 from .serializers import BillListSerializer, BillDetailSerializer, MPVoteInBillSerializer
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bill.objects.all().order_by('-registered_at')
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = BillFilterSet
     search_fields = ['title', 'bill_number', 'initiator_name']
 
     def get_serializer_class(self):
@@ -20,11 +23,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         return BillDetailSerializer
 
     def get_queryset(self):
-        qs = Bill.objects.all().order_by('-registered_at')
-        status = self.request.query_params.get('status')
-        if status:
-            qs = qs.filter(status=status)
-        return qs
+        return Bill.objects.all().order_by('-registered_at')
 
     def list(self, request, *args, **kwargs):
         """Return paginated bills in the shape the frontend expects."""
@@ -37,7 +36,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         except (ValueError, TypeError):
             limit = 20
 
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         total = queryset.count()
         offset = (page - 1) * limit
         bills = queryset[offset:offset + limit]
@@ -75,10 +74,10 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         from django.utils import timezone
         
         past_week = timezone.now().date() - timedelta(days=7)
-        queryset = self.get_queryset().filter(registered_at__gte=past_week).order_by('-registered_at')
+        queryset = self.filter_queryset(self.get_queryset()).filter(registered_at__gte=past_week).order_by('-registered_at')
         
         if not queryset.exists():
-            queryset = self.get_queryset().order_by('-registered_at')[:10]
+            queryset = self.filter_queryset(self.get_queryset()).order_by('-registered_at')[:10]
         
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -160,7 +159,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         for interest in user_interests:
             query |= Q(ai_analysis__impact_categories__contains=[interest])
         
-        queryset = self.get_queryset().filter(query)
+        queryset = self.filter_queryset(self.get_queryset()).filter(query)
         
         page = self.paginate_queryset(queryset)
         if page is not None:
