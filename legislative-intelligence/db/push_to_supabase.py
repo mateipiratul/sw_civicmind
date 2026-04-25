@@ -14,11 +14,15 @@ import io
 from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from dotenv import load_dotenv
 from supabase import create_client, Client
 
-load_dotenv()
+from env_setup import load_project_env
+
+load_project_env()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -171,6 +175,8 @@ def push_impact_scores(db: Client, path: Path) -> None:
     rows = [
         {
             "mp_slug":          row.get("mp_slug"),
+            "mp_name":          row.get("mp_name"),
+            "party":            row.get("party"),
             "score":            row.get("score"),
             "total_votes":      row.get("total_votes"),
             "for_count":        row.get("for_count"),

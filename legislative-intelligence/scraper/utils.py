@@ -11,12 +11,12 @@ _VOTE_TYPE_KEYWORDS: dict[str, list[str]] = {
 }
 
 STATUS_MAP: dict[str, list[str]] = {
-    "la_comisii":      ["la comisii", "comisii sesizate"],
-    "la_senat":        ["la senat", "trimis la senat"],
-    "la_promulgare":   ["la promulgare"],
-    "lege":            ["lege nr.", "promulgat", "publicat"],
-    "respins":         ["respins"],
-    "incetat":         ["încetat", "incetat", "procedura legislativa încetat"],
+    "lege":            ["lege nr", "promulgat", "publicat in monitorul oficial"],
+    "la_promulgare":   ["trimis la promulgare", "la promulgare"],
+    "respins":         ["respins", "respingere definitiva"],
+    "incetat":         ["incetat", "procedura legislativa incetata"],
+    "la_senat":        ["trimis la senat", "la senat", "adoptat de camera deputatilor"],
+    "la_comisii":      ["la comisii", "comisii sesizate", "sesizata in fond"],
 }
 
 
@@ -42,6 +42,13 @@ def classify_vote_type(description: str) -> str:
     return "procedural"
 
 
+def normalize_text(text: str) -> str:
+    text = unicodedata.normalize("NFD", text or "")
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
+    text = re.sub(r"\s+", " ", text.lower())
+    return text.strip()
+
+
 def extract_bill_number(description: str) -> Optional[str]:
     # Matches: PL-x 147/2026, Pl 1/2026, PL 545/2025, etc.
     match = re.search(r"P[Ll][-x\s]*(\d+)/(\d{4})", description, re.IGNORECASE)
@@ -51,7 +58,7 @@ def extract_bill_number(description: str) -> Optional[str]:
 
 
 def detect_status(text: str) -> str:
-    lower = text.lower()
+    lower = normalize_text(text)
     for status, keywords in STATUS_MAP.items():
         if any(kw in lower for kw in keywords):
             return status

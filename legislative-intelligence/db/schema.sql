@@ -73,6 +73,13 @@ create table if not exists public.ai_analyses (
     confidence double precision
 );
 
+alter table public.ai_analyses add column if not exists title_short text;
+alter table public.ai_analyses add column if not exists arguments jsonb not null default '{}'::jsonb;
+alter table public.ai_analyses add column if not exists controversy_score double precision;
+alter table public.ai_analyses add column if not exists passed_by text;
+alter table public.ai_analyses add column if not exists dominant_party text;
+alter table public.ai_analyses add column if not exists vote_date date;
+
 create table if not exists public.impact_scores (
     mp_slug text primary key references public.parliamentarians(mp_slug) on delete cascade,
     score double precision,
@@ -85,6 +92,11 @@ create table if not exists public.impact_scores (
     narrative text,
     calculated_at timestamptz
 );
+
+alter table public.impact_scores add column if not exists mp_name text;
+alter table public.impact_scores add column if not exists party text;
+alter table public.impact_scores add column if not exists categories_voted jsonb not null default '[]'::jsonb;
+alter table public.impact_scores add column if not exists narrative text;
 
 create table if not exists public.users (
     user_id text primary key,

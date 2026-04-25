@@ -7,6 +7,8 @@ Run:
     uvicorn api.main:app --reload --port 8000
 """
 import json
+import subprocess
+import sys
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
@@ -362,6 +364,61 @@ class NotificationDeliverRequest(BaseModel):
     limit: int = 100
 
 
+class RAGSearchRequest(BaseModel):
+    query: str
+    top_k: int = 8
+    threshold: float = 0.72
+    source: Optional[str] = None
+    bill_idp: Optional[int] = None
+    document_type: Optional[str] = None
+    exclude_bill_idp: Optional[int] = None
+
+
+class RAGChatRequest(BaseModel):
+    question: str
+    top_k: int = 8
+    threshold: float = 0.72
+    source: Optional[str] = None
+    bill_idp: Optional[int] = None
+    exclude_bill_idp: Optional[int] = None
+
+
+class RAGBillCompareRequest(BaseModel):
+    idp: int
+    top_k: int = 8
+    threshold: float = 0.72
+    source: Optional[str] = None
+
+
+class RAGReindexRequest(BaseModel):
+    source: str = "legislatie-just"  # bills | legislatie-just
+    all: bool = False
+    file: Optional[str] = None
+    year: Optional[int] = None
+    from_year: int = 1989
+    to_year: int = 2026
+    page_size: int = 50
+    max_pages: Optional[int] = None
+    limit: Optional[int] = None
+    changed_only: bool = True
+    dry_run: bool = False
+
+
+class RAGEvalRequest(BaseModel):
+    cases: str = "evals/rag_queries.json"
+    limit: Optional[int] = None
+    report: str = "data/processed/rag_eval_last.json"
+
+
+class RAGExplainMatchRequest(BaseModel):
+    query: str
+    chunk_id: str
+    source: Optional[str] = None
+    bill_idp: Optional[int] = None
+    document_type: Optional[str] = None
+    exclude_bill_idp: Optional[int] = None
+
+
 @app.post("/qa")
 def ask_question(req: QARequest):
     bill = _bills_by_idp().get(req.idp)
@@ -389,6 +446,266 @@ def draft_email(req: MessengerRequest):
     from agents.messenger import run_messenger
     draft = run_messenger(bill, req.mp_name, req.user_name, req.stance)
     return {"idp": req.idp, "draft": draft}
+
+
+@app.get("/rag/health")
+def get_rag_health():
+    try:
+        from agents.rag_tools import rag_health
+        return {"status": "ok", **rag_health()}
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/rag/search")
+def rag_search(req: RAGSearchRequest):
+    if not req.query.strip():
+        raise HTTPException(status_code=422, detail="query cannot be empty")
+    try:
+        from agents.rag_tools import search_legislation_chunks
+        items = search_legislation_chunks(
+            req.query,
+            top_k=req.top_k,
+            threshold=req.threshold,
+            source=req.source,
+            bill_idp=req.bill_idp,
+            document_type=req.document_type,
+            exclude_bill_idp=req.exclude_bill_idp,
+        )
+        return {"query": req.query, "total": len(items), "items": items}
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/rag/chat")
+def rag_chat(req: RAGChatRequest):
+    if not req.question.strip():
+        raise HTTPException(status_code=422, detail="question cannot be empty")
+    try:
+        from agents.rag import run_rag_chat
+        return run_rag_chat(
+            req.question,
+            top_k=req.top_k,
+            threshold=req.threshold,
+            source=req.source,
+            bill_idp=req.bill_idp,
+            exclude_bill_idp=req.exclude_bill_idp,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/rag/bills/{idp}/context")
+def rag_bill_context(idp: int):
+    try:
+        from agents.rag_tools import get_bill_context
+        return get_bill_context(idp)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/rag/documents/{document_id}")
+def rag_document_detail(document_id: str):
+    try:
+        from agents.rag_tools import get_document_by_id
+        return get_document_by_id(document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/rag/chunks/{chunk_id}")
+def rag_chunk_detail(chunk_id: str):
+    try:
+        from agents.rag_tools import get_chunk_by_id
+        return get_chunk_by_id(chunk_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/rag/chunks/{chunk_id}/excerpt")
+def rag_chunk_excerpt(
+    chunk_id: str,
+    query: Optional[str] = Query(None, description="Optional query used to focus the excerpt"),
+    sentences: int = Query(3, ge=1, le=8),
+    max_chars: int = Query(1200, ge=200, le=4000),
+):
+    try:
+        from agents.rag_tools import get_chunk_excerpt
+        return get_chunk_excerpt(
+            chunk_id,
+            query=query,
+            max_sentences=sentences,
+            max_chars=max_chars,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/rag/explain-match")
+def rag_explain_match(req: RAGExplainMatchRequest):
+    if not req.query.strip():
+        raise HTTPException(status_code=422, detail="query cannot be empty")
+    try:
+        from agents.rag_tools import explain_chunk_match
+        return explain_chunk_match(
+            req.query,
+            req.chunk_id,
+            source=req.source,
+            bill_idp=req.bill_idp,
+            document_type=req.document_type,
+            exclude_bill_idp=req.exclude_bill_idp,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/rag/bills/compare")
+def rag_compare_bill(req: RAGBillCompareRequest):
+    try:
+        from agents.rag_tools import compare_bill_to_corpus
+        return compare_bill_to_corpus(
+            req.idp,
+            top_k=req.top_k,
+            threshold=req.threshold,
+            source=req.source,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/rag/reindex")
+def rag_reindex(req: RAGReindexRequest):
+    if req.source not in ("bills", "legislatie-just"):
+        raise HTTPException(status_code=422, detail="source must be 'bills' or 'legislatie-just'")
+    if req.source == "bills" and not req.all and not req.file:
+        raise HTTPException(status_code=422, detail="source='bills' requires all=true or file")
+
+    cmd = [sys.executable, "rag_index.py", "--source", req.source]
+    if req.all:
+        cmd.append("--all")
+    if req.file:
+        cmd.extend(["--file", req.file])
+    if req.year is not None:
+        cmd.extend(["--year", str(req.year)])
+    cmd.extend(["--from-year", str(req.from_year), "--to-year", str(req.to_year)])
+    cmd.extend(["--page-size", str(req.page_size)])
+    if req.max_pages is not None:
+        cmd.extend(["--max-pages", str(req.max_pages)])
+    if req.limit is not None:
+        cmd.extend(["--limit", str(req.limit)])
+    if req.changed_only:
+        cmd.append("--changed-only")
+    if req.dry_run:
+        cmd.append("--dry-run")
+
+    root = Path(__file__).resolve().parents[1]
+    try:
+        completed = subprocess.run(
+            cmd,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=True,
+        )
+        return {
+            "status": "ok",
+            "command": cmd,
+            "stdout": completed.stdout[-4000:],
+            "stderr": completed.stderr[-2000:],
+        }
+    except subprocess.CalledProcessError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "command": cmd,
+                "returncode": exc.returncode,
+                "stdout": exc.stdout[-4000:] if exc.stdout else "",
+                "stderr": exc.stderr[-2000:] if exc.stderr else "",
+            },
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "command": cmd,
+                "stdout": (exc.stdout or "")[-4000:],
+                "stderr": (exc.stderr or "")[-2000:],
+                "message": "rag reindex timed out",
+            },
+        )
+
+
+@app.get("/rag/eval-report")
+def rag_eval_report():
+    path = Path("data/processed/rag_eval_last.json")
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="No RAG eval report found yet")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@app.post("/rag/eval")
+def rag_eval(req: RAGEvalRequest | None = None):
+    payload = req or RAGEvalRequest()
+    cmd = [sys.executable, "eval_rag.py", "--cases", payload.cases, "--report", payload.report]
+    if payload.limit is not None:
+        cmd.extend(["--limit", str(payload.limit)])
+
+    root = Path(__file__).resolve().parents[1]
+    try:
+        completed = subprocess.run(
+            cmd,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=True,
+        )
+        report_path = root / payload.report
+        report = (
+            json.loads(report_path.read_text(encoding="utf-8"))
+            if report_path.exists()
+            else None
+        )
+        return {
+            "status": "ok",
+            "command": cmd,
+            "stdout": completed.stdout[-4000:],
+            "stderr": completed.stderr[-2000:],
+            "report": report,
+        }
+    except subprocess.CalledProcessError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "command": cmd,
+                "returncode": exc.returncode,
+                "stdout": exc.stdout[-4000:] if exc.stdout else "",
+                "stderr": exc.stderr[-2000:] if exc.stderr else "",
+            },
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "command": cmd,
+                "stdout": (exc.stdout or "")[-4000:],
+                "stderr": (exc.stderr or "")[-2000:],
+                "message": "rag eval timed out",
+            },
+        )
 
 
 # ── Stats (useful for dashboard overview) ─────────────────────────────────────
