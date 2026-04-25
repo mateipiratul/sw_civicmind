@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import React, { useEffect, useMemo, useState, useRef, type CSSProperties, type ReactNode } from "react";
 import { Link, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { api } from "@/lib/api";
-import type { Bill } from "@/lib/api";
+import { api, type Bill, type RagSource, type BillVotesResponse } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowUpRight,
   Calendar,
+  ChevronDown,
   ChevronLeft,
   FileText,
   MessageSquareText,
   Scale,
+  Send,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
@@ -212,6 +213,19 @@ function BillDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Votes
+  const [votes, setVotes] = useState<BillVotesResponse | null>(null);
+  const [votesExpanded, setVotesExpanded] = useState(false);
+  const [voteFilter, setVoteFilter] = useState<"Toți" | "Pentru" | "Contra" | "Abținere" | "Absent">("Toți");
+  const [partyFilter, setPartyFilter] = useState("Toate Partidele");
+
+  // Q&A
+  const [qaQuestion, setQaQuestion] = useState("");
+  const [qaAnswer, setQaAnswer] = useState("");
+  const [qaLoading, setQaLoading] = useState(false);
+  const [qaSources, setQaSources] = useState<RagSource[]>([]);
+  const qaAnswerRef = useRef<HTMLDivElement>(null);
+
   const billId = Number.parseInt(id, 10);
 
   useEffect(() => {
@@ -242,6 +256,63 @@ function BillDetailPage() {
       active = false;
     };
   }, [billId]);
+
+  useEffect(() => {
+    api.getBillVotes(billId).then(setVotes).catch(() => {});
+  }, [billId]);
+
+  const allVotedMPs = useMemo(() => {
+    if (!votes) return [];
+    return [
+      ...votes.votes.for.map(v => ({ ...v, bucket: "Pentru" as const })),
+      ...votes.votes.against.map(v => ({ ...v, bucket: "Contra" as const })),
+      ...votes.votes.abstain.map(v => ({ ...v, bucket: "Abținere" as const })),
+      ...votes.votes.absent.map(v => ({ ...v, bucket: "Absent" as const })),
+    ];
+  }, [votes]);
+
+  const uniqueParties = useMemo(
+    () => [...new Set(allVotedMPs.map(v => v.party))].sort(),
+    [allVotedMPs],
+  );
+
+  const filteredMPs = useMemo(
+    () => allVotedMPs.filter(mp => {
+      const matchVote = voteFilter === "Toți" || mp.bucket === voteFilter;
+      const matchParty = partyFilter === "Toate Partidele" || mp.party === partyFilter;
+      return matchVote && matchParty;
+    }),
+    [allVotedMPs, voteFilter, partyFilter],
+  );
+
+  useEffect(() => {
+    if (qaAnswerRef.current) {
+      qaAnswerRef.current.scrollTop = qaAnswerRef.current.scrollHeight;
+    }
+  }, [qaAnswer]);
+
+  const handleQaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = qaQuestion.trim();
+    if (!q || qaLoading) return;
+    setQaQuestion("");
+    setQaAnswer("");
+    setQaSources([]);
+    setQaLoading(true);
+    try {
+      await api.streamRagChat(q, { bill_idp: billId }, {
+        onEvent: (event) => {
+          if (event.type === "token") setQaAnswer(prev => prev + event.delta);
+          if (event.type === "sources") setQaSources(event.items);
+          if (event.type === "done") setQaSources(event.sources);
+        },
+      });
+    } catch {
+      setQaAnswer("A apărut o eroare. Încearcă din nou.");
+    } finally {
+      setQaLoading(false);
+    }
+  };
 
   const sourceDocuments = useMemo(() => {
     if (!bill) {
@@ -542,32 +613,184 @@ function BillDetailPage() {
                 </div>
               </div>
             </Section>
+
+            {/* Civic Q&A */}
+            <Section eyebrow="Civic Q&A" title="Întreabă asistentul AI" icon={<MessageSquareText size={17} />}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {(qaAnswer || qaLoading) && (
+                  <div
+                    ref={qaAnswerRef}
+                    style={{
+                      padding: "14px 16px", borderRadius: 10, background: "#fafafa",
+                      border: "1px solid #e8e8e8", fontSize: 13.5, lineHeight: 1.7,
+                      color: "#333", maxHeight: 320, overflowY: "auto", whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {qaLoading && !qaAnswer
+                      ? <span style={{ color: "#aaa" }}>Se generează răspunsul...</span>
+                      : qaAnswer}
+                  </div>
+                )}
+
+                {qaSources.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {qaSources.slice(0, 4).map((src, i) => (
+                      <div key={i} style={{
+                        display: "flex", alignItems: "center", gap: 5, padding: "4px 8px",
+                        borderRadius: 6, background: "#f5f5f5", border: "1px solid #e8e8e8",
+                        fontSize: 11.5, color: "#666", maxWidth: 260, overflow: "hidden",
+                      }}>
+                        <FileText size={11} style={{ flexShrink: 0, color: "#aaa" }} />
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {src.title || src.document_id}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={handleQaSubmit} style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="text"
+                    value={qaQuestion}
+                    onChange={e => setQaQuestion(e.target.value)}
+                    placeholder="Ex: Cum afectează această lege pensionarii?"
+                    disabled={qaLoading}
+                    style={{
+                      flex: 1, padding: "10px 14px", fontSize: 13.5,
+                      border: "1px solid #e2e2e2", borderRadius: 8,
+                      background: "white", color: "#111", outline: "none",
+                      fontFamily: "var(--font)",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={qaLoading || !qaQuestion.trim()}
+                    style={{
+                      padding: "10px 14px", borderRadius: 8, border: "none",
+                      background: qaLoading || !qaQuestion.trim() ? "#ccc" : "#111",
+                      color: "white", cursor: qaLoading || !qaQuestion.trim() ? "default" : "pointer",
+                      display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
+                      fontFamily: "var(--font)", fontSize: 13, fontWeight: 500,
+                    }}
+                  >
+                    <Send size={14} />
+                    {qaLoading ? "Se generează..." : "Trimite"}
+                  </button>
+                </form>
+              </div>
+            </Section>
           </div>
 
           <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            {/* Vote Prediction */}
+            {/* Votes */}
             <section style={sectionCardStyle}>
-              <div style={{ ...eyebrowStyle, marginBottom: 10 }}>Predicție Vot</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[
-                  { label: "Pentru", pct: 55, color: "#16a34a", bg: "#dcfce7" },
-                  { label: "Împotrivă", pct: 30, color: "#dc2626", bg: "#fee2e2" },
-                  { label: "Abținere", pct: 15, color: "#888", bg: "#f0f0f0" },
-                ].map(({ label, pct, color, bg }) => (
-                  <div key={label}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 5 }}>
-                      <span style={{ color: "#555", fontWeight: 500 }}>{label}</span>
-                      <span style={{ color, fontWeight: 600 }}>{pct}%</span>
+              <button
+                onClick={() => setVotesExpanded(v => !v)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: votes ? 12 : 0 }}
+              >
+                <div style={eyebrowStyle}>Voturi</div>
+                <ChevronDown size={13} style={{ color: "#aaa", transform: votesExpanded ? "rotate(180deg)" : "none", transition: "transform 0.15s", flexShrink: 0 }} />
+              </button>
+
+              {votes ? (() => {
+                const s = votes.vote_session.summary;
+                const total = s.present || (s.for + s.against + s.abstain + s.absent);
+                const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
+                const bars = [
+                  { label: "Pentru", count: s.for, color: "#16a34a" },
+                  { label: "Contra", count: s.against, color: "#dc2626" },
+                  { label: "Abținere", count: s.abstain, color: "#888" },
+                  { label: "Absent", count: s.absent, color: "#ccc" },
+                ];
+                return (
+                  <>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {bars.map(({ label, count, color }) => (
+                        <div key={label}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}>
+                            <span style={{ color: "#555", fontWeight: 500 }}>{label}</span>
+                            <span style={{ color, fontWeight: 600 }}>{count} ({pct(count)}%)</span>
+                          </div>
+                          <div style={{ height: 5, borderRadius: 99, background: "#f0f0f0", overflow: "hidden" }}>
+                            <div style={{ width: `${pct(count)}%`, height: "100%", background: color, borderRadius: 99 }} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ height: 6, borderRadius: 99, background: "#f0f0f0", overflow: "hidden" }}>
-                      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 99 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ fontSize: 11, color: "#aaa", marginTop: 12, lineHeight: 1.5 }}>
-                Bazat pe alinierea partidelor și declarațiile publice.
-              </p>
+
+                    {votesExpanded && (
+                      <div style={{ marginTop: 14, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
+                        {/* Vote type filter */}
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+                          {(["Toți", "Pentru", "Contra", "Abținere", "Absent"] as const).map(tab => (
+                            <button
+                              key={tab}
+                              onClick={() => setVoteFilter(tab)}
+                              style={{
+                                fontSize: 11, padding: "3px 8px", borderRadius: 4, cursor: "pointer",
+                                border: `1px solid ${voteFilter === tab ? "#111" : "#e0e0e0"}`,
+                                background: voteFilter === tab ? "#111" : "transparent",
+                                color: voteFilter === tab ? "white" : "#666",
+                                fontFamily: "var(--font)",
+                              }}
+                            >
+                              {tab}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Party filter */}
+                        {uniqueParties.length > 1 && (
+                          <select
+                            value={partyFilter}
+                            onChange={e => setPartyFilter(e.target.value)}
+                            style={{
+                              width: "100%", padding: "5px 8px", fontSize: 12,
+                              border: "1px solid #e2e2e2", borderRadius: 6,
+                              background: "white", color: "#111", marginBottom: 10,
+                              fontFamily: "var(--font)", outline: "none",
+                            }}
+                          >
+                            <option>Toate Partidele</option>
+                            {uniqueParties.map(p => <option key={p}>{p}</option>)}
+                          </select>
+                        )}
+
+                        {/* MP list */}
+                        <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+                          {filteredMPs.length === 0 ? (
+                            <div style={{ fontSize: 12, color: "#aaa", textAlign: "center", padding: "12px 0" }}>Nicio înregistrare.</div>
+                          ) : filteredMPs.map(mp => (
+                            <div
+                              key={`${mp.mp_slug}-${mp.bucket}`}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f5f5f5", gap: 6 }}
+                            >
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 11.5, fontWeight: 500, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mp.mp_name}</div>
+                                <div style={{ fontSize: 10.5, color: "#aaa" }}>{mp.party}</div>
+                              </div>
+                              <span style={{
+                                fontSize: 10.5, fontWeight: 600, flexShrink: 0,
+                                color: mp.bucket === "Pentru" ? "#16a34a" : mp.bucket === "Contra" ? "#dc2626" : "#aaa",
+                              }}>
+                                {mp.bucket}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#bbb", marginTop: 8 }}>
+                          {filteredMPs.length} / {allVotedMPs.length} voturi
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })() : (
+                <div style={{ fontSize: 12.5, color: "#aaa", textAlign: "center", padding: "10px 0" }}>
+                  Nu există date de vot.
+                </div>
+              )}
             </section>
 
             {/* Documents */}
@@ -631,50 +854,6 @@ function BillDetailPage() {
               </div>
             </Section>
 
-            {/* Civic Q&A */}
-            <section style={{ ...sectionCardStyle, background: "#f8f8f8" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ ...eyebrowStyle }}>Civic Q&A</div>
-                <p style={{ fontSize: 12.5, lineHeight: 1.55, color: "#555" }}>
-                  Ai întrebări despre cum afectează acest proiect municipalitatea ta? Întreabă asistentul AI.
-                </p>
-                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                  <input
-                    type="text"
-                    placeholder="Pune o întrebare..."
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      fontSize: 12.5,
-                      border: "1px solid #e2e2e2",
-                      borderRadius: 8,
-                      background: "white",
-                      color: "#111",
-                      outline: "none",
-                      fontFamily: "var(--font)",
-                    }}
-                  />
-                  {bill.source_url && (
-                    <a
-                      href={bill.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        padding: "8px 10px",
-                        borderRadius: 8,
-                        background: "#111",
-                        color: "white",
-                        display: "flex",
-                        alignItems: "center",
-                        textDecoration: "none",
-                      }}
-                    >
-                      <ArrowUpRight size={14} />
-                    </a>
-                  )}
-                </div>
-              </div>
-            </section>
           </aside>
         </div>
       </div>
