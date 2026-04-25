@@ -102,7 +102,6 @@ function RegisterPage() {
                       type={name.toLowerCase().includes("password") ? "password" : name === "email" ? "email" : "text"}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
                       disabled={isLoading}
                       style={{
                         padding: "9px 12px",
@@ -116,7 +115,10 @@ function RegisterPage() {
                         transition: "border-color 0.12s",
                       }}
                       onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "#888"; }}
-                      onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--border-input)"; field.handleBlur(); }}
+                      onBlur={(e) => { 
+                        (e.target as HTMLInputElement).style.borderColor = "var(--border-input)"; 
+                        field.handleBlur(); 
+                      }}
                     />
                   </div>
                 )}
