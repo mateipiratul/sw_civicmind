@@ -419,6 +419,41 @@ class RAGExplainMatchRequest(BaseModel):
     exclude_bill_idp: Optional[int] = None
 
 
+class UserProfileBody(BaseModel):
+    display_name: Optional[str] = None
+    auth_provider: Optional[str] = None
+    city: Optional[str] = None
+    county: Optional[str] = None
+    constituency: Optional[str] = None
+    occupation: Optional[str] = None
+    sector: Optional[str] = None
+    roles: list[str] = []
+    interests: list[str] = []
+    affected_profiles: list[str] = []
+    followed_bills: list[int] = []
+    followed_mps: list[str] = []
+    language: str = "ro"
+    explanation_preference: str = "brief"
+    onboarding_completed_at: Optional[str] = None
+
+
+class NotificationPreferencesBody(BaseModel):
+    categories: list[str] = []
+    profiles: list[str] = []
+    flags: list[str] = []
+    frequency: str = "weekly"
+    min_importance: str = "normal"
+    major_alerts: bool = True
+
+
+class UserProfileUpsertRequest(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    email_opt_in: Optional[bool] = None
+    profile: UserProfileBody
+    notification_preferences: Optional[NotificationPreferencesBody] = None
+
+
 @app.post("/qa")
 def ask_question(req: QARequest):
     bill = _bills_by_idp().get(req.idp)
@@ -446,6 +481,110 @@ def draft_email(req: MessengerRequest):
     from agents.messenger import run_messenger
     draft = run_messenger(bill, req.mp_name, req.user_name, req.stance)
     return {"idp": req.idp, "draft": draft}
+
+
+@app.get("/profiles/{user_id}")
+def get_profile(user_id: str):
+    try:
+        from personalization import get_user_profile
+        return get_user_profile(user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.put("/profiles/{user_id}")
+def put_profile(user_id: str, req: UserProfileUpsertRequest):
+    try:
+        from personalization import upsert_user_profile
+        return upsert_user_profile(user_id, req.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/profiles/{user_id}/personalization")
+def get_profile_personalization(
+    user_id: str,
+    limit: int = Query(10, ge=1, le=50),
+):
+    try:
+        from personalization import build_personalization_summary
+        return build_personalization_summary(user_id, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/profiles/{user_id}/follow/bill/{idp}")
+def follow_bill(user_id: str, idp: int):
+    try:
+        from personalization import follow_bill as _follow_bill
+        return _follow_bill(user_id, idp)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.delete("/profiles/{user_id}/follow/bill/{idp}")
+def unfollow_bill(user_id: str, idp: int):
+    try:
+        from personalization import unfollow_bill as _unfollow_bill
+        return _unfollow_bill(user_id, idp)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/profiles/{user_id}/follow/mp/{mp_slug}")
+def follow_mp(user_id: str, mp_slug: str):
+    try:
+        from personalization import follow_mp as _follow_mp
+        return _follow_mp(user_id, mp_slug)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.delete("/profiles/{user_id}/follow/mp/{mp_slug}")
+def unfollow_mp(user_id: str, mp_slug: str):
+    try:
+        from personalization import unfollow_mp as _unfollow_mp
+        return _unfollow_mp(user_id, mp_slug)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/feed")
+def get_feed(
+    user_id: Optional[str] = Query(None, description="Omit for anonymous chronological feed"),
+    limit: int = Query(20, ge=1, le=50),
+    category: Optional[str] = Query(None, description="Filter by impact category"),
+):
+    try:
+        if user_id:
+            from personalization import build_personalization_summary
+            result = build_personalization_summary(user_id, limit=limit)
+            items = result["recommended_bills"]
+            if category:
+                items = [
+                    i for i in items
+                    if category.casefold() in [c.casefold() for c in i.get("impact_categories", [])]
+                ]
+            return {
+                "mode": "personalized",
+                "user_id": user_id,
+                "ranking_strategy": result["feed_guidance"]["ranking_strategy"],
+                "total": len(items),
+                "items": items,
+            }
+        else:
+            from personalization import build_anonymous_feed
+            return build_anonymous_feed(limit=limit, category=category)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
 
 
 @app.get("/rag/health")
