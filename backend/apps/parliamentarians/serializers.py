@@ -95,3 +95,51 @@ class ParliamentarianDetailSerializer(serializers.ModelSerializer):
             .order_by('-vote_session__date')[:50]
         )
         return MPVoteSerializer(qs, many=True).data
+
+
+class ParliamentarianVoteMapSerializer(serializers.ModelSerializer):
+    impact_score = ImpactScoreSerializer(read_only=True)
+    votes = serializers.SerializerMethodField()
+    total_votes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Parliamentarian
+        fields = (
+            'mp_slug',
+            'mp_name',
+            'party',
+            'county',
+            'chamber',
+            'email',
+            'impact_score',
+            'total_votes',
+            'votes',
+        )
+
+    def get_votes(self, obj: Parliamentarian):
+        vote_limit = self.context.get('vote_limit')
+        votes = self._get_votes_queryset(obj)
+        if vote_limit is not None:
+            votes = votes[:vote_limit]
+        return MPVoteSerializer(votes, many=True).data
+
+    def get_total_votes(self, obj: Parliamentarian):
+        votes = getattr(obj, 'prefetched_votes', None)
+        if votes is not None:
+            return len(votes)
+        return obj.votes.count()
+
+    @staticmethod
+    def _get_votes_queryset(obj: Parliamentarian):
+        prefetched_votes = getattr(obj, 'prefetched_votes', None)
+        if prefetched_votes is not None:
+            return prefetched_votes
+        return list(
+            obj.votes
+            .select_related(
+                'vote_session',
+                'vote_session__bill',
+                'vote_session__bill__ai_analysis',
+            )
+            .order_by('-vote_session__date')
+        )
