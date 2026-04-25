@@ -135,6 +135,35 @@ interface AuthResponse {
   token: string;
 }
 
+export interface ImpactScore {
+  score: number;
+  total_votes: number;
+  for_count: number;
+  against_count: number;
+  abstain_count: number;
+  absent_count: number;
+  categories_voted: string[];
+  narrative: string;
+  calculated_at: string;
+}
+
+export interface Parliamentarian {
+  mp_slug: string;
+  mp_name: string;
+  party: string;
+  county: string;
+  chamber: string;
+  email?: string;
+  impact_score?: ImpactScore | null;
+}
+
+export interface PaginatedMPs {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Parliamentarian[];
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -174,7 +203,7 @@ class ApiClient {
   private getAuthHeader = (): Record<string, string> => {
     const token = localStorage.getItem("auth_token");
     if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
+    return { Authorization: `Token ${token}` };
   };
 
   private requestTo = async <T>(baseUrl: string, endpoint: string, options: RequestInit = {}): Promise<T> => {
@@ -218,14 +247,14 @@ class ApiClient {
 
   // Auth
   register = async (username: string, email: string, password: string): Promise<User> => {
-    const response = await this.request<AuthResponse>("/auth/register/", {
+    const response = await this.request<AuthResponse>("/api/auth/register/", {
       method: "POST",
       body: JSON.stringify({ username, email, password }),
     });
     return this.normalizeAuthUser(response);
   };
   login = async (username: string, password: string): Promise<User> => {
-    const response = await this.request<AuthResponse>("/auth/login/", {
+    const response = await this.request<AuthResponse>("/api/auth/login/", {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
@@ -245,6 +274,23 @@ class ApiClient {
 
   getMetadata = async (): Promise<{ impact_categories: string[], affected_profiles: string[], counties: string[] }> => {
     return this.request("/api/bills/metadata/");
+  };
+
+  // Parliamentarians
+  listMPs = async (params: { search?: string; county?: string; page?: number } = {}): Promise<PaginatedMPs> => {
+    const q = new URLSearchParams();
+    if (params.search) q.append("search", params.search);
+    if (params.county) q.append("county", params.county);
+    if (params.page && params.page > 1) q.append("page", String(params.page));
+    return this.request(`/api/mps/?${q}`);
+  };
+
+  getMP = async (slug: string): Promise<Parliamentarian> => {
+    return this.request(`/api/mps/${slug}/`);
+  };
+
+  getPersonalizedFeed = async (page = 1, limit = 10): Promise<PaginatedBills> => {
+    return this.request(`/api/bills/personalized/?page=${page}&limit=${limit}`);
   };
 
   // User

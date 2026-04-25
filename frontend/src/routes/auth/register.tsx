@@ -54,16 +54,7 @@ function RegisterPage() {
       >
         {/* Brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            style={{
-              width: 24,
-              height: 24,
-              background: "var(--primary)",
-              borderRadius: 6,
-              display: "block",
-              flexShrink: 0,
-            }}
-          />
+          <img src="/favicon.png" alt="CivicMind" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
           <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px" }}>
             CivicMind
           </span>

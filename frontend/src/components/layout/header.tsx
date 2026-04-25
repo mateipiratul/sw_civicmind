@@ -38,8 +38,8 @@ export function Header() {
       }}
     >
       {/* Logo */}
-      <Link to="/" style={{ display: "flex", alignItems: "center", gap: 7, textDecoration: "none", flexShrink: 0 }}>
-        <span style={{ width: 16, height: 16, background: "#111", borderRadius: 3, display: "block" }} />
+      <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
+        <img src="/favicon.png" alt="CivicMind" style={{ width: 22, height: 22, objectFit: "contain" }} />
         <span style={{ fontSize: 14, fontWeight: 600, color: "#111", letterSpacing: "-0.2px" }}>CivicMind</span>
       </Link>
 
@@ -47,7 +47,7 @@ export function Header() {
       <nav style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
         {[
           { label: "Feed", href: "/" },
-          { label: "MPs", href: "/mps" },
+          { label: "Parlamentari", href: "/mps" },
           { label: "Chat", href: "/chat" },
         ].map((item) => (
           <Link
