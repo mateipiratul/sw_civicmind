@@ -15,6 +15,31 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
             return BillListSerializer
         return BillDetailSerializer
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def feed(self, request):
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        # Get bills from the past 7 days based on registered_at
+        past_week = timezone.now().date() - timedelta(days=7)
+        queryset = self.get_queryset().filter(registered_at__gte=past_week).order_by('-registered_at')
+        
+        # Fallback: If no bills are found in the past week, just show the 10 most recent
+        if not queryset.exists():
+            queryset = self.get_queryset().order_by('-registered_at')[:10]
+        
+        if request.user.is_authenticated:
+            # TODO: Prioritise based on user preferences later
+            pass
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
         user_interests = getattr(request.user.profile, 'interests', [])
