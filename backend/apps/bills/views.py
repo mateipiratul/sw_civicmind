@@ -1,10 +1,10 @@
-from rest_framework import viewsets, permissions, filters, status
+import math
+from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from .models import Bill, AIAnalysis, VoteSession
-from apps.parliamentarians.models import Parliamentarian
 from .serializers import BillListSerializer, BillDetailSerializer
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
@@ -41,7 +41,6 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         offset = (page - 1) * limit
         bills = queryset[offset:offset + limit]
         serializer = BillListSerializer(bills, many=True)
-        import math
         return Response({
             'page': page,
             'limit': limit,
@@ -57,6 +56,8 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         profiles = ["student", "angajat", "pensionar", "pfa", "it", "parinte", "agricultor", "antreprenor", "pacient"]
         
         # Get unique counties from parliamentarians
+        # Lazy import to avoid circular dependency (parliamentarians -> bills -> parliamentarians)
+        from apps.parliamentarians.models import Parliamentarian
         counties = list(Parliamentarian.objects.values_list('county', flat=True).distinct())
         counties = [c for c in counties if c]
         counties.sort()
