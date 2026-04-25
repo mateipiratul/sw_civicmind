@@ -173,6 +173,10 @@ class ApiClient {
     return this.request(`/api/bills/${id}`);
   };
 
+  getMetadata = async (): Promise<{ impact_categories: string[], affected_profiles: string[], counties: string[] }> => {
+    return this.request("/api/bills/metadata/");
+  };
+
   // User
   getProfile = async (): Promise<User> => { return this.request("/api/profiles/me/"); };
   updateProfile = async (data: Partial<User>): Promise<User> => {
