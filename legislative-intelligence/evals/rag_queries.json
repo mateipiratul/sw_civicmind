@@ -1,0 +1,55 @@
+[
+  {
+    "name": "procurement_control_ex_ante",
+    "mode": "search",
+    "query": "achizitii publice control ex ante",
+    "top_k": 5,
+    "threshold": 0.72,
+    "expected_terms_any": ["achizitii", "publice", "control", "ex ante"],
+    "min_top_similarity": 0.75
+  },
+  {
+    "name": "health_order_social_insurance",
+    "mode": "search",
+    "query": "ordin ministrul sanatatii asigurari sociale",
+    "top_k": 5,
+    "threshold": 0.72,
+    "source": "legislatie-just",
+    "expected_source": "legislatie-just",
+    "expected_terms_any": ["sanatatii", "asigurari", "sociale", "ordin"],
+    "min_top_similarity": 0.77
+  },
+  {
+    "name": "government_bill_query",
+    "mode": "search",
+    "query": "proiect de lege guvernului camera deputatilor vot final",
+    "top_k": 5,
+    "threshold": 0.72,
+    "source": "cdep",
+    "expected_source": "cdep",
+    "expected_terms_any": ["proiect", "lege", "camera deputatilor", "vot final"],
+    "min_top_similarity": 0.75
+  },
+  {
+    "name": "ministry_monitorul_query",
+    "mode": "search",
+    "query": "monitorul oficial ministerul sanatatii",
+    "top_k": 5,
+    "threshold": 0.72,
+    "source": "legislatie-just",
+    "expected_source": "legislatie-just",
+    "expected_terms_any": ["monitorul oficial", "ministerul sanatatii", "sanatatii"],
+    "min_top_similarity": 0.79
+  },
+  {
+    "name": "bill_17811_similarity",
+    "mode": "compare_bill",
+    "bill_idp": 17811,
+    "top_k": 5,
+    "threshold": 0.2,
+    "source": "cdep",
+    "expected_source": "cdep",
+    "expected_terms_any": ["oug", "aprobare", "lege", "pl-x"],
+    "min_top_similarity": 0.78
+  }
+]

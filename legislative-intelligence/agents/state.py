@@ -52,3 +52,11 @@ class NotificationState(TypedDict):
     flags: dict
     jobs: list
     error: Optional[str]
+
+
+class RAGState(TypedDict):
+    question: str
+    filters: dict
+    chunks: list
+    answer: str
+    error: Optional[str]

@@ -7,7 +7,15 @@ from datetime import date
 from bs4 import BeautifulSoup, Tag
 from typing import Optional
 
-from .utils import VOTE_MAP, slugify, safe_int, classify_vote_type, detect_status, detect_initiator_type
+from .utils import (
+    VOTE_MAP,
+    slugify,
+    safe_int,
+    classify_vote_type,
+    detect_status,
+    detect_initiator_type,
+    normalize_text,
+)
 
 BASE_URL = "https://www.cdep.ro"
 
@@ -166,7 +174,8 @@ def parse_bill_detail(html: str, idp: int) -> dict:
     docs  = _extract_documents(soup)
     vote_idvs = _extract_vote_idvs(soup)
     initiator_name, initiator_type = _extract_initiator(soup, full_text)
-    status = detect_status(full_text)
+    status_text = _extract_status_text(soup)
+    status = detect_status(status_text or full_text)
     dates  = _extract_dates(full_text)
 
     return {
@@ -203,6 +212,60 @@ def _extract_documents(soup: BeautifulSoup) -> dict:
                 docs[field] = full
                 break
     return docs
+
+
+def _extract_status_text(soup: BeautifulSoup) -> str:
+    """
+    CDEP detail pages include historical Chamber/Senate text in many places.
+    Prefer the specific legislative status row so unrelated page text cannot
+    accidentally classify everything as "la_senat".
+    """
+    label_patterns = [
+        "stadiu legislativ",
+        "stadiul legislativ",
+        "procedura legislativa",
+        "procedura legislativa incetata",
+    ]
+
+    for row in soup.find_all("tr"):
+        cells = row.find_all(["td", "th"])
+        if not cells:
+            continue
+
+        cell_texts = [cell.get_text(" ", strip=True) for cell in cells]
+        normalized = [normalize_text(text) for text in cell_texts]
+
+        for idx, text in enumerate(normalized):
+            if not any(pattern in text for pattern in label_patterns):
+                continue
+
+            if idx + 1 < len(cell_texts):
+                value = " ".join(t for t in cell_texts[idx + 1:] if t).strip()
+                if value:
+                    return value
+
+            row_text = " ".join(t for t in cell_texts if t).strip()
+            for pattern in label_patterns:
+                row_text = re.sub(pattern, "", row_text, flags=re.I)
+            if row_text:
+                return row_text
+
+    for label in soup.find_all(string=lambda s: s and any(p in normalize_text(s) for p in label_patterns)):
+        parent = label.parent
+        if not parent:
+            continue
+
+        sibling = parent.find_next_sibling()
+        if sibling:
+            text = sibling.get_text(" ", strip=True)
+            if text:
+                return text
+
+        parent_text = parent.get_text(" ", strip=True)
+        if parent_text:
+            return parent_text
+
+    return ""
 
 
 def _extract_vote_idvs(soup: BeautifulSoup) -> list[int]:

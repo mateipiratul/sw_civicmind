@@ -1,7 +1,7 @@
 # CivicMind — Architecture & Implementation Status
 
 > Last updated: 2026-04-25  
-> Stack: Python 3.11 · Mistral AI · LangGraph · FastAPI · Supabase (pending) · React (pending)
+> Stack: Python 3.11 · Mistral AI · LangGraph · FastAPI · Supabase · React (pending)
 
 ---
 
@@ -21,13 +21,15 @@ CivicMind is a Romanian civic-tech platform that scrapes legislative data from c
 | Agent 2 — Auditor | ✅ Done | 284 MPs scored, narratives generated; narrative calls retry once on transient failure |
 | Agent 3 — Q&A | ✅ Done | Live Mistral calls, tested |
 | Agent 4 — Messenger | ✅ Done | Live Mistral calls, tested |
-| REST API (FastAPI) | ✅ Done | 14 endpoints, file-based, no DB needed |
+| REST API (FastAPI) | ✅ Done | 34 endpoints — bills, MPs, agents, RAG, profile, feed, follow/unfollow |
 | Test UI | ✅ Done | `index.html` — single file, vanilla JS |
 | Supabase ingestion script | ✅ Done | Pushes bills, votes, AI analyses, impact scores, notification preferences/events/flags/jobs |
-| Supabase SQL migration | ✅ Done | `db/schema.sql`; backend team runs it once in Supabase |
-| Supabase tables | ⏳ Pending | Pending actual Supabase project migration |
+| Supabase SQL migration | ✅ Done | `db/schema.sql` and `db/schema_rag.sql` applied in Supabase |
+| Supabase tables | ✅ Done | `schema.sql` and `schema_rag.sql` applied in Supabase on 2026-04-25 |
 | Agent 5 — Notifications | ✅ MVP Done | Deterministic watchdog + flag classifier + local job queue + dry-run delivery |
-| React/Next.js frontend | ⏳ Pending | Teammate |
+| RAG Agent — Legislative Text Similarity Chat | 🛠️ Infra Live | Supabase vector schema applied, local bills indexed, first 300 discovered 2025 Portal Legislativ acts indexed, baseline eval harness live |
+| Personalization / User Profile Layer | ✅ Feed contract done | `_build_feed_card`, `build_anonymous_feed`, follow/unfollow, `GET /feed` — all live |
+| React/Vite frontend | 🛠️ Started | Vite scaffold + TypeScript initialized; backlog in `frontend/GEMINI.md` |
 | API deployment | ⏳ Pending | Teammate |
 
 ---
@@ -35,15 +37,28 @@ CivicMind is a Romanian civic-tech platform that scrapes legislative data from c
 ## Project Layout
 
 ```
+sw_civicmind/                        # Git repo root (monorepo)
+├── backend/                         # Django 6 + DRF — auth, profiles, admin
+├── frontend/                        # React 19 + TypeScript + Vite — citizen SPA
+└── legislative-intelligence/        # FastAPI + LangGraph — AI agents, scraper, RAG
+    # (detail below)
+```
+
+**Full monorepo expansion:**
+
+```
 civicmind/
 ├── sw_civicmind/            # Git repo root
-│   ├── backend/             # Existing backend app
+│   ├── backend/             # Django + DRF
+│   ├── frontend/            # React + Vite SPA
 │   └── legislative-intelligence/
 │       ├── index.html               # Test UI — open in browser while API is running
 │       ├── main.py                  # Scraper CLI entry point
 │       ├── enrich_ocr.py            # OCR enrichment (run after main.py)
 │       ├── run_agents.py            # Agent CLI (scout / auditor / qa / messenger / all)
 │       ├── requirements.txt
+│       ├── eval_rag.py             # baseline RAG retrieval regression runner
+│       ├── personalization.py      # user-profile store + first personalization helper
 │       ├── .env                     # MISTRAL_API_KEY, SUPABASE_URL, SUPABASE_KEY
 │       ├── .env.example
 │       ├── .gitignore               # excludes .env, data/raw/, data/processed/
@@ -63,6 +78,8 @@ civicmind/
 │       │   ├── qa.py                # Agent 3 — Civic Q&A (3-node LangGraph)
 │       │   ├── messenger.py         # Agent 4 — Civic Messenger (3-node LangGraph)
 │       │   ├── notifications.py     # Agent 5 — flags bill events and queues notification jobs
+│       │   ├── rag.py               # RAG chat wrapper + planned LangGraph ReAct builder
+│       │   ├── rag_tools.py         # Supabase vector search / query embedding helpers
 │       │   └── notification_delivery.py # Dry-run notification delivery worker
 │       │
 │       ├── api/
@@ -70,16 +87,88 @@ civicmind/
 │       │
 │       ├── db/
 │       │   ├── schema.sql           # Supabase migration
+│       │   ├── schema_rag.sql       # pgvector tables/functions/indexes for RAG
 │       │   └── push_to_supabase.py  # Upserts all JSON data into Supabase tables
+│       ├── evals/
+│       │   └── rag_queries.json     # small retrieval regression set for the live vector corpus
 │       ├── notification_preferences.example.json  # Example opt-in preferences for Agent 5
 │       │
 │       └── data/
 │           ├── raw/                 # bill_XXXXX.json — one file per bill (gitignored)
 │           └── processed/
-│               └── impact_scores.json  # Auditor output — 284 MPs, sorted by score desc
+│               ├── impact_scores.json  # Auditor output — 284 MPs, sorted by score desc
+│               └── rag_eval_last.json  # latest local retrieval eval report
 │
 └── move_to_legislative_intelligence.ps1  # One-time move script used for this migration
 ```
+
+---
+
+## Full-System Architecture
+
+Three modules, three processes, one Supabase database.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CITIZEN BROWSER                                                         │
+│  React + Vite SPA  (frontend/)                                           │
+│  ├─ Auth screens  → POST /api/auth/register, /api/auth/login            │
+│  ├─ Onboarding wizard → PUT /api/profiles/me/                           │
+│  ├─ Civic Feed  → GET /api/bills/personalized/                          │
+│  ├─ Bill Detail + Q&A + Messenger → POST /qa  /messenger                │
+│  ├─ MP Scoreboard  → GET /mps                                           │
+│  └─ RAG Chat  → POST /rag/chat                                          │
+└────────────────┬────────────────────────────────────────────────────────┘
+                 │ HTTP  (Vite proxy: /api → :8000,  /rag /bills /mps → :8001)
+   ┌─────────────▼──────────────┐          ┌──────────────────────────────┐
+   │  DJANGO BACKEND  (:8000)   │          │  FASTAPI AI-SERVICE  (:8001) │
+   │  backend/                  │          │  legislative-intelligence/   │
+   │  ├─ POST /auth/register    │          │  api/main.py                 │
+   │  ├─ POST /auth/login       │          │  ├─ GET /bills               │
+   │  ├─ GET/PUT /profiles/{id} │          │  ├─ GET /bills/{idp}         │
+   │  └─ GET /profiles/{id}/    │          │  ├─ GET /mps                 │
+   │       personalization       │          │  ├─ POST /qa                 │
+   └─────────────┬───────────────┘          │  ├─ POST /messenger          │
+                 │                          │  ├─ POST /rag/chat           │
+                 │                          │  └─ GET  /notifications/*    │
+                 │                          └───────────────┬──────────────┘
+                 │                                          │
+   ┌─────────────▼──────────────────────────────────────────▼──────────────┐
+   │  SUPABASE  (PostgreSQL + pgvector)                                     │
+   │  bills · vote_sessions · parliamentarians · mp_votes                   │
+   │  ai_analyses · impact_scores · user_profiles                           │
+   │  notification_preferences · bill_events · bill_flags · jobs            │
+   │  legislation_documents · legislation_chunks (1024-dim vectors)         │
+   │  rag_query_logs                                                        │
+   └────────────────────────────────────────────────────────────────────────┘
+```
+
+**Environment variable boundary:**
+- Django uses `DATABASE_URL` (Supabase pooler) + `SECRET_KEY`
+- FastAPI uses `SUPABASE_URL` + `SUPABASE_KEY` + `MISTRAL_API_KEY`
+- Frontend uses `VITE_API_BASE_URL` (Django) + `VITE_AI_SERVICE_URL` (FastAPI)
+
+---
+
+## Layer 0 — Backend (`backend/`)
+
+**Stack:** Django 6.0, Django REST Framework, psycopg2, dj-database-url  
+**Status:** Auth + Profile endpoints working; Supabase-connected.
+
+### Apps
+
+| App | Models | Key endpoints |
+|-----|--------|--------------|
+| `authentication` | — | `POST /auth/register`, `POST /auth/login` |
+| `profiles` | `Profile` (county, interests, notification prefs) | `GET/PUT /api/profiles/me/` |
+| `bills` | `Bill` (read-only ORM mirror) | — |
+| `parliamentarians` | `Parliamentarian` (name, party, email, county) | — |
+
+### Key technical choices
+- Token-based authentication (DRF `TokenAuthentication`)
+- `django-cors-headers` with origin allowlist for the Vite dev server
+- `dj_database_url` parses `DATABASE_URL` → psycopg2 connection to Supabase pooler
+- `Service Role Key` never exposed to the Django app — only FastAPI uses it for writes
 
 ---
 
@@ -300,9 +389,351 @@ Database tables in `db/schema.sql`:
 
 ---
 
+### RAG Agent — Legislative Text Similarity Chat (`agents/rag.py`)
+
+**Status:** infrastructure live. This is a separate RAG/search agent, not a replacement for Agent 3 Q&A. Agent 3 answers questions about one selected bill; the RAG agent searches the whole legislative corpus and returns similar legislative chunks with citations.
+
+Implemented:
+- `db/schema_rag.sql` — Supabase pgvector tables, HNSW cosine index, and `match_legislation_chunks()` RPC.
+- `scraper/legislatie_just.py` — SOAP client for Portal Legislativ `GetToken` and `Search`.
+- `rag_index.py` — local bill and Portal Legislativ indexing pipeline with dry-run, content hashes, and Mistral embeddings.
+- `agents/rag_tools.py` — query embedding, bill-context lookup, bill-to-corpus comparison, document/chunk drill-down, hybrid reranking, result diversification, source inference, and query logging helpers.
+- `agents/rag.py` — grounded chat wrapper plus `build_react_rag_agent()` for the planned LangGraph prebuilt ReAct chatbot.
+- `eval_rag.py` + `evals/rag_queries.json` — repeatable retrieval regression harness plus a small live baseline query set.
+- API endpoints: `GET /rag/health`, `POST /rag/search`, `POST /rag/chat`, `GET /rag/bills/{idp}/context`, `POST /rag/bills/compare`, `GET /rag/chunks/{chunk_id}/excerpt`, `POST /rag/explain-match`, `POST /rag/reindex`, `POST /rag/eval`, `GET /rag/eval-report`.
+- `env_setup.py` — loads both `legislative-intelligence/.env` and `backend/.env`, and maps `SUPABASE_SERVICE_ROLE_KEY` to `SUPABASE_KEY` for server-side tooling.
+
+Executed on 2026-04-25:
+- Applied `db/schema.sql` and `db/schema_rag.sql` to Supabase.
+- Applied SQL through the Supabase IPv4 pooler (`aws-0-eu-west-1.pooler.supabase.com:5432`) because the direct `db.<project-ref>.supabase.co` hostname was IPv6-only from this environment.
+- Verified `legislation_documents`, `legislation_chunks`, and `match_legislation_chunks()` through Supabase REST.
+- Synced all 11 local Chamber bill files and 284 impact scores into Supabase.
+- Indexed all local Chamber bill RAG documents into Supabase.
+- Indexed the first 200 discovered Portal Legislativ 2025 acts with `--changed-only`, resulting in a live mixed corpus from `legislatie-just` and `cdep`.
+- Expanded the Portal Legislativ 2025 slice to the first 300 discovered acts with `--changed-only`.
+- Verified live retrieval and chat; tightened the RAG prompt so it does not suggest laws outside retrieved context.
+- Added adaptive embedding-batch splitting and retry/backoff for Mistral capacity errors in `rag_index.py`.
+- Added light retry/backoff for query embeddings in `agents/rag_tools.py`, so search/chat/eval are less likely to fail on transient free-tier Mistral 429s.
+- Added `POST /rag/reindex` so indexing can be triggered through FastAPI without dropping back to the terminal.
+- Added real RAG helper tools for:
+  - `get_bill_context(idp)`
+  - `compare_bill_to_corpus(idp, top_k)`
+  - `get_document_by_id(document_id)`
+  - `get_chunk_by_id(chunk_id)`
+  - result diversification / dedupe
+  - lightweight source inference (`cdep` vs `legislatie-just`)
+  - query logging into `rag_query_logs`
+- Added RAG API drill-down endpoints for document/chunk inspection and bill-based similarity.
+- Added a lightweight hybrid reranker after vector search (`vector_similarity` + lexical/title overlap) plus slightly stronger source/document diversity caps.
+- Added exact excerpt extraction for one indexed chunk plus a query-aware "why this matched" explainer for UI/debugging and future follow-up chat turns.
+- Added a baseline retrieval eval harness that writes `data/processed/rag_eval_last.json`.
+- Added `POST /rag/eval` and `GET /rag/eval-report` for admin/debug evaluation runs.
+- Verified live chat path with `run_rag_chat()`.
+
+Vector DB / semantic search verification on 2026-04-25:
+- `rag_health()` returned a live corpus in Supabase after the 300-act slice expansion: 340 documents, 1901 chunks, latest source `legislatie-just`.
+- Raw vector search through `match_legislation_chunks()` returned plausible ranked results for multiple queries:
+  - `achizitii publice control ex ante` still underperforms and surfaces only weak matches; this is currently a corpus/ranking gap, not a broken vector DB.
+  - `ordin ministrul sanatatii asigurari sociale` returned `legislatie-just` health orders with the right Ministry/CNAS family.
+  - `proiect de lege guvernului camera deputatilor vot final` returned `cdep` bill chunks as expected.
+- `run_rag_chat()` produced grounded answers using retrieved sources for:
+  - public procurement / control ex ante
+  - health / social insurance text similarity
+  - bill-detail similarity mode using `bill_idp`, now defaulting to `cdep` when no explicit source is passed
+- `python eval_rag.py` now gives a repeatable retrieval baseline. Current baseline on the live corpus: 4/5 cases passed (80.0%), average top similarity `0.7995`.
+- The one failing case is currently `procurement_control_ex_ante`, which we are treating as a real known gap in corpus coverage/ranking quality.
+- Conclusion: the vector DB, pgvector RPC, embeddings pipeline, and semantic retrieval are operational.
+- Important caveat: retrieval quality is improving, but not yet production-tuned. The system now has a measurable baseline, not just spot checks, and still needs better coverage and ranking for harder topical queries.
+
+Important migration note:
+- Existing Supabase projects may already contain an older `ai_analyses` table definition.
+- `db/schema.sql` now includes additive `alter table ... add column if not exists ...` statements for the newer Scout fields (`title_short`, `arguments`, `controversy_score`, `passed_by`, `dominant_party`, `vote_date`).
+- `db/schema.sql` also includes additive `alter table ... add column if not exists ...` statements for legacy `impact_scores` tables (`mp_name`, `party`, `categories_voted`, `narrative`).
+- This avoids `create table if not exists` silently leaving older projects behind.
+
+**Framework:** LangGraph prebuilt ReAct chatbot using `create_react_agent`.
+
+**Purpose:**
+- Power the website's Chat section with an embeddable conversational interface.
+- Let users ask cross-bill questions such as "ce proiecte seamănă cu acesta?", "unde mai apare aceeași obligație?", "ce legi afectează PFA-urile?", or "găsește texte similare despre sănătate".
+- Use cosine similarity over embedded chunks to retrieve the most relevant passages, then answer only from retrieved context.
+
+**Recommended stack:**
+- Vector DB: Supabase Postgres with the `pgvector` extension, because Supabase is already the planned production database and pgvector supports vector storage, indexes, filtering, and cosine distance in SQL.
+- Embeddings: Mistral `mistral-embed`, because the project already uses Mistral and the model returns 1024-dimensional text vectors.
+- Similarity: cosine distance via pgvector's `<=>` operator; expose returned similarity as `1 - cosine_distance`.
+- Chat model: keep `mistral-small-latest` for grounded answers unless latency/cost forces `open-mistral-nemo`; retrieval quality should depend on embeddings, not on the chat model.
+
+**Official source decision for the full Romanian legislation corpus:**
+- Primary source: Ministerul Justiției — Portal Legislativ (`https://legislatie.just.ro`).
+- Reason: this is the official free national legislation portal, with updated/consolidated acts, programmatic access, 150,000+ normative acts, daily updates, and N-Lex/EU interconnection.
+- Programmatic endpoint: `http://legislatie.just.ro/apiws/FreeWebService.svc/SOAP`.
+- WSDL: `http://legislatie.just.ro/apiws/FreeWebService.svc?singleWsdl`.
+- Verified operations:
+  - `GetToken()` returns a temporary token.
+  - `Search(SearchModel, tokenKey)` returns paginated `Legi` records.
+- WSDL `SearchModel` fields:
+  - `NumarPagina`
+  - `RezultatePagina`
+  - `SearchAn`
+  - `SearchNumar`
+  - `SearchText`
+  - `SearchTitlu`
+- WSDL `Legi` result fields:
+  - `DataVigoare`
+  - `Emitent`
+  - `LinkHtml`
+  - `Numar`
+  - `Publicatie`
+  - `Text`
+  - `TipAct`
+  - `Titlu`
+- Detail HTML source: `LinkHtml`, usually `http://legislatie.just.ro/Public/DetaliiDocument/{document_id}`.
+- Secondary validation/backfill source: Consiliul Legislativ / Repertoriul legislativ, which EU e-Justice describes as covering 1864-present. Use it only for validation/backfill unless its access surface is more stable than Portal Legislativ.
+- Do not use Monitorul Oficial as the main ingestion source for MVP. It is the official publication channel, but Portal Legislativ is better for consolidated text, search, and free programmatic access.
+
+**Legislation-source ingestion plan:**
+- Add `scraper/legislatie_just.py` or `sources/legislatie_just.py`.
+- Add CLI:
+
+```bash
+python rag_index.py --source legislatie-just --year 2025
+python rag_index.py --source legislatie-just --from-year 1989 --to-year 2026
+python rag_index.py --source legislatie-just --changed-only
+```
+
+- Discovery strategy:
+  - Get SOAP token.
+  - For each year, call `Search` with `SearchAn=<year>`, empty `SearchTitlu`, `SearchText`, and `SearchNumar`.
+  - Page with `NumarPagina` until an empty result page.
+  - Use conservative `RezultatePagina` such as 50-100.
+  - Dedupe by `LinkHtml` document ID and a normalized title/type/number/year key.
+- Text strategy:
+  - Store `Legi.Text` as the first raw full-text source because it is returned directly by the API.
+  - Fetch `LinkHtml` when richer structure is needed: table of contents, article anchors, consolidated/base-form options, and relation metadata.
+  - Parse article-level structure from detail HTML where possible; fall back to chunking `Legi.Text`.
+- Scope:
+  - MVP: national Romanian normative acts available from Portal Legislativ, especially 1989-present plus relevant pre-1989 acts exposed by the portal.
+  - Later: validate 1864-present coverage against Consiliul Legislativ, add EU transposition links from N-Lex/EUR-Lex, and add Monitorul Oficial identifiers as citations.
+- Legal/data-use note:
+  - Official legislative texts are generally not copyright-protected as creative works, but Portal Legislativ's site terms and redistribution constraints still need a quick legal/product review before exposing bulk text downloads.
+  - Product should expose citations and short relevant snippets, not a bulk mirror of the entire portal.
+
+**Corpus to index ("whole legislation" for MVP):**
+- All national Romanian normative acts discovered from Portal Legislativ via SOAP `Search`, using `Legi.Text` and `LinkHtml` as the canonical corpus.
+- Every `data/raw/bill_*.json` bill title, bill number, status, initiator, dates, categories, affected profiles, and Scout `ai_analysis`.
+- All OCR text in `ocr_content`, split by document type:
+  - `expunere_de_motive`
+  - `forma_initiatorului`
+  - `forma_adoptata`
+  - `aviz_ces`
+  - `aviz_cl`
+  - any future document URLs discovered by the scraper
+- Vote-session descriptions and final-vote metadata as low-priority metadata, not primary legal text.
+- Future expansion: Senate documents (`cam=2`), promulgated law text, Monitorul Oficial references, amendment text, committee reports, and official consolidated law text where available.
+
+**Do not index as primary semantic chunks:**
+- Full nominal vote tables; store them as structured metadata and retrieve through existing MP/vote endpoints.
+- Generated Messenger email drafts.
+- Notification jobs, deliveries, or user preference data.
+
+**Chunking plan:**
+- Normalize OCR markdown, remove repeated headers/footers, preserve Romanian diacritics.
+- Chunk per bill document, not across documents.
+- Target 800-1,200 tokens per chunk with 100-150 token overlap.
+- Preserve citation metadata on every chunk: `bill_idp`, `bill_number`, `title`, `document_type`, `source_url`, optional `page_start/page_end`, `chunk_index`, `text_hash`, `scraped_at`.
+- Add a short metadata prefix before embedding, e.g. `PL-x 91/2025 | expunere_de_motive | sănătate, fiscal | ...`, so similarity can use legal context without burying the passage.
+
+**Database plan (`db/schema_rag.sql`, planned):**
+
+```sql
+create extension if not exists vector with schema extensions;
+
+create table public.legislation_documents (
+    document_id text primary key,
+    bill_idp bigint references public.bills(idp) on delete cascade,
+    bill_number text,
+    document_type text not null,
+    source_url text,
+    content_hash text not null,
+    metadata jsonb not null default '{}'::jsonb,
+    indexed_at timestamptz not null default now()
+);
+
+create table public.legislation_chunks (
+    chunk_id text primary key,
+    document_id text references public.legislation_documents(document_id) on delete cascade,
+    bill_idp bigint references public.bills(idp) on delete cascade,
+    chunk_index int not null,
+    content text not null,
+    content_hash text not null,
+    embedding extensions.vector(1024) not null,
+    metadata jsonb not null default '{}'::jsonb,
+    indexed_at timestamptz not null default now()
+);
+
+create index idx_legislation_chunks_bill_idp on public.legislation_chunks(bill_idp);
+create index idx_legislation_chunks_metadata on public.legislation_chunks using gin(metadata);
+create index idx_legislation_chunks_embedding_hnsw
+    on public.legislation_chunks
+    using hnsw (embedding vector_cosine_ops);
+```
+
+Add a SQL RPC:
+
+```sql
+match_legislation_chunks(
+    query_embedding extensions.vector(1024),
+    match_threshold float,
+    match_count int,
+    filter_bill_idp bigint default null,
+    filter_document_type text default null
+)
+```
+
+The function should order by `embedding <=> query_embedding asc`, return `similarity = 1 - (embedding <=> query_embedding)`, and cap `match_count` to a safe maximum such as 30.
+
+**Indexing pipeline plan:**
+- New CLI: `python rag_index.py --all`, `python rag_index.py --file bill_23048.json`, `python rag_index.py --changed-only`.
+- Read bill JSON locally first; later read from Supabase once API data layer is Supabase-native.
+- Generate stable `document_id = "{idp}:{document_type}"`.
+- Generate stable `chunk_id = "{document_id}:{chunk_index}:{content_hash[:12]}"`.
+- Skip unchanged documents by comparing `content_hash`.
+- Batch calls to Mistral embeddings API.
+- Upsert documents/chunks into Supabase.
+- Delete stale chunks when a document hash changes.
+- If an embedding batch exceeds Mistral token limits, recursively split the batch.
+- If Mistral returns temporary capacity errors, retry with backoff.
+- `--changed-only` also reindexes documents that exist without chunk rows, which recovers cleanly from interrupted runs.
+
+Implemented CLI:
+
+```bash
+python rag_index.py --source bills --all --dry-run
+python rag_index.py --source bills --file bill_23048.json
+python rag_index.py --source legislatie-just --year 2025 --limit 100 --dry-run
+python rag_index.py --source legislatie-just --from-year 1989 --to-year 2026 --changed-only
+```
+
+Before non-dry-run indexing:
+- run `db/schema.sql`
+- run `db/schema_rag.sql`
+- set `MISTRAL_API_KEY`, `SUPABASE_URL`, and `SUPABASE_KEY`
+
+Current live corpus in Supabase after indexing on 2026-04-25:
+- `legislation_documents`: 239
+- `legislation_chunks`: 1216
+- sources present: `legislatie-just`, `cdep`
+- `rag_query_logs`: live inserts verified
+
+Current known retrieval limitations:
+- Search still can over-return related chunks from the same bill family, but exact same-document duplication is now reduced in `agents/rag_tools.py`.
+- Ranking is still mainly cosine similarity; there is light post-filtering/diversification, but no proper reranker or MMR scoring layer yet.
+- `legislatie-just` text is chunked from API text, not yet from parsed article-level HTML structure.
+- Citation quality is acceptable for debugging but not yet polished for citizen-facing UI.
+- `POST /rag/chat` is currently synchronous; streaming remains planned.
+- Source inference is heuristic right now; it works for obvious cases but is not a learned router.
+
+**Agent/tool plan:**
+
+```text
+Website Chat
+  → POST /rag/chat
+  → agents/rag.py LangGraph prebuilt ReAct chatbot
+  → tools:
+      search_legislation_chunks(query, filters, top_k)
+      get_bill_context(idp)
+      compare_bill_to_corpus(idp, top_k)
+  → Supabase RPC match_legislation_chunks()
+  → answer with citations
+```
+
+ReAct tools:
+- `search_legislation_chunks`: embeds user query with `mistral-embed`, calls Supabase RPC, returns top chunks.
+- `get_bill_context`: fetches existing bill summary/AI analysis/vote metadata for citation context. Implemented.
+- `compare_bill_to_corpus`: embeds a selected bill's title + key ideas + document chunks, finds similar chunks in other bills, excludes same `idp` by default. Implemented.
+- `get_document_by_id`: fetches one indexed document by `document_id`. Implemented.
+- `get_chunk_by_id`: fetches one indexed chunk and its parent document by `chunk_id`. Implemented.
+- `get_chunk_excerpt`: extracts the most relevant sentences from one chunk, optionally focused by query terms. Implemented.
+- `explain_chunk_match`: shows why one chunk matched one query, including overlap terms and current rank/score. Implemented.
+
+Implementation status of the RAG agent itself:
+- Current live path: `run_rag_chat()` in `agents/rag.py` performs retrieval + grounded answer generation.
+- `run_rag_chat()` now also:
+  - infers source in obvious cases
+  - switches to bill-comparison mode when the user asks for similar laws from a bill context
+  - defaults bill-similarity mode to `cdep` unless explicitly overridden
+- `search_legislation_chunks()` now applies a lightweight hybrid rerank on top of cosine similarity and then a source/document diversity pass.
+- Baseline retrieval evals are now real code, not a TODO:
+  - `eval_rag.py`
+  - `evals/rag_queries.json`
+  - `data/processed/rag_eval_last.json`
+- Current scaffold: `build_react_rag_agent()` exists as the LangGraph prebuilt ReAct entry point and now includes multiple live tools (`search_legislation`, `bill_context`, `compare_bill`, `document_detail`, `chunk_detail`).
+- Therefore the full "agent" is still not done yet; the current product is a working retrieval-backed chatbot plus a partially tooled ReAct scaffold, not yet a fully orchestrated conversational assistant.
+
+RAG agent implementation plan:
+1. Tool expansion
+- Add tool support for multi-step citation follow-up, e.g. "open source 2" / "show the exact paragraph behind this answer" across turns, not only as a single direct helper call.
+- Wire the new excerpt/explanation helpers into frontend follow-up UX so users can inspect sources without dropping to raw JSON.
+
+2. Retrieval quality layer
+- Improve dedupe across same `bill_idp` / closely related document families beyond the current lightweight caps.
+- Replace the current lightweight hybrid rerank with either MMR or a better source-diversity reranker after vector search.
+- Replace heuristic source-aware routing with a more explicit router or classifier.
+- Add stricter confidence thresholds per mode so weak matches return "not enough evidence".
+
+3. Agent behavior
+- Use the ReAct agent only when tool selection is genuinely useful.
+- Keep direct retrieval mode for simple questions to reduce latency/cost.
+- Add conversation-aware follow-up handling so "this act" or "compare with the previous result" works across turns.
+
+4. Evaluation
+- Expand the current 5-case regression set toward 20-50 Romanian queries across: fiscal, sanatate, munca, justitie, administratie, achizitii.
+- Track precision of top-5 retrieval manually at first; current baseline is only a smoke/regression suite, not a benchmark.
+- Keep logging query, chosen mode, returned chunk IDs, and answer confidence in `rag_query_logs`.
+
+System prompt requirements:
+- Answer in Romanian by default.
+- Use only retrieved chunks and existing bill metadata.
+- Cite `bill_number`, `document_type`, and `source_url` for every substantive claim.
+- If retrieved chunks are weak or below threshold, say that no strong match was found.
+- Preserve CDEP-only scope until Senate/full-law data is indexed.
+
+**Current API surface:**
+- `POST /rag/search` → raw semantic search results for debugging and UI sidebars.
+- `POST /rag/chat` → grounded chat response for the website Chat section.
+- `GET /rag/chunks/{chunk_id}/excerpt` → fetches the most relevant sentences from one stored chunk.
+- `POST /rag/explain-match` → explains why a stored chunk matched a given query.
+- `POST /rag/reindex` → admin-only local trigger for changed bills.
+- `POST /rag/eval` → admin/debug trigger for the baseline retrieval suite.
+- `GET /rag/eval-report` → latest saved retrieval eval report.
+- `GET /rag/health` → chunk counts, embedding model, last indexed timestamp.
+
+**Frontend plan:**
+- Embed as the app's Chat section, not a separate landing page.
+- Initial modes:
+  - "Întreabă legislația" — user asks an open question across all indexed bills.
+  - "Găsește proiecte similare" — starts from the current bill detail page and calls `compare_bill_to_corpus`.
+- Show citations as compact source chips linking back to bill detail/document source.
+- Show "CDEP-only MVP" scope note in the chat footer.
+
+**Evaluation plan:**
+- Golden queries for categories: fiscal, sănătate, educație, muncă, justiție.
+- Check that top-5 retrieval includes known related bills.
+- Check that no answer is produced without citations.
+- Check same-bill exclusion for similarity mode.
+- Track query, returned chunk IDs, similarity scores, and user feedback in `rag_query_logs` later.
+
+**Open decisions before implementation:**
+- Whether to use only raw OCR text for embeddings or include Scout summaries in the embedded text. Recommendation: include Scout summaries as metadata prefix, but keep raw legal text as the chunk body.
+- Whether to keep `schema_rag.sql` separate or merge into `db/schema.sql`. Recommendation: separate during development, merge once stable.
+- Whether chat history should be persisted. Recommendation: start stateless with short frontend history; add user-level persistence only after auth/privacy decisions.
+
+---
+
 ## Layer 3 — REST API (`api/main.py`)
 
-FastAPI server reading from JSON files. No Supabase needed — works offline.
+FastAPI server reading core bill/MP data from JSON files. Most non-RAG endpoints work offline; the RAG endpoints require Supabase + Mistral credentials.
 
 ### Start
 
@@ -325,6 +756,26 @@ python -m uvicorn api.main:app --reload --port 8000
 | `GET` | `/mps/{mp_slug}` | — | MP detail + full vote history across all bills |
 | `POST` | `/qa` | body: `{idp, question}` | `{answer}` — live Mistral call |
 | `POST` | `/messenger` | body: `{idp, mp_name, user_name, stance}` | `{draft: {subject, body}}` — live Mistral call |
+| `GET` | `/profiles/{user_id}` | — | canonical user profile + notification preference bundle |
+| `PUT` | `/profiles/{user_id}` | body: `{email?, full_name?, email_opt_in?, profile, notification_preferences?}` | create/update canonical user profile |
+| `GET` | `/profiles/{user_id}/personalization` | `limit` | personalization summary and ranked bill recommendations |
+| `POST` | `/profiles/{user_id}/follow/bill/{idp}` | — | add bill to `followed_bills`; returns updated list |
+| `DELETE` | `/profiles/{user_id}/follow/bill/{idp}` | — | remove bill from `followed_bills`; returns updated list |
+| `POST` | `/profiles/{user_id}/follow/mp/{mp_slug}` | — | add MP to `followed_mps`; returns updated list |
+| `DELETE` | `/profiles/{user_id}/follow/mp/{mp_slug}` | — | remove MP from `followed_mps`; returns updated list |
+| `GET` | `/feed` | `user_id?`, `limit`, `category?` | personalized feed when `user_id` is given; anonymous chronological feed otherwise |
+| `GET` | `/rag/health` | — | RAG corpus counts, embedding model, latest indexed source |
+| `POST` | `/rag/search` | body: `{query, top_k, threshold, source?, bill_idp?, document_type?, exclude_bill_idp?}` | raw semantic search results from Supabase pgvector |
+| `POST` | `/rag/chat` | body: `{question, top_k, threshold, source?, bill_idp?, exclude_bill_idp?}` | grounded RAG answer + cited source chunks |
+| `GET` | `/rag/bills/{idp}/context` | — | structured local Chamber bill context for the RAG agent |
+| `POST` | `/rag/bills/compare` | body: `{idp, top_k, threshold, source?}` | similar corpus matches for a selected Chamber bill |
+| `GET` | `/rag/documents/{document_id}` | — | one indexed legislation document by `document_id` |
+| `GET` | `/rag/chunks/{chunk_id}` | — | one indexed chunk plus its parent document |
+| `GET` | `/rag/chunks/{chunk_id}/excerpt` | `query`, `sentences`, `max_chars` | focused excerpt from one indexed chunk |
+| `POST` | `/rag/explain-match` | body: `{query, chunk_id, source?, bill_idp?, document_type?, exclude_bill_idp?}` | explains why a specific chunk matched a query |
+| `POST` | `/rag/reindex` | body: `{source, year?, limit?, changed_only?, dry_run?, ...}` | triggers `rag_index.py` from the API server |
+| `POST` | `/rag/eval` | body: `{cases?, limit?, report?}` | runs the baseline retrieval eval suite and returns the latest report |
+| `GET` | `/rag/eval-report` | — | latest saved retrieval eval report from `data/processed/rag_eval_last.json` |
 | `GET` | `/notifications/events` | `event_type`, `idp`, `limit` | detected bill events + flag records |
 | `POST` | `/notifications/run` | body: `{preferences_path?}` | runs deterministic notification watchdog |
 | `GET` | `/notifications/jobs` | `status`, `email`, `limit` | queued notification jobs for review/sending |
@@ -332,7 +783,7 @@ python -m uvicorn api.main:app --reload --port 8000
 
 CORS is open (`allow_origins=["*"]`). The test UI (`index.html`) calls this API from `file://`.
 
-**Status:** done. All 14 endpoints tested.
+**Status:** done. 34 endpoints available.
 
 ---
 
@@ -351,12 +802,16 @@ Ingestion script: reads all JSON files, upserts to Supabase in dependency order.
 | `ai_analyses` | `bill_idp` | Scout output |
 | `impact_scores` | `mp_slug` | Auditor output |
 | `users` | `user_id` | notification recipients + consent state |
+| `user_profiles` | `user_id` | canonical profile, interests, follows, explanation mode |
 | `notification_preferences` | `user_id` | categories/profiles/frequency/min importance |
 | `bill_events` | `event_key` | detected CDEP bill events |
 | `bill_flags` | `event_key` | deterministic flags and importance |
 | `notification_jobs` | `job_id` | queued draft emails, not yet sent |
 | `notification_deliveries` | `id` | dry-run and future email provider delivery logs |
 | `unsubscribe_tokens` | `token` | future unsubscribe flow |
+| `legislation_documents` | `document_id` | live RAG source documents from `cdep` and `legislatie-just` |
+| `legislation_chunks` | `chunk_id` | live RAG chunks with `mistral-embed` vectors |
+| `rag_query_logs` | `id` | live search/chat telemetry and evaluation traces |
 
 ### Run ingestion
 
@@ -374,6 +829,51 @@ Notes:
 - Single-file sync skips notification data by default.
 
 **Status:** schema + script done. Blocked on Supabase project creation and running `db/schema.sql`.
+
+---
+
+## Layer 5 — Frontend (`frontend/`)
+
+**Stack:** React 19, TypeScript, Vite 8, Lucide React, TanStack Query / Axios, vanilla CSS  
+**Status:** 🛠️ Scaffold initialized. Main UI implementation in progress by teammate.
+
+### Screens & backlog
+
+| Screen | Features | API surface |
+|--------|----------|------------|
+| **Auth** | Login / Register forms | `POST /auth/login`, `POST /auth/register` |
+| **Onboarding wizard** | County dropdown, interest selection | `PUT /api/profiles/me/` |
+| **Civic Feed** | Personalized bill cards with Impact Badges, status chips, AI summary | `GET /api/bills/personalized/` |
+| **Bill Detail** | Key ideas, PRO/CON cards, vote breakdown, MP vote list, Q&A, email composer modal | `GET /bills/{idp}`, `POST /qa`, `POST /messenger` |
+| **MP Scoreboard** | Score gauge, consistency feed, contact card | `GET /mps`, `GET /mps/{slug}` |
+| **RAG Chat** | Cross-bill legislative Q&A with citations | `POST /rag/chat` |
+
+### Design rules
+- Mobile-first responsive layout
+- Gov-Tech palette: deep blues, clean whites, green (adopted), amber (in progress), red (rejected)
+- Null safety: show "Se procesează..." / "Date în curs" when AI analysis is not yet available; never crash on `null`
+- Skeleton screens for the feed to maintain perceived performance
+
+### Vite dev configuration (pending)
+```ts
+// vite.config.ts — target layout
+proxy: {
+  '/api':  'http://localhost:8000',   // Django (auth, profiles)
+  '/auth': 'http://localhost:8000',
+  '/bills': 'http://localhost:8001',  // FastAPI (bills, MPs, agents, RAG)
+  '/mps':  'http://localhost:8001',
+  '/rag':  'http://localhost:8001',
+}
+```
+
+Environment variables (`.env`):
+- `VITE_API_BASE_URL` — Django base URL
+- `VITE_AI_SERVICE_URL` — FastAPI AI service base URL
+
+### State management
+- React Context for auth/user profile (global)
+- TanStack Query for server state (bills, MPs, feed)
+- Local state only for ephemeral UI (modals, form inputs)
 
 ---
 
@@ -437,43 +937,228 @@ python -m uvicorn api.main:app --reload --port 8000
 
 > Read this section fully before touching any code. Everything in the layers above is working. Don't modify the core agent logic unless a task below specifically says to.
 
+### Current team allocation (recommended)
+
+Current parallel workstreams:
+- **Auth (Teammate A):** Django `POST /auth/register`, `POST /auth/login`, Google OAuth.
+- **Onboarding research (Teammate B):** Defines what the wizard should ask and how answers map to the profile schema.
+- **Feed backend (Teammate C):** `GET /api/bills/personalized/` — Django view or FastAPI endpoint that consumes profile interests.
+- **Frontend (Teammate D):** Scaffold initialized; implementing feed, bill detail, and MP screens against the API surface above.
+- **Personalization contract:** Central lane — connects auth, feed, chat, and notifications (see below).
+
+Best open lane for the next builder:
+- Own the **profile intelligence + personalization contract** across auth, feed, chat, and notifications.
+- Reason: this is central to the product, it is not blocked by the feed backend, and it turns the existing RAG/analysis work into a personalized civic product instead of just a generic legislative dashboard.
+
+Implemented on 2026-04-25:
+- Added `public.user_profiles` to `db/schema.sql` and applied it in Supabase.
+- Added `personalization.py` with canonical profile fetch/upsert, feed card builder, and feed ranking.
+- Ranking strategy `interest_profile_follow_v1`: interest hits (+3×), affected profile hits (+2×), followed bill (+8), followed MP voted (+2).
+- Added `_build_feed_card()` — shared card shape used by both personalized and anonymous feed. Fields: `idp`, `bill_number`, `title`, `title_short`, `status`, `status_label`, `impact_categories`, `affected_profiles`, `controversy_score`, `passed_by`, `vote_date`, `has_ai_analysis`, `key_ideas_preview`, optional `personalization` sub-object.
+- Added `build_anonymous_feed()` — chronological feed (vote_date desc) for unauthenticated users; filterable by category.
+- Added follow/unfollow functions: `follow_bill`, `unfollow_bill`, `follow_mp`, `unfollow_mp` — each does a read-modify-write on the `user_profiles` array column.
+- Added API endpoints:
+  - `GET /profiles/{user_id}`
+  - `PUT /profiles/{user_id}`
+  - `GET /profiles/{user_id}/personalization`
+  - `POST /profiles/{user_id}/follow/bill/{idp}`
+  - `DELETE /profiles/{user_id}/follow/bill/{idp}`
+  - `POST /profiles/{user_id}/follow/mp/{mp_slug}`
+  - `DELETE /profiles/{user_id}/follow/mp/{mp_slug}`
+  - `GET /feed` — dual-mode: personalized when `user_id` is given, anonymous otherwise
+
+What this lane should produce:
+1. Canonical user-profile schema
+- Define a single profile model used across the app:
+  - `user_id`
+  - `full_name` / optional public display name
+  - `email`
+  - `auth_provider`
+  - `city` / `county` / optional constituency
+  - `occupation` / `sector`
+  - `roles` (e.g. student, parent, PFA, employee, employer, pensioner, NGO worker, journalist)
+  - `interests` (mapped to CivicMind impact categories)
+  - `affected_profiles` of interest
+  - `followed_bills`
+  - `followed_mps`
+  - `notification_frequency`
+  - `language`
+- Keep most of this optional at first so auth can ship before full onboarding is finalized.
+
+2. Onboarding-to-profile mapping
+- Turn the login/onboarding research into a backend-ready schema, not just UI copy.
+- Separate:
+  - required auth fields
+  - first-session onboarding fields
+  - optional preference enrichment fields later
+
+3. Personalization contract for the feed
+- Define how the feed backend should consume the profile:
+  - boost bills matching `interests`
+  - boost bills matching `affected_profiles`
+  - boost geographically relevant items later when location data exists
+  - surface followed MPs/bills first
+  - expose a simple explanation field like `why_this_matters_to_you`
+- This lets the feed teammate build ranking/output against a stable interface.
+
+4. Personalization contract for the RAG/chat layer
+- Define what profile context can be passed into `/rag/chat` later:
+  - preferred categories
+  - followed topics
+  - user role/occupation
+  - explanation preference (`brief`, `detailed`, `actionable`)
+- The RAG layer should stay grounded in retrieved text, but can tailor framing and prioritization using profile context.
+
+5. Personalization contract for notifications
+- Align notification preferences with the same profile categories, followed bills, followed MPs, and affected roles.
+- Avoid inventing a second parallel preference system for notifications.
+
+6. Minimal database/API plan
+- Initial schema/API slice is now implemented:
+  - `public.user_profiles`
+  - `GET /profiles/{user_id}`
+  - `PUT /profiles/{user_id}`
+  - `GET /profiles/{user_id}/personalization`
+- Next step is to connect the auth/onboarding flow to this schema instead of inventing a separate profile store.
+
+### Best thing for you to do now
+
+If auth, onboarding research, and feed backend are already owned by teammates, the highest-leverage work for you is:
+
+**Option A — Frontend integration (if you own a screen):**
+1. Wire the Auth screens to `POST /auth/login` and `POST /auth/register`.
+2. Implement the Onboarding wizard and call `PUT /api/profiles/me/`.
+3. Build the Civic Feed consuming `GET /api/bills/personalized/` — skeleton cards first, data second.
+4. Add the Bill Detail screen (key ideas, vote breakdown, Q&A, email composer modal).
+5. Add the MP Scoreboard screen.
+
+**Option B — Personalization contract (cross-cutting lane):**
+1. Define the canonical profile schema in code and in Supabase.
+2. Define how login/onboarding answers map into that schema.
+3. Add minimal profile/preferences endpoints in the API.
+4. Add a first personalization helper used by the feed and later by chat.
+5. Update the architecture doc as those contracts become real.
+
+Why this is the best lane:
+- it connects almost every other workstream
+- it makes the app feel like CivicMind instead of a generic law search tool
+- it avoids duplicating auth work or feed work
+- it unlocks the "alternative to news outlets" and "what matters to me" product promise
+
 ### P0 — Do first (database + deployment unblockers)
 
-**1. Run Supabase migration and test full sync**
+**1. Supabase migration and full sync — done**
 
-`db/schema.sql` now exists. Backend team should run it once in the Supabase SQL editor, add `SUPABASE_URL` and `SUPABASE_KEY` to `.env`, then run:
+`db/schema.sql` and `db/schema_rag.sql` have been applied in Supabase, and full sync has already been exercised from this workspace. The remaining database work is operational hardening and moving more runtime reads from local JSON to Supabase.
 
 ```bash
 python db/push_to_supabase.py
 ```
 
-Expected result: bills, vote sessions, parliamentarians, MP votes, Scout analyses, and Auditor impact scores are all present in Supabase.
+Result: bills, vote sessions, parliamentarians, MP votes, Scout analyses, Auditor impact scores, and RAG tables are present in Supabase.
 
 ---
 
-**2. Decide monorepo layout before adding frontend**
+**2. Monorepo layout — current state**
 
-Recommendation: use a monorepo for this stage. Keep scraper, agents, API, DB migrations, and frontend in one repo so shared contracts (`bill` shape, `ai_analysis`, categories, flags, API response models) evolve together.
+The monorepo is already set up with `backend/`, `frontend/`, and `legislative-intelligence/` as siblings. Do not restructure until the frontend has enough screens to know which shared contracts need to be extracted.
 
-Suggested target layout:
+When the frontend starts importing types from the API layer, extract them into a `packages/shared/` package. Until then, keep contracts as plain JSON/TypeScript interfaces duplicated across the repo boundary.
 
-```text
-apps/
-  api/                 # FastAPI app
-  web/                 # React/Next.js frontend
-packages/
-  agents/              # LangGraph agents
-  scraper/             # cdep.ro scraper + OCR
-  shared/              # schemas, constants, category/flag definitions
-db/
-  schema.sql
-  migrations/
-data/
-  raw/
-  processed/
+---
+
+**2b. Connect the frontend Vite proxy to both backends**
+
+Before the frontend can call either backend, update `frontend/vite.config.ts` to proxy the relevant prefixes:
+
+```ts
+// frontend/vite.config.ts
+proxy: {
+  '/api':   'http://localhost:8000',   // Django
+  '/auth':  'http://localhost:8000',
+  '/bills': 'http://localhost:8001',   // FastAPI
+  '/mps':   'http://localhost:8001',
+  '/rag':   'http://localhost:8001',
+  '/qa':    'http://localhost:8001',
+  '/messenger': 'http://localhost:8001',
+}
 ```
 
-Do not over-package immediately; first move only when the frontend starts depending on backend contracts.
+Also add path aliases for clean imports:
+
+```ts
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+    '@components': path.resolve(__dirname, './src/components'),
+    '@hooks': path.resolve(__dirname, './src/hooks'),
+  },
+}
+```
+
+---
+
+### P0 — RAG foundation (implemented; continue tuning)
+
+**3. Add Supabase pgvector migration for legislative RAG — done and applied**
+
+`db/schema_rag.sql` now exists with:
+- `vector` extension enabled in `extensions`
+- `legislation_documents`
+- `legislation_chunks`
+- HNSW cosine index on `embedding vector(1024)`
+- `match_legislation_chunks()` RPC using cosine distance (`<=>`)
+
+Keep this separate from `db/schema.sql` until the schema settles.
+
+---
+
+**4. Add RAG indexing script — MVP done**
+
+`rag_index.py` now exists.
+
+Inputs:
+- Portal Legislativ SOAP `Search` results from `legislatie.just.ro`
+- `Legi.Text` and `Legi.LinkHtml` detail pages for national normative acts
+- `data/raw/bill_*.json`
+- OCR text from all `ocr_content` document types
+- bill metadata and Scout summaries as metadata/prefix context
+
+Outputs:
+- document rows
+- chunk rows
+- Mistral `mistral-embed` vectors
+
+Required modes:
+
+```bash
+python rag_index.py --all
+python rag_index.py --changed-only
+python rag_index.py --file bill_23048.json
+```
+
+The script must be idempotent using content hashes.
+
+---
+
+**5. Add LangGraph ReAct RAG chatbot — skeleton done, tuning pending**
+
+Created:
+- `agents/rag.py`
+- `agents/rag_tools.py`
+
+Use LangGraph's prebuilt ReAct chatbot (`create_react_agent`) with tools for:
+- semantic chunk search
+- bill context lookup
+- selected-bill similarity search
+
+Exposed through FastAPI:
+- `POST /rag/search`
+- `POST /rag/chat`
+- `POST /rag/reindex`
+- `GET /rag/health`
+
+The website Chat section should call `/rag/chat` and render citations.
 
 ---
 
@@ -483,13 +1168,9 @@ This section is strictly about scraper and agent work, not frontend/backend poli
 
 #### Scraper P0
 
-**1. Fix CDEP status parsing**
+**1. CDEP status parsing — done**
 
-Current `status` is unreliable and often shows `la_senat`. Parse the specific legislative status row/table from the CDEP bill detail page instead of scanning the whole page text.
-
-Files:
-- `scraper/parsers.py`
-- `scraper/utils.py`
+The parser now extracts the specific legislative-status row/table instead of scanning the whole page text. Keep this area stable while working on the next scraper tasks.
 
 **2. Emit explicit scraper events**
 
@@ -637,5 +1318,4 @@ Every Monday, reads all bills scraped in the past 7 days, generates a 5-sentence
 
 | Bug | Location | Fix |
 |-----|----------|-----|
-| `status` all shows `la_senat` | `scraper/utils.py:detect_status` | Parse the specific "Stadiu legislativ" table row instead of full-page text scan |
 | `adopted_at` is often `null` | `scraper/parsers.py:_extract_dates` | The regex only matches dates before "adoptare/lege nr." keywords; those strings don't appear for bills still in progress — correct behaviour, not a bug |
