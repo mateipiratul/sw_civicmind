@@ -27,3 +27,6 @@ dist-ssr
 
 # Ignore tests for now
 src/tests/
+
+# No .tanstack tmp files
+.tanstack/

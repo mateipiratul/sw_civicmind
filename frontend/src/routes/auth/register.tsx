@@ -1,41 +1,43 @@
-import { useForm } from "@tanstack/react-form";
-import { useNavigate, createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useNavigate, createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 function RegisterPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm({
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-    onSubmit: async (formData) => {
-      const values = formData.value;
-      if (values.password !== values.confirmPassword) {
-        setError("Parolele nu coincid");
-        return;
-      }
-      try {
-        setIsLoading(true);
-        setError(null);
-        const user = await api.register(values.username, values.email, values.password);
-        login(user);
-        navigate({ to: "/" });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Înregistrarea a eșuat");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-  });
+  const handleRegister = async () => {
+    console.log("Submitting register form...");
+    if (password !== confirmPassword) {
+      setError("Parolele nu coincid");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      console.log("Calling API...");
+      const user = await api.register(username, email, password);
+      console.log("API Success, logging in...");
+      login(user);
+      console.log("Login success, navigating...");
+      navigate({ to: "/" });
+    } catch (err) {
+      console.error("Register error:", err);
+      setError(err instanceof Error ? err.message : "Înregistrarea a eșuat");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
@@ -72,50 +74,55 @@ function RegisterPage() {
 
         {/* Form */}
         <form
-          onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+          onSubmit={(e) => { 
+            console.log("Form onSubmit triggered");
+            e.preventDefault(); 
+            handleRegister(); 
+          }}
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
-          {(["username", "email", "password", "confirmPassword"] as const).map((name) => {
-            const labels: Record<typeof name, string> = {
-              username: "Nume utilizator",
-              email: "Email",
-              password: "Parolă",
-              confirmPassword: "Confirmă parola",
-            };
-            return (
-              <form.Field key={name} name={name}>
-                {(field) => (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>
-                      {labels[name]}
-                    </label>
-                    <input
-                      type={name.toLowerCase().includes("password") ? "password" : name === "email" ? "email" : "text"}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      disabled={isLoading}
-                      style={{
-                        padding: "9px 12px",
-                        fontSize: 13.5,
-                        border: "1px solid var(--border-input)",
-                        borderRadius: "var(--radius-sm)",
-                        background: "var(--surface)",
-                        color: "var(--text)",
-                        outline: "none",
-                        fontFamily: "var(--font)",
-                        transition: "border-color 0.12s",
-                      }}
-                      onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "#888"; }}
-                      onBlur={(e) => { 
-                        (e.target as HTMLInputElement).style.borderColor = "var(--border-input)"; 
-                        field.handleBlur(); 
-                      }}
-                    />
-                  </div>
-                )}
-              </form.Field>
-            );
-          })}
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label>Nume utilizator</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Parolă</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Confirmă parola</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={isLoading}
+              style={inputStyle}
+            />
+          </div>
 
           {error && (
             <p style={{ fontSize: 12.5, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "8px 12px" }}>
@@ -158,6 +165,17 @@ function RegisterPage() {
     </div>
   );
 }
+
+const inputStyle = {
+  padding: "9px 12px",
+  fontSize: 13.5,
+  border: "1px solid var(--border-input)",
+  borderRadius: "var(--radius-sm)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  outline: "none",
+  fontFamily: "var(--font)",
+};
 
 export const Route = createFileRoute("/auth/register")({
   component: RegisterPage,

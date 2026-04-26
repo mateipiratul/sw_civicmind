@@ -1,10 +1,8 @@
-import { HeadContent, Scripts, createRootRoute, useNavigate, Link, Outlet } from "@tanstack/react-router";
-import { AuthProvider } from "@/lib/auth-context";
+import { createRootRoute, useNavigate, Link, Outlet } from "@tanstack/react-router";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { Header } from "@/components/layout/header";
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
-import appCss from "../styles.css?url";
 
 interface RootErrorProps {
   error: Error & { status?: number };
@@ -12,46 +10,42 @@ interface RootErrorProps {
 
 function RootErrorComponent({ error }: RootErrorProps) {
   const navigate = useNavigate();
+  const auth = useAuth();
   
   const isUnauthorized = error?.message?.includes("401") || error?.status === 401;
   const isForbidden = error?.message?.includes("403") || error?.status === 403;
 
   useEffect(() => {
     if (isUnauthorized) {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-      // Use navigate instead of hard redirect if possible, 
-      // but for 401 a hard redirect is often safer to clear all state
-      window.location.href = "/auth/login";
+      auth.logout();
+      navigate({ to: "/auth/login", search: { redirect: window.location.pathname } });
     }
-  }, [isUnauthorized]);
+  }, [isUnauthorized, auth, navigate]);
 
   if (isUnauthorized) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center space-y-6 bg-white p-8 rounded-xl shadow-sm border border-[#e2e2e2]">
-        <div className="mx-auto w-20 h-20 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center">
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ maxWidth: 400, width: "100%", textAlign: "center", background: "white", padding: 32, borderRadius: 12, border: "1px solid #e2e2e2" }}>
+        <div style={{ margin: "0 auto 24px", width: 80, height: 80, background: "#f5f5f5", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#888" }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
         
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isForbidden ? "Permission Denied" : "Something went wrong"}
-          </h1>
-          <p className="text-gray-600 mt-2">
-            {isForbidden 
-              ? "You don't have permission to access this resource." 
-              : error?.message || "An unexpected error occurred. Please try again later."}
-          </p>
-        </div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+          {isForbidden ? "Acces Interzis" : "Ceva n-a mers bine"}
+        </h1>
+        <p style={{ color: "#666", marginBottom: 24 }}>
+          {isForbidden 
+            ? "Nu ai permisiunea de a accesa această resursă." 
+            : error?.message || "A apărut o eroare neașteptată."}
+        </p>
 
-        <div className="flex gap-4 justify-center">
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <Button onClick={() => window.location.reload()}>
-            Refresh Page
+            Reîncarcă
           </Button>
           <Button variant="outline" onClick={() => navigate({ to: "/" })}>
-            Go Home
+            Acasă
           </Button>
         </div>
       </div>
@@ -61,16 +55,14 @@ function RootErrorComponent({ error }: RootErrorProps) {
 
 function NotFoundComponent() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center space-y-6 bg-white p-8 rounded-xl shadow-sm border border-[#e2e2e2]">
-        <h1 className="text-6xl font-bold text-[#111]">404</h1>
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Page Not Found</h2>
-          <p className="text-gray-600 mt-2">The page you are looking for does not exist or has been moved.</p>
-        </div>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ maxWidth: 400, width: "100%", textAlign: "center", background: "white", padding: 32, borderRadius: 12, border: "1px solid #e2e2e2" }}>
+        <h1 style={{ fontSize: 64, fontWeight: 800, marginBottom: 8, color: "#111" }}>404</h1>
+        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Pagina nu a fost găsită</h2>
+        <p style={{ color: "#666", marginBottom: 24 }}>Pagina pe care o cauți nu există.</p>
         <Link to="/">
-          <Button className="w-full">
-            Back to Dashboard
+          <Button style={{ width: "100%" }}>
+            Înapoi la Dashboard
           </Button>
         </Link>
       </div>
@@ -80,56 +72,19 @@ function NotFoundComponent() {
 
 function RootComponent() {
   return (
-    <RootDocument>
+    <AuthProvider>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
         <Header />
-        <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", width: "100%" }}>
           <Outlet />
         </main>
       </div>
-    </RootDocument>
+    </AuthProvider>
   );
 }
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "CivicMind - Intelligent Civic Engine",
-      },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
-
   errorComponent: RootErrorComponent,
   notFoundComponent: NotFoundComponent,
   component: RootComponent,
 });
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body className="min-h-screen antialiased font-sans">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-        <Scripts />
-      </body>
-    </html>
-  );
-}

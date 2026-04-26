@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "./api";
 import type { User } from "./api";
 
@@ -18,8 +18,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async () => {
+  // 1. Stable logout reference
+  const logout = useCallback(() => {
+    console.log("[AuthContext] Logging out, clearing storage.");
+    setUser(null);
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+  }, []);
+
+  // 2. Stable profile fetch reference
+  const fetchProfile = useCallback(async () => {
     try {
+      console.log("[AuthContext] Fetching latest profile...");
       const profile = await api.getProfile();
       setUser(prev => {
         if (!prev) return null;
@@ -27,81 +37,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("auth_user", JSON.stringify(profile));
         return updated;
       });
+      console.log("[AuthContext] Profile refreshed.");
     } catch (error) {
-      console.error("Failed to fetch user profile:", error);
-      // Only logout if it's a 401
+      console.error("[AuthContext] Failed to fetch user profile:", error);
       if (error instanceof Error && error.message.includes("401")) {
+        console.warn("[AuthContext] 401 detected in refresh, logging out.");
         logout();
       }
     }
-  };
+  }, [logout]);
 
+  // 3. Initial load effect
   useEffect(() => {
-    // Load user from localStorage on mount
     const token = localStorage.getItem("auth_token");
     const userData = localStorage.getItem("auth_user");
 
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
+        console.log("[AuthContext] Restoring session:", parsedUser.username);
         setUser({ ...parsedUser, token });
-        // Refresh profile in background to get latest balance/data
+        
+        // BG Refresh
         api.getProfile().then(profile => {
           setUser(prev => prev ? { ...prev, ...profile } : null);
           localStorage.setItem("auth_user", JSON.stringify(profile));
         }).catch(err => {
-          console.error("BG Refresh failed", err);
-          if (err instanceof Error && err.message.includes("401")) logout();
+          if (err instanceof Error && err.message.includes("401")) {
+             console.warn("[AuthContext] BG Refresh 401");
+             logout();
+          }
         });
-      } catch {
+      } catch (e) {
+        console.error("[AuthContext] Corrupt storage");
         logout();
       }
     }
 
     setIsLoading(false);
-  }, []);
+  }, [logout]); // logout is stable, so this is safe
 
-  const login = (newUser: User) => {
-    // Ensure we have a clean state update
-    setUser(newUser);
+  const login = useCallback((newUser: User) => {
+    console.log("[AuthContext] Login logic...");
     if (newUser.token) {
       localStorage.setItem("auth_token", newUser.token);
     }
     const { token, ...userData } = newUser;
     localStorage.setItem("auth_user", JSON.stringify(userData));
-  };
+    setUser(newUser);
+  }, []);
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
-  };
-
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     await fetchProfile();
-  };
+  }, [fetchProfile]);
 
-  const updateUser = (data: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...data };
-      setUser(updatedUser);
+  const updateUser = useCallback((data: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      const updatedUser = { ...prev, ...data };
       const { token, ...userData } = updatedUser;
       localStorage.setItem("auth_user", JSON.stringify(userData));
-    }
-  };
+      return updatedUser;
+    });
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    user,
+    isLoading,
+    login,
+    logout,
+    refreshUser,
+    updateUser,
+    isAuthenticated: !!user && !!user.username,
+  }), [user, isLoading, login, logout, refreshUser, updateUser]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        login,
-        logout,
-        refreshUser,
-        updateUser,
-        isAuthenticated: !!user && !!user.username,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
