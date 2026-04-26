@@ -180,6 +180,7 @@ function DashboardPage() {
   const bills = data?.bills && Array.isArray(data.bills) ? data.bills : [];
 
   return (
+    <>
     <div style={{ display: "flex", minHeight: "calc(100vh - 52px)" }}>
       {/* Left sidebar */}
       <aside style={{ width: 200, flexShrink: 0, borderRight: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 0" }}>
@@ -261,7 +262,7 @@ function DashboardPage() {
       </main>
 
       {/* Right panel */}
-      <aside style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 16px" }}>
+      <aside style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 16px", display: "flex", flexDirection: "column" }}>
         {localMPs.length > 0 ? (
           <>
             <div style={{ marginBottom: 14 }}>
@@ -300,17 +301,25 @@ function DashboardPage() {
                 </div>
               </Link>
             ))}
-            {!isAuthenticated && (
-              <div style={{ marginTop: 16, padding: "12px", background: "#f8f8f8", borderRadius: 8 }}>
-                <p style={{ fontSize: 12, color: "#888", lineHeight: 1.5, margin: 0 }}>
-                  <Link to="/auth/login" style={{ color: "#111", fontWeight: 600 }}>Autentifică-te</Link>{" "}
-                    ca să urmărești ce contează pentru tine și să rămâi la curent cu schimbările legislative.                </p>
-              </div>
-            )}
           </>
+        )}
+
+        {!isAuthenticated && (
+          <div style={{
+            position: "sticky", bottom: 16, marginTop: "auto",
+            background: "white", borderRadius: 10,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)",
+            padding: "12px 14px",
+          }}>
+            <span style={{ fontSize: 12, color: "#666", lineHeight: 1.6, display: "block" }}>
+              <Link to="/auth/login" style={{ color: "#111", fontWeight: 700 }}>Autentifică-te</Link>
+              {" "}ca să urmărești ce contează pentru tine și să rămâi la curent cu schimbările legislative.
+            </span>
+          </div>
         )}
       </aside>
     </div>
+    </>
   );
 }
 
