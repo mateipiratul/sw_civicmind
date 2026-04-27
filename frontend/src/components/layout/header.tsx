@@ -23,28 +23,15 @@ export function Header() {
   };
 
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 40,
-        background: "white",
-        borderBottom: "1px solid #e2e2e2",
-        height: 52,
-        display: "flex",
-        alignItems: "center",
-        padding: "0 24px",
-        gap: 32,
-      }}
-    >
+    <header className="app-header">
       {/* Logo */}
-      <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
-        <img src="/favicon.png" alt="CivicMind" style={{ width: 22, height: 22, objectFit: "contain" }} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#111", letterSpacing: "-0.2px" }}>CivicMind</span>
+      <Link to="/" className="logo-link">
+        <img src="/favicon.png" alt="CivicMind" className="logo-img" />
+        <span className="brand">CivicMind</span>
       </Link>
 
       {/* Nav */}
-      <nav style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
+      <nav className="nav-links">
         {[
           { label: "Feed", href: "/" },
           { label: "Parlamentari", href: "/mps" },
@@ -53,8 +40,8 @@ export function Header() {
           <Link
             key={item.href}
             to={item.href}
-            style={{ fontSize: 13.5, color: "#888", textDecoration: "none", padding: "4px 10px", borderRadius: 6 }}
-            activeProps={{ style: { fontSize: 13.5, color: "#111", fontWeight: 600, textDecoration: "none", padding: "4px 10px", borderRadius: 6, background: "#f5f5f5" } }}
+            className="nav-link"
+            activeProps={{ className: "nav-link active" }}
             activeOptions={{ exact: true }}
           >
             {item.label}
@@ -63,53 +50,48 @@ export function Header() {
       </nav>
 
       {/* Right side */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        <button
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#888", display: "flex", alignItems: "center" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f5f5f5"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; }}
-        >
+      <div className="header-actions">
+        <button className="icon-button">
           <Bell size={15} />
         </button>
-        <button
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 6, color: "#888", display: "flex", alignItems: "center" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f5f5f5"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; }}
-        >
+        <button className="icon-button">
           <Search size={15} />
         </button>
 
         {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" style={{ padding: 0, width: 28, height: 28, borderRadius: "50%", overflow: "hidden" }}>
-                <Avatar style={{ width: 28, height: 28 }}>
-                  <AvatarFallback style={{ background: "#f0f0f0", color: "#111", fontSize: 11, fontWeight: 600 }}>
-                    {user.username.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" style={{ minWidth: 180 }}>
-              <DropdownMenuLabel style={{ fontWeight: 500, fontSize: 13 }}>
-                <div>{user.username}</div>
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 400 }}>{user.email}</div>
-              </DropdownMenuLabel>
+                <Button variant="ghost" className="avatar-btn">
+                  <Avatar className="avatar-size">
+                    <AvatarFallback style={{ background: "#f0f0f0", color: "#111", fontSize: 11, fontWeight: 600 }}>
+                      {user.username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="dropdown-content">
+                <DropdownMenuLabel className="dropdown-label">
+                  <div>{user.username}</div>
+                  <div style={{ fontSize: 11, color: "#888", fontWeight: 400 }}>{user.email}</div>
+                </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/profile" style={{ fontSize: 13 }}>Profil</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} style={{ fontSize: 13, color: "#e53e3e" }}>
+              <DropdownMenuItem onClick={handleLogout} className="logout-item" style={{ fontSize: 13 }}>
                 Ieșire
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
+        <div className="auth-actions">
           <Link to="/auth/login">
-            <Button size="sm" variant="outline" style={{ fontSize: 12, height: 28, padding: "0 12px" }}>
-              Autentificare
-            </Button>
+            <Button size="sm" variant="outline" className="btn-outline">Autentificare</Button>
           </Link>
+          <Link to="/auth/register">
+            <Button size="sm" variant="outline" className="btn-outline">Înregistrare</Button>
+          </Link>
+        </div>
         )}
       </div>
     </header>

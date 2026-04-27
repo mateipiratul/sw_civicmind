@@ -39,25 +39,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div
-        style={{
-          background: "var(--surface)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-card)",
-          width: "100%",
-          maxWidth: 400,
-          padding: "40px 36px 32px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 24,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/favicon.png" alt="CivicMind" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
-          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px" }}>
-            CivicMind
-          </span>
+    <div className="card-centered">
+      <div className="card">
+        <div className="brand-row">
+          <img src="/favicon.png" alt="CivicMind" className="logo-img" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px" }}>CivicMind</span>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -69,7 +55,7 @@ function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <form onSubmit={handleLogin} className="form-col">
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>
               Nume utilizator
@@ -80,16 +66,7 @@ function LoginPage() {
               onChange={(event) => setUsername(event.target.value)}
               disabled={isLoading}
               autoComplete="username"
-              style={{
-                padding: "9px 12px",
-                fontSize: 13.5,
-                border: "1px solid var(--border-input)",
-                borderRadius: "var(--radius-sm)",
-                background: "var(--surface)",
-                color: "var(--text)",
-                outline: "none",
-                fontFamily: "var(--font)",
-              }}
+              className="form-input"
             />
           </div>
 
@@ -103,51 +80,13 @@ function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               disabled={isLoading}
               autoComplete="current-password"
-              style={{
-                padding: "9px 12px",
-                fontSize: 13.5,
-                border: "1px solid var(--border-input)",
-                borderRadius: "var(--radius-sm)",
-                background: "var(--surface)",
-                color: "var(--text)",
-                outline: "none",
-                fontFamily: "var(--font)",
-              }}
+              className="form-input"
             />
           </div>
 
-          {error && (
-            <p
-              style={{
-                fontSize: 12.5,
-                color: "#dc2626",
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: 6,
-                padding: "8px 12px",
-              }}
-            >
-              {error}
-            </p>
-          )}
+          {error && <p className="error-box">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              width: "100%",
-              padding: "11px 16px",
-              borderRadius: "var(--radius-sm, 6px)",
-              border: "none",
-              background: "var(--primary)",
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--primary-text)",
-              cursor: isLoading ? "default" : "pointer",
-              opacity: isLoading ? 0.7 : 1,
-              transition: "opacity 0.12s",
-            }}
-          >
+          <button type="submit" disabled={isLoading} className="form-button">
             {isLoading ? "Se autentifica..." : "Autentifica-te"}
           </button>
         </form>
@@ -179,7 +118,7 @@ function LoginPage() {
           }}
         >
           <GoogleIcon />
-          Google auth in curs
+          Google auth în curs
         </button>
 
         <p
@@ -190,13 +129,13 @@ function LoginPage() {
             lineHeight: 1.6,
           }}
         >
-          Continuand, esti de acord cu{" "}
+          Continuând, esti de acord cu{" "}
           <a href="#" style={{ color: "var(--text)", textDecoration: "underline", textUnderlineOffset: 2 }}>
             Termenii de utilizare
           </a>{" "}
           si{" "}
           <a href="#" style={{ color: "var(--text)", textDecoration: "underline", textUnderlineOffset: 2 }}>
-            Politica de confidentialitate
+            Politica de confidențialitate
           </a>.
         </p>
       </div>

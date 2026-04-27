@@ -1,7 +1,25 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+
+const PASSWORD_REQUIREMENTS = {
+  minLength: { regex: /.{8,}/, label: "Minim 8 caractere" },
+  uppercase: { regex: /[A-Z]/, label: "Cel puțin o literă mare" },
+  lowercase: { regex: /[a-z]/, label: "Cel puțin o literă mică" },
+  digit: { regex: /\d/, label: "Cel puțin o cifră" },
+  special: { regex: /[!@#$%^&*()_\-+=\[\]{}|\\:;"'<>,.?/`~]/, label: "Cel puțin un caracter special" },
+  noSpaces: { regex: /^\S*$/, label: "Spațiile albe nu sunt permise" },
+};
+
+function checkPasswordRequirements(password: string) {
+  return Object.fromEntries(
+    Object.entries(PASSWORD_REQUIREMENTS).map(([key, { regex }]) => [
+      key,
+      regex.test(password),
+    ])
+  ) as Record<string, boolean>;
+}
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -14,11 +32,32 @@ function RegisterPage() {
   
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+
+  const passwordRequirements = useMemo(() => checkPasswordRequirements(password), [password]);
+  const allRequirementsMet = Object.values(passwordRequirements).every(Boolean);
+  const passwordsMatch = password === confirmPassword && password.length > 0;
 
   const handleRegister = async () => {
-    console.log("Submitting register form...");
+    console.log("Se trimite formularul de înregistrare");
+    
+    if (!username.trim()) {
+      setError("Numele de utilizator este obligatoriu");
+      return;
+    }
+    
+    if (!email.trim()) {
+      setError("Email-ul este obligatoriu");
+      return;
+    }
+    
+    if (!allRequirementsMet) {
+      setError("Parola nu îndeplinește toate cerințele");
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("Parolele nu coincid");
+      setError("Parolele nu se potrivesc");
       return;
     }
 
@@ -40,26 +79,12 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div
-        style={{
-          background: "var(--surface)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-card)",
-          width: "100%",
-          maxWidth: 400,
-          padding: "40px 36px 32px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 24,
-        }}
-      >
+    <div className="card-centered">
+      <div className="card">
         {/* Brand */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/favicon.png" alt="CivicMind" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
-          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px" }}>
-            CivicMind
-          </span>
+        <div className="brand-row">
+          <img src="/favicon.png" alt="CivicMind" className="logo-img" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px" }}>CivicMind</span>
         </div>
 
         {/* Heading */}
@@ -82,7 +107,7 @@ function RegisterPage() {
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <label>Nume utilizator</label>
+            <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Nume utilizator</label>
             <input
               type="text"
               value={username}
@@ -107,10 +132,31 @@ function RegisterPage() {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setShowPasswordRequirements(true);
+              }}
+              onFocus={() => setShowPasswordRequirements(true)}
+              onBlur={() => {
+                if (password.length === 0) setShowPasswordRequirements(false);
+              }}
               disabled={isLoading}
               style={inputStyle}
             />
+            {showPasswordRequirements && password.length > 0 && (
+              <div style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 4, marginTop: 4, padding: 10, background: "#f9fafb", borderRadius: 6, border: "1px solid var(--border-input)" }}>
+                {Object.entries(PASSWORD_REQUIREMENTS).map(([key, { label }]) => (
+                  <div key={key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: passwordRequirements[key as keyof typeof passwordRequirements] ? "#10b981" : "#d1d5db", fontSize: 14, fontWeight: 600 }}>
+                      {passwordRequirements[key as keyof typeof passwordRequirements] ? "✓" : "○"}
+                    </span>
+                    <span style={{ color: passwordRequirements[key as keyof typeof passwordRequirements] ? "#10b981" : "#6b7280" }}>
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -122,6 +168,9 @@ function RegisterPage() {
               disabled={isLoading}
               style={inputStyle}
             />
+            {password.length > 0 && !passwordsMatch && (
+              <p style={{ fontSize: 12, color: "#dc2626", margin: 0, marginTop: 4 }}>Parolele nu coincid</p>
+            )}
           </div>
 
           {error && (
@@ -132,16 +181,16 @@ function RegisterPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !username.trim() || !email.trim() || !allRequirementsMet || !passwordsMatch}
             style={{
               padding: "11px 16px",
               borderRadius: "var(--radius-sm, 6px)",
-              background: "var(--primary)",
+              background: isLoading || !username.trim() || !email.trim() || !allRequirementsMet || !passwordsMatch ? "#d1d5db" : "var(--primary)",
               color: "var(--primary-text)",
               fontSize: 14,
               fontWeight: 500,
-              cursor: isLoading ? "default" : "pointer",
-              opacity: isLoading ? 0.7 : 1,
+              cursor: (isLoading || !username.trim() || !email.trim() || !allRequirementsMet || !passwordsMatch) ? "not-allowed" : "pointer",
+              opacity: (isLoading || !username.trim() || !email.trim() || !allRequirementsMet || !passwordsMatch) ? 0.6 : 1,
               transition: "opacity 0.12s",
               border: "none",
               fontFamily: "var(--font)",

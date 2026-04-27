@@ -245,6 +245,21 @@ class ApiClient {
     const data = await response.json();
 
     if (!response.ok) {
+      // Handle Django REST Framework validation errors (object with field names as keys)
+      if (typeof data === 'object' && !Array.isArray(data) && !data.detail && !data.error) {
+        const errors: string[] = [];
+        for (const [field, messages] of Object.entries(data)) {
+          if (Array.isArray(messages)) {
+            errors.push(...messages.map(m => `${m}`));
+          } else if (typeof messages === 'string') {
+            errors.push(messages);
+          }
+        }
+        if (errors.length > 0) {
+          throw new ApiError(errors.join(", "), response.status);
+        }
+      }
+      // Handle custom errors array format
       if (data.errors && Array.isArray(data.errors)) {
         const errorMessage = data.errors.map((e: any) => `${e.field}: ${e.message}`).join(", ");
         throw new ApiError(errorMessage, response.status);

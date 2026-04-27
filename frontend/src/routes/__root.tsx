@@ -10,17 +10,18 @@ interface RootErrorProps {
 
 function RootErrorComponent({ error }: RootErrorProps) {
   const navigate = useNavigate();
-  const auth = useAuth();
   
   const isUnauthorized = error?.message?.includes("401") || error?.status === 401;
   const isForbidden = error?.message?.includes("403") || error?.status === 403;
 
   useEffect(() => {
     if (isUnauthorized) {
-      auth.logout();
+      // Clear auth storage directly without useAuth (error component is outside AuthProvider)
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
       navigate({ to: "/auth/login", search: { redirect: window.location.pathname } });
     }
-  }, [isUnauthorized, auth, navigate]);
+  }, [isUnauthorized, navigate]);
 
   if (isUnauthorized) return null;
 
