@@ -110,23 +110,25 @@ function MPSidebarCard({ mp }: { mp: Parliamentarian }) {
   const absentPct = total > 0 ? Math.round(((s?.absent_count ?? 0) / total) * 100) : 0;
 
   return (
-    <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #f0f0f0" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 4 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#111", lineHeight: 1.3 }}>{mp.mp_name}</div>
-        {s?.score != null && (
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#111", flexShrink: 0 }}>{s.score.toFixed(0)}</div>
+    <Link to="/mps/$slug" params={{ slug: mp.mp_slug }} style={{ textDecoration: "none" }}>
+      <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #f0f0f0", cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#111", lineHeight: 1.3 }}>{mp.mp_name}</div>
+          {s?.score != null && (
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", flexShrink: 0 }}>{s.score.toFixed(0)}</div>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: "#aaa", marginBottom: total > 0 ? 7 : 0 }}>
+          {mp.party} · {mp.chamber === "deputies" ? "Deputat" : "Senator"}
+        </div>
+        {total > 0 && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <span style={{ fontSize: 11, color: "#16a34a" }}>✓ {forPct}%</span>
+            <span style={{ fontSize: 11, color: "#ccc" }}>Absent {absentPct}%</span>
+          </div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: "#aaa", marginBottom: total > 0 ? 7 : 0 }}>
-        {mp.party} · {mp.chamber === "deputies" ? "Deputat" : "Senator"}
-      </div>
-      {total > 0 && (
-        <div style={{ display: "flex", gap: 8 }}>
-          <span style={{ fontSize: 11, color: "#16a34a" }}>✓ {forPct}%</span>
-          <span style={{ fontSize: 11, color: "#ccc" }}>Absent {absentPct}%</span>
-        </div>
-      )}
-    </div>
+    </Link>
   );
 }
 
@@ -168,7 +170,7 @@ function DashboardPage() {
 
   useEffect(() => {
     if (user?.county) {
-      api.listMPs({ county: user.county }).then(res => setLocalMPs(res.results.slice(0, 5))).catch(() => {});
+      api.listMPs({ county: user.county, limit: 5 }).then(res => setLocalMPs(res.parliamentarians.slice(0, 5))).catch(() => {});
     }
   }, [user?.county]);
 
@@ -183,7 +185,7 @@ function DashboardPage() {
     <>
     <div style={{ display: "flex", minHeight: "calc(100vh - 52px)" }}>
       {/* Left sidebar */}
-      <aside style={{ width: 200, flexShrink: 0, borderRight: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 0" }}>
+      <aside style={{ width: 200, flexShrink: 0, position: "sticky", top: 52, alignSelf: "flex-start", height: "calc(100vh - 52px)", overflowY: "auto", borderRight: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 0" }}>
         <div style={{ padding: "0 16px", marginBottom: 8 }}>
           <span style={{ fontSize: 10.5, fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Categorii
@@ -262,7 +264,7 @@ function DashboardPage() {
       </main>
 
       {/* Right panel */}
-      <aside style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 16px", display: "flex", flexDirection: "column" }}>
+      <aside style={{ width: 220, flexShrink: 0, position: "sticky", top: 52, alignSelf: "flex-start", height: "calc(100vh - 52px)", overflowY: "auto", borderLeft: "1px solid #e8e8e8", background: "rgba(255,255,255,0.75)", padding: "20px 16px", display: "flex", flexDirection: "column" }}>
         {localMPs.length > 0 ? (
           <>
             <div style={{ marginBottom: 14 }}>

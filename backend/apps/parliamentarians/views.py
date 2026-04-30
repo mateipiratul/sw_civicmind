@@ -15,6 +15,51 @@ from .serializers import (
 )
 from .models import MPVote
 
+ROMANIAN_COUNTIES = [
+    'Alba',
+    'Arad',
+    'Arges',
+    'Bacau',
+    'Bihor',
+    'Bistrita-Nasaud',
+    'Botosani',
+    'Braila',
+    'Brasov',
+    'Bucuresti',
+    'Buzau',
+    'Calarasi',
+    'Caras-Severin',
+    'Cluj',
+    'Constanta',
+    'Covasna',
+    'Dambovita',
+    'Dolj',
+    'Galati',
+    'Giurgiu',
+    'Gorj',
+    'Harghita',
+    'Hunedoara',
+    'Ialomita',
+    'Iasi',
+    'Ilfov',
+    'Maramures',
+    'Mehedinti',
+    'Mures',
+    'Neamt',
+    'Olt',
+    'Prahova',
+    'Salaj',
+    'Satu Mare',
+    'Sibiu',
+    'Suceava',
+    'Teleorman',
+    'Timis',
+    'Tulcea',
+    'Valcea',
+    'Vaslui',
+    'Vrancea',
+]
+
 
 class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -97,6 +142,17 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             payload.update(extra)
         return Response(payload)
 
+    def list(self, request, *args, **kwargs):
+        page = self._parse_page(request)
+        limit = self._parse_limit(request)
+        queryset = self.filter_queryset(self.get_queryset())
+        return self._paginated_response(
+            queryset=queryset,
+            serializer=self.get_serializer,
+            page=page,
+            limit=limit,
+        )
+
     def _base_deputies_queryset(self):
         return self.filter_queryset(self.get_queryset()).filter(chamber__icontains='deput').order_by('mp_name')
 
@@ -115,22 +171,22 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='metadata')
     def metadata(self, request):
-        deputies = Parliamentarian.objects.filter(chamber__icontains='deput')
+        parliamentarians = Parliamentarian.objects.all()
         counties = sorted(
             county
-            for county in deputies.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct()
+            for county in parliamentarians.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct()
         )
         parties = sorted(
             party
-            for party in deputies.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct()
+            for party in parliamentarians.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct()
         )
         chamber_counts = Counter(
             chamber or 'unknown'
-            for chamber in Parliamentarian.objects.values_list('chamber', flat=True)
+            for chamber in parliamentarians.values_list('chamber', flat=True)
         )
 
         return Response({
-            'counties': counties,
+            'counties': counties or ROMANIAN_COUNTIES,
             'parties': parties,
             'chambers': dict(chamber_counts),
             'hasCountyData': bool(counties),

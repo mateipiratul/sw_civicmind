@@ -183,6 +183,40 @@ export interface BillVotesResponse {
   votes: { for: BillVoteMP[]; against: BillVoteMP[]; abstain: BillVoteMP[]; absent: BillVoteMP[] };
 }
 
+export interface MPVote {
+  vote: string;
+  party: string;
+  vote_date: string | null;
+  vote_type: string | null;
+  bill_idp: number;
+  bill_number: string;
+  bill_title: string;
+  bill_status: string | null;
+  title_short: string | null;
+  impact_categories: string[];
+  controversy_score: number | null;
+}
+
+export interface ParliamentarianDetail extends Parliamentarian {
+  recent_votes: MPVote[];
+}
+
+export interface MPMetadata {
+  counties: string[];
+  parties: string[];
+  chambers: Record<string, number>;
+  hasCountyData: boolean;
+}
+
+export interface PaginatedMPList {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  parliamentarians: Parliamentarian[];
+  filters?: { county?: string; party?: string | null; chamber?: string };
+}
+
 export interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -296,16 +330,34 @@ class ApiClient {
   };
 
   // Parliamentarians
-  listMPs = async (params: { search?: string; county?: string; page?: number } = {}): Promise<PaginatedMPs> => {
+  listMPs = async (params: { search?: string; county?: string; party?: string; page?: number; limit?: number } = {}): Promise<PaginatedMPList> => {
     const q = new URLSearchParams();
     if (params.search) q.append("search", params.search);
     if (params.county) q.append("county", params.county);
+    if (params.party) q.append("party", params.party);
     if (params.page && params.page > 1) q.append("page", String(params.page));
+    if (params.limit) q.append("limit", String(params.limit));
     return this.request(`/api/mps/?${q}`);
   };
 
   getMP = async (slug: string): Promise<Parliamentarian> => {
     return this.request(`/api/mps/${slug}/`);
+  };
+
+  getMPDetail = async (slug: string): Promise<ParliamentarianDetail> => {
+    return this.request(`/api/mps/${slug}/`);
+  };
+
+  getMPMetadata = async (): Promise<MPMetadata> => {
+    return this.request(`/api/mps/metadata/`);
+  };
+
+  getMyRepresentatives = async (county: string, params: { party?: string; page?: number; limit?: number } = {}): Promise<PaginatedMPList> => {
+    const q = new URLSearchParams({ county });
+    if (params.party) q.append("party", params.party);
+    if (params.page && params.page > 1) q.append("page", String(params.page));
+    if (params.limit) q.append("limit", String(params.limit));
+    return this.request(`/api/mps/my-representatives/?${q}`);
   };
 
   getBillVotes = async (id: number): Promise<BillVotesResponse> => {

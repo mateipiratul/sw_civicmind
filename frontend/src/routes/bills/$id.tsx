@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef, type CSSProperties, type ReactNode } from "react";
 import { Link, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { api, type Bill, type RagSource, type BillVotesResponse } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -18,11 +20,18 @@ import {
   ShieldCheck,
   Sparkles,
   User,
+  X,
 } from "lucide-react";
 
 type SourceDocument = {
   label: string;
   url: string;
+};
+
+type BillChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
 };
 
 const pageStyle: CSSProperties = {
@@ -56,6 +65,42 @@ const eyebrowStyle: CSSProperties = {
   textTransform: "uppercase",
   color: "#aaa",
 };
+
+const createId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p style={{ margin: "0 0 8px", lineHeight: 1.6 }}>{children}</p>,
+        ul: ({ children }) => <ul style={{ margin: "0 0 8px 18px", padding: 0, lineHeight: 1.6 }}>{children}</ul>,
+        ol: ({ children }) => <ol style={{ margin: "0 0 8px 18px", padding: 0, lineHeight: 1.6 }}>{children}</ol>,
+        li: ({ children }) => <li style={{ marginBottom: 3 }}>{children}</li>,
+        h1: ({ children }) => <h1 style={{ margin: "0 0 8px", fontSize: 17, lineHeight: 1.3 }}>{children}</h1>,
+        h2: ({ children }) => <h2 style={{ margin: "0 0 8px", fontSize: 15.5, lineHeight: 1.35 }}>{children}</h2>,
+        h3: ({ children }) => <h3 style={{ margin: "0 0 7px", fontSize: 14, lineHeight: 1.35 }}>{children}</h3>,
+        strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#2457d6", textDecoration: "underline" }}>
+            {children}
+          </a>
+        ),
+        hr: () => <hr style={{ border: 0, borderTop: "1px solid #e7e7e2", margin: "10px 0" }} />,
+        code: ({ children }) => (
+          <code style={{ background: "#f3f3f1", border: "1px solid #e7e7e2", borderRadius: 5, padding: "1px 4px", fontSize: "0.92em" }}>
+            {children}
+          </code>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
 
 function statusStyle(status?: string | null): CSSProperties {
   const adopted = status?.toLowerCase().includes("adopt");
@@ -220,11 +265,14 @@ function BillDetailPage() {
   const [partyFilter, setPartyFilter] = useState("Toate Partidele");
 
   // Q&A
+  const [qaOpen, setQaOpen] = useState(false);
   const [qaQuestion, setQaQuestion] = useState("");
-  const [qaAnswer, setQaAnswer] = useState("");
+  const [qaMessages, setQaMessages] = useState<BillChatMessage[]>([]);
   const [qaLoading, setQaLoading] = useState(false);
   const [qaSources, setQaSources] = useState<RagSource[]>([]);
+  const qaBottomRef = useRef<HTMLDivElement>(null);
   const qaAnswerRef = useRef<HTMLDivElement>(null);
+  const qaAnswer = [...qaMessages].reverse().find(message => message.role === "assistant")?.content ?? "";
 
   const billId = Number.parseInt(id, 10);
 
@@ -286,29 +334,60 @@ function BillDetailPage() {
   );
 
   useEffect(() => {
-    if (qaAnswerRef.current) {
-      qaAnswerRef.current.scrollTop = qaAnswerRef.current.scrollHeight;
-    }
-  }, [qaAnswer]);
+    qaBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [qaMessages, qaSources, qaLoading, qaOpen]);
 
   const handleQaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const q = qaQuestion.trim();
     if (!q || qaLoading) return;
+    const userMessage: BillChatMessage = { id: createId(), role: "user", content: q };
+    const assistantId = createId();
+    let assistantStarted = false;
+
+    setQaOpen(true);
     setQaQuestion("");
-    setQaAnswer("");
+    setQaMessages(prev => [...prev, userMessage]);
     setQaSources([]);
     setQaLoading(true);
     try {
       await api.streamRagChat(q, { bill_idp: billId }, {
         onEvent: (event) => {
-          if (event.type === "token") setQaAnswer(prev => prev + event.delta);
+          if (event.type === "token") {
+            if (!assistantStarted) {
+              assistantStarted = true;
+              setQaMessages(prev => [...prev, { id: assistantId, role: "assistant", content: event.delta }]);
+            } else {
+              setQaMessages(prev =>
+                prev.map(message =>
+                  message.id === assistantId
+                    ? { ...message, content: message.content + event.delta }
+                    : message,
+                ),
+              );
+            }
+          }
           if (event.type === "sources") setQaSources(event.items);
-          if (event.type === "done") setQaSources(event.sources);
+          if (event.type === "done") {
+            setQaSources(event.sources);
+            if (!assistantStarted) {
+              assistantStarted = true;
+              setQaMessages(prev => [...prev, { id: assistantId, role: "assistant", content: event.answer }]);
+            } else if (event.answer) {
+              setQaMessages(prev =>
+                prev.map(message =>
+                  message.id === assistantId ? { ...message, content: event.answer } : message,
+                ),
+              );
+            }
+          }
         },
       });
     } catch {
-      setQaAnswer("A apărut o eroare. Încearcă din nou.");
+      setQaMessages(prev => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: "A aparut o eroare. Incearca din nou." },
+      ]);
     } finally {
       setQaLoading(false);
     }
@@ -614,9 +693,7 @@ function BillDetailPage() {
               </div>
             </Section>
 
-            {/* Civic Q&A */}
-            <Section eyebrow="Civic Q&A" title="Întreabă asistentul AI" icon={<MessageSquareText size={17} />}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "none" }}>
                 {(qaAnswer || qaLoading) && (
                   <div
                     ref={qaAnswerRef}
@@ -679,7 +756,6 @@ function BillDetailPage() {
                   </button>
                 </form>
               </div>
-            </Section>
           </div>
 
           <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -856,6 +932,140 @@ function BillDetailPage() {
 
           </aside>
         </div>
+        {!qaOpen && (
+          <button
+            type="button"
+            onClick={() => setQaOpen(true)}
+            style={{
+              position: "fixed",
+              right: 24,
+              bottom: 24,
+              zIndex: 60,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 9,
+              padding: "13px 16px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.18)",
+              background: "#111",
+              color: "white",
+              boxShadow: "0 14px 35px rgba(0,0,0,0.2)",
+              cursor: "pointer",
+              fontFamily: "var(--font)",
+              fontSize: 13.5,
+              fontWeight: 700,
+            }}
+            aria-label="Deschide chatul AI pentru acest proiect"
+          >
+            <MessageSquareText size={17} />
+            Intreaba AI
+          </button>
+        )}
+        {qaOpen && (
+          <div
+            style={{
+              position: "fixed",
+              right: 24,
+              bottom: 24,
+              width: "min(440px, calc(100vw - 32px))",
+              height: "min(620px, calc(100vh - 88px))",
+              zIndex: 60,
+              display: "flex",
+              flexDirection: "column",
+              background: "white",
+              border: "1px solid #dedede",
+              borderRadius: 12,
+              boxShadow: "0 18px 55px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ padding: "13px 14px", borderBottom: "1px solid #e8e8e8", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#111", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                AI
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#111" }}>Chat despre proiect</div>
+                <div style={{ fontSize: 11.5, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bill.bill_number}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQaOpen(false)}
+                style={{ width: 30, height: 30, borderRadius: 8, border: "none", background: "#f5f5f5", color: "#555", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                aria-label="Inchide chatul"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+              {qaMessages.length === 0 && (
+                <div style={{ border: "1px dashed #dedede", borderRadius: 10, padding: 14, fontSize: 13, color: "#666", lineHeight: 1.55 }}>
+                  Intreaba cum te afecteaza proiectul, ce prevede sau ce documente oficiale sustin raspunsul.
+                </div>
+              )}
+              {qaMessages.map(message => (
+                <div key={message.id} style={{ display: "flex", justifyContent: message.role === "user" ? "flex-end" : "flex-start", gap: 8 }}>
+                  {message.role === "assistant" && (
+                    <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#111", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>
+                      AI
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      maxWidth: "82%",
+                      padding: "9px 12px",
+                      borderRadius: message.role === "user" ? "13px 13px 4px 13px" : "13px 13px 13px 4px",
+                      background: message.role === "user" ? "#111" : "#fafafa",
+                      color: message.role === "user" ? "white" : "#111",
+                      border: message.role === "assistant" ? "1px solid #e8e8e8" : "none",
+                      fontSize: 13,
+                      lineHeight: 1.55,
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {message.role === "assistant" ? <MarkdownContent content={message.content} /> : <div style={{ whiteSpace: "pre-wrap" }}>{message.content}</div>}
+                  </div>
+                </div>
+              ))}
+              {qaLoading && qaMessages[qaMessages.length - 1]?.role !== "assistant" && (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", color: "#aaa", fontSize: 13 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#111", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>AI</div>
+                  Se genereaza raspunsul...
+                </div>
+              )}
+              {qaSources.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 34 }}>
+                  {qaSources.slice(0, 4).map((src, i) => (
+                    <div key={`${src.document_id}-${i}`} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 7px", borderRadius: 6, background: "#f5f5f5", border: "1px solid #e8e8e8", fontSize: 11, color: "#666", maxWidth: 180, overflow: "hidden" }}>
+                      <FileText size={11} style={{ flexShrink: 0, color: "#aaa" }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{src.title || src.document_id}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div ref={qaBottomRef} />
+            </div>
+
+            <form onSubmit={handleQaSubmit} style={{ padding: 12, borderTop: "1px solid #e8e8e8", display: "flex", gap: 8, flexShrink: 0 }}>
+              <input
+                type="text"
+                value={qaQuestion}
+                onChange={e => setQaQuestion(e.target.value)}
+                placeholder="Intreaba despre acest proiect..."
+                disabled={qaLoading}
+                style={{ flex: 1, minWidth: 0, padding: "10px 12px", fontSize: 13, border: "1px solid #e2e2e2", borderRadius: 8, background: "white", color: "#111", outline: "none", fontFamily: "var(--font)" }}
+              />
+              <button
+                type="submit"
+                disabled={qaLoading || !qaQuestion.trim()}
+                style={{ width: 38, height: 38, borderRadius: 8, border: "none", background: qaLoading || !qaQuestion.trim() ? "#d5d5d5" : "#111", color: "white", cursor: qaLoading || !qaQuestion.trim() ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                aria-label="Trimite intrebarea"
+              >
+                <Send size={15} />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

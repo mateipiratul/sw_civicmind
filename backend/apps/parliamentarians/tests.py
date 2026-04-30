@@ -23,6 +23,16 @@ class ParliamentarianFilterSetTests(SimpleTestCase):
         queryset.filter.assert_called_once_with(county__icontains="Cluj")
         self.assertEqual(result, "filtered-queryset")
 
+    def test_filter_party_uses_case_insensitive_exact_match(self):
+        queryset = MagicMock()
+        queryset.filter.return_value = "filtered-queryset"
+
+        filterset = ParliamentarianFilterSet(data={}, queryset=queryset)
+        result = filterset.filter_party(queryset, "party", "  USR  ")
+
+        queryset.filter.assert_called_once_with(party__iexact="USR")
+        self.assertEqual(result, "filtered-queryset")
+
     def test_viewset_uses_parliamentarian_filterset(self):
         self.assertIs(ParliamentarianViewSet.filterset_class, ParliamentarianFilterSet)
 
@@ -142,13 +152,13 @@ class ParliamentarianVoteMapTests(APITestCase):
 
     @patch("apps.parliamentarians.views.Parliamentarian.objects")
     def test_metadata_returns_filter_collections(self, mock_manager):
-        deputies = MagicMock()
-        mock_manager.filter.return_value = deputies
-        deputies.exclude.return_value.exclude.return_value.values_list.return_value.distinct.side_effect = [
+        parliamentarians = MagicMock()
+        mock_manager.all.return_value = parliamentarians
+        parliamentarians.exclude.return_value.exclude.return_value.values_list.return_value.distinct.side_effect = [
             ["Cluj", "Alba"],
             ["USR", "PSD"],
         ]
-        mock_manager.values_list.return_value = ["deputies", "deputies", "senate"]
+        parliamentarians.values_list.return_value = ["deputies", "deputies", "senate"]
 
         response = self.client.get(reverse("parliamentarian-metadata"))
 
@@ -156,6 +166,7 @@ class ParliamentarianVoteMapTests(APITestCase):
         self.assertEqual(response.data["counties"], ["Alba", "Cluj"])
         self.assertEqual(response.data["parties"], ["PSD", "USR"])
         self.assertEqual(response.data["chambers"]["deputies"], 2)
+        self.assertTrue(response.data["hasCountyData"])
 
     @patch("apps.parliamentarians.views.ParliamentarianVoteMapSerializer")
     @patch("apps.parliamentarians.views.ParliamentarianViewSet.filter_queryset")
