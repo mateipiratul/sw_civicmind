@@ -273,6 +273,8 @@ function ChatPage() {
       >
         <div
           style={{
+            height: 76,
+            boxSizing: "border-box",
             padding: "16px 20px",
             borderBottom: "1px solid #e8e8e8",
             background: "white",
@@ -488,7 +490,16 @@ function ChatPage() {
       </div>
 
       <aside style={{ width: 320, flexShrink: 0, height: "100%", minHeight: 0, background: "rgba(255,255,255,0.75)", borderLeft: "1px solid #e8e8e8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid #e8e8e8", flexShrink: 0 }}>
+        <div
+          style={{
+            height: 76,
+            boxSizing: "border-box",
+            padding: "16px 20px",
+            borderBottom: "1px solid #e8e8e8",
+            background: "white",
+            flexShrink: 0,
+          }}
+        >
           <div
             style={{
               fontSize: 10.5,
