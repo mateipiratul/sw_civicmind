@@ -1,5 +1,5 @@
 import { createRootRoute, useNavigate, Link, Outlet } from "@tanstack/react-router";
-import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import { Header } from "@/components/layout/header";
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -73,14 +73,12 @@ function NotFoundComponent() {
 
 function RootComponent() {
   return (
-    <AuthProvider>
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
-        <Header />
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", width: "100%" }}>
-          <Outlet />
-        </main>
-      </div>
-    </AuthProvider>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
+      <Header />
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", width: "100%" }}>
+        <Outlet />
+      </main>
+    </div>
   );
 }
 

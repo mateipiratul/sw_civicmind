@@ -247,19 +247,34 @@ function ChatPage() {
   };
 
   return (
-    <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+    <div
+      style={{
+        display: "flex",
+        position: "fixed",
+        top: 52,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        minHeight: 0,
+        overflow: "hidden",
+        width: "100%",
+      }}
+    >
       <div
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
+          minHeight: 0,
           borderRight: "1px solid #e8e8e8",
           background: "transparent",
         }}
       >
         <div
           style={{
+            height: 76,
+            boxSizing: "border-box",
             padding: "16px 20px",
             borderBottom: "1px solid #e8e8e8",
             background: "white",
@@ -275,6 +290,7 @@ function ChatPage() {
         <div
           style={{
             flex: 1,
+            minHeight: 0,
             overflowY: "auto",
             padding: "20px",
             display: "flex",
@@ -473,8 +489,17 @@ function ChatPage() {
         </div>
       </div>
 
-      <aside style={{ width: 320, flexShrink: 0, background: "rgba(255,255,255,0.75)", borderLeft: "1px solid #e8e8e8", overflowY: "auto" }}>
-        <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid #e8e8e8" }}>
+      <aside style={{ width: 320, flexShrink: 0, height: "100%", minHeight: 0, background: "rgba(255,255,255,0.75)", borderLeft: "1px solid #e8e8e8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div
+          style={{
+            height: 76,
+            boxSizing: "border-box",
+            padding: "16px 20px",
+            borderBottom: "1px solid #e8e8e8",
+            background: "white",
+            flexShrink: 0,
+          }}
+        >
           <div
             style={{
               fontSize: 10.5,
@@ -498,7 +523,7 @@ function ChatPage() {
             Fragmentele legislative extrase vor apărea aici după prima întrebare.
           </div>
         ) : (
-          <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
             {fragments.map((fragment) => (
               <div
                 key={fragment.id}

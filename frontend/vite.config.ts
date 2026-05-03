@@ -22,7 +22,6 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': djangoOrigin,
         '/rag': aiOrigin,
-        '/mps': aiOrigin,
         '/feed': aiOrigin,
         '/qa': aiOrigin,
         '/messenger': aiOrigin,

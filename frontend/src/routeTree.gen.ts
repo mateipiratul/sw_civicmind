@@ -14,6 +14,8 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as MpsIndexRouteImport } from './routes/mps/index'
+import { Route as MpsSlugRouteImport } from './routes/mps/$slug'
 import { Route as BillsIdRouteImport } from './routes/bills/$id'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLogoutRouteImport } from './routes/auth/logout'
@@ -46,6 +48,16 @@ const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MpsIndexRoute = MpsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MpsRoute,
+} as any)
+const MpsSlugRoute = MpsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => MpsRoute,
 } as any)
 const BillsIdRoute = BillsIdRouteImport.update({
   id: '/bills/$id',
@@ -87,7 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
-  '/mps': typeof MpsRoute
+  '/mps': typeof MpsRouteWithChildren
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -95,13 +107,14 @@ export interface FileRoutesByFullPath {
   '/auth/logout': typeof AuthLogoutRoute
   '/auth/register': typeof AuthRegisterRoute
   '/bills/$id': typeof BillsIdRoute
+  '/mps/$slug': typeof MpsSlugRoute
+  '/mps/': typeof MpsIndexRoute
   '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
-  '/mps': typeof MpsRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -109,6 +122,8 @@ export interface FileRoutesByTo {
   '/auth/logout': typeof AuthLogoutRoute
   '/auth/register': typeof AuthRegisterRoute
   '/bills/$id': typeof BillsIdRoute
+  '/mps/$slug': typeof MpsSlugRoute
+  '/mps': typeof MpsIndexRoute
   '/profile': typeof ProfileIndexRoute
 }
 export interface FileRoutesById {
@@ -116,7 +131,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
-  '/mps': typeof MpsRoute
+  '/mps': typeof MpsRouteWithChildren
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -124,6 +139,8 @@ export interface FileRoutesById {
   '/auth/logout': typeof AuthLogoutRoute
   '/auth/register': typeof AuthRegisterRoute
   '/bills/$id': typeof BillsIdRoute
+  '/mps/$slug': typeof MpsSlugRoute
+  '/mps/': typeof MpsIndexRoute
   '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRouteTypes {
@@ -140,13 +157,14 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/bills/$id'
+    | '/mps/$slug'
+    | '/mps/'
     | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/chat'
-    | '/mps'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -154,6 +172,8 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/bills/$id'
+    | '/mps/$slug'
+    | '/mps'
     | '/profile'
   id:
     | '__root__'
@@ -168,6 +188,8 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/bills/$id'
+    | '/mps/$slug'
+    | '/mps/'
     | '/profile/'
   fileRoutesById: FileRoutesById
 }
@@ -175,7 +197,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   ChatRoute: typeof ChatRoute
-  MpsRoute: typeof MpsRoute
+  MpsRoute: typeof MpsRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   AuthLogoutRoute: typeof AuthLogoutRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
@@ -219,6 +241,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/profile/'
       preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/mps/': {
+      id: '/mps/'
+      path: '/'
+      fullPath: '/mps/'
+      preLoaderRoute: typeof MpsIndexRouteImport
+      parentRoute: typeof MpsRoute
+    }
+    '/mps/$slug': {
+      id: '/mps/$slug'
+      path: '/$slug'
+      fullPath: '/mps/$slug'
+      preLoaderRoute: typeof MpsSlugRouteImport
+      parentRoute: typeof MpsRoute
     }
     '/bills/$id': {
       id: '/bills/$id'
@@ -286,11 +322,23 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface MpsRouteChildren {
+  MpsSlugRoute: typeof MpsSlugRoute
+  MpsIndexRoute: typeof MpsIndexRoute
+}
+
+const MpsRouteChildren: MpsRouteChildren = {
+  MpsSlugRoute: MpsSlugRoute,
+  MpsIndexRoute: MpsIndexRoute,
+}
+
+const MpsRouteWithChildren = MpsRoute._addFileChildren(MpsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   ChatRoute: ChatRoute,
-  MpsRoute: MpsRoute,
+  MpsRoute: MpsRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   AuthLogoutRoute: AuthLogoutRoute,
   AuthRegisterRoute: AuthRegisterRoute,
