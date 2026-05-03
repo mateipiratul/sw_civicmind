@@ -247,99 +247,18 @@ function ChatPage() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        position: "fixed",
-        top: 52,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        minHeight: 0,
-        overflow: "hidden",
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minWidth: 0,
-          minHeight: 0,
-          borderRight: "1px solid #e8e8e8",
-          background: "transparent",
-        }}
-      >
-        <div
-          style={{
-            height: 76,
-            boxSizing: "border-box",
-            padding: "16px 20px",
-            borderBottom: "1px solid #e8e8e8",
-            background: "white",
-            flexShrink: 0,
-          }}
-        >
-          <h1 style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>Chat legislativ</h1>
-          <p style={{ fontSize: 12, color: "#7d7d7d", marginTop: 2 }}>
-            Răspunsuri cu streaming și surse din corpusul legislativ indexat.
-          </p>
+    <div className="chat-root">
+      <div className="chat-main">
+        <div className="chat-header">
+          <h1>Chat legislativ</h1>
+          <p>Răspunsuri cu streaming și surse din corpusul legislativ indexat.</p>
         </div>
 
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: "auto",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
-        >
+        <div className="chat-body">
           {messages.map((message) => (
-            <div
-              key={message.id}
-              style={{
-                display: "flex",
-                justifyContent: message.role === "user" ? "flex-end" : "flex-start",
-                gap: 10,
-              }}
-            >
-              {message.role === "assistant" && (
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#111",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    marginTop: 2,
-                  }}
-                >
-                  AI
-                </div>
-              )}
-              <div
-                style={{
-                  maxWidth: "74%",
-                  padding: "10px 14px",
-                  borderRadius: message.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                  background: message.role === "user" ? "#111" : "white",
-                  color: message.role === "user" ? "white" : "#111",
-                  fontSize: 13.5,
-                  lineHeight: 1.58,
-                  border: message.role === "assistant" ? "1px solid #e8e8e8" : "none",
-                  overflowWrap: "anywhere",
-                }}
-              >
+            <div key={message.id} className={`message-row ${message.role === "user" ? "user" : "assistant"}`}>
+              {message.role === "assistant" && <div className="avatar">AI</div>}
+              <div className={`message-bubble ${message.role === "user" ? "user" : "assistant"}`}>
                 {message.role === "assistant" ? (
                   <MarkdownContent content={message.content} />
                 ) : (
@@ -350,47 +269,11 @@ function ChatPage() {
           ))}
 
           {isLoading && (
-            <div style={{ display: "flex", gap: 10 }}>
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: "#111",
-                  color: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}
-              >
-                AI
-              </div>
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "14px 14px 14px 4px",
-                  background: "white",
-                  border: "1px solid #e8e8e8",
-                  display: "flex",
-                  gap: 4,
-                  alignItems: "center",
-                }}
-              >
+            <div className="loading-row">
+              <div className="avatar">AI</div>
+              <div className="loading-bubble">
                 {[0, 1, 2].map((dot) => (
-                  <span
-                    key={dot}
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "#ccc",
-                      display: "block",
-                      animation: `bounce 1.2s ${dot * 0.2}s ease-in-out infinite`,
-                    }}
-                  />
+                  <span key={dot} className={`dot delay-${dot}`} />
                 ))}
               </div>
             </div>
@@ -400,45 +283,17 @@ function ChatPage() {
         </div>
 
         {messages.length === 1 && (
-          <div
-            style={{
-              padding: "0 20px 14px",
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 10,
-            }}
-          >
+          <div className="suggestions">
             {SUGGESTIONS.map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => sendMessage(suggestion)}
-                style={{
-                  padding: "12px 14px",
-                  fontSize: 12.5,
-                  border: "1px solid #e2e2e2",
-                  borderRadius: 12,
-                  background: "white",
-                  color: "#444",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  lineHeight: 1.45,
-                }}
-              >
+              <button key={suggestion} onClick={() => sendMessage(suggestion)} className="suggestion-btn">
                 {suggestion}
               </button>
             ))}
           </div>
         )}
 
-        <div
-          style={{
-            padding: "12px 20px 16px",
-            borderTop: "1px solid #e8e8e8",
-            background: "white",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+        <div className="input-area">
+          <div className="input-row">
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -450,152 +305,51 @@ function ChatPage() {
               }}
               placeholder="Scrie întrebarea ta despre legislație..."
               rows={2}
-              style={{
-                flex: 1,
-                padding: "10px 14px",
-                fontSize: 13.5,
-                border: "1px solid #e2e2e2",
-                borderRadius: 10,
-                resize: "none",
-                outline: "none",
-                fontFamily: "inherit",
-                color: "#111",
-                lineHeight: 1.5,
-              }}
+              className="textarea"
             />
             <button
               onClick={() => void sendMessage(input)}
               disabled={!canSend}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 9,
-                background: canSend ? "#111" : "#e0e0e0",
-                color: canSend ? "white" : "#aaa",
-                border: "none",
-                cursor: canSend ? "pointer" : "default",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
+              className="send-button"
             >
               <Send size={15} />
             </button>
           </div>
-          <p style={{ fontSize: 11, color: "#9a9a9a", marginTop: 8, textAlign: "center" }}>
-            Răspunsurile sunt generate cu streaming și trebuie verificate în documentele oficiale citate.
-          </p>
+          <p className="input-note">Răspunsurile sunt generate cu streaming și trebuie verificate în documentele oficiale citate.</p>
         </div>
       </div>
-
-      <aside style={{ width: 320, flexShrink: 0, height: "100%", minHeight: 0, background: "rgba(255,255,255,0.75)", borderLeft: "1px solid #e8e8e8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div
-          style={{
-            height: 76,
-            boxSizing: "border-box",
-            padding: "16px 20px",
-            borderBottom: "1px solid #e8e8e8",
-            background: "white",
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10.5,
-              fontWeight: 600,
-              color: "#8b8b8b",
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-            }}
-          >
-            Fragmente și surse
-          </div>
-          <div style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
-            {resolvedSource
-              ? `Sursa predominantă: ${resolvedSource}`
-              : "Agentul alege sursa în funcție de întrebare."}
+      <aside className="aside">
+        <div className="sources-header">
+          <div className="sources-label">Fragmente și surse</div>
+          <div className="sources-sub">
+            {resolvedSource ? `Sursa predominantă: ${resolvedSource}` : "Agentul alege sursa în funcție de întrebare."}
           </div>
         </div>
 
         {fragments.length === 0 ? (
-          <div style={{ padding: "24px 16px", color: "#8f8f8f", fontSize: 12.5, lineHeight: 1.6 }}>
-            Fragmentele legislative extrase vor apărea aici după prima întrebare.
-          </div>
+          <div className="fragments-empty">Fragmentele legislative extrase vor apărea aici după prima întrebare.</div>
         ) : (
-          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="fragments-list">
             {fragments.map((fragment) => (
-              <div
-                key={fragment.id}
-                style={{
-                  background: "#fafafa",
-                  border: "1px solid #ebebeb",
-                  borderRadius: 10,
-                  padding: "10px 12px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: 8,
-                    marginBottom: 6,
-                  }}
-                >
+              <div key={fragment.id} className="source-card">
+                <div className="source-header">
                   <div>
-                    <div
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        color: "#888",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {fragment.label}
-                    </div>
-                    {fragment.similarity && (
-                      <div style={{ fontSize: 10.5, color: "#9b9b9b", marginTop: 3 }}>
-                        {fragment.similarity}
-                      </div>
-                    )}
+                    <div className="source-label">{fragment.label}</div>
+                    {fragment.similarity && <div className="source-sim">{fragment.similarity}</div>}
                   </div>
                   {fragment.href && (
-                    <a
-                      href={fragment.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "#888", flexShrink: 0 }}
-                    >
+                    <a href={fragment.href} target="_blank" rel="noopener noreferrer" style={{ color: "#888", flexShrink: 0 }}>
                       <ExternalLink size={13} />
                     </a>
                   )}
                 </div>
-                <div
-                  style={{
-                    fontSize: 11.5,
-                    color: "#404040",
-                    fontWeight: 600,
-                    lineHeight: 1.45,
-                    marginBottom: 8,
-                  }}
-                >
-                  {fragment.law}
-                </div>
-                <p style={{ fontSize: 12, color: "#4f4f4f", lineHeight: 1.55 }}>{fragment.excerpt}</p>
+                <div className="source-law">{fragment.law}</div>
+                <p className="source-excerpt">{fragment.excerpt}</p>
               </div>
             ))}
           </div>
         )}
       </aside>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-5px); }
-        }
-      `}</style>
     </div>
   );
 }

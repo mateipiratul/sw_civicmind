@@ -225,7 +225,7 @@ function DashboardPage() {
               <h1 style={{ fontSize: 20, fontWeight: 600, color: "#111", marginBottom: 3 }}>
                 {activeCategory ? activeCategory : isAuthenticated ? "Feed Personalizat" : "Legislativ Actual"}
               </h1>
-              <p style={{ fontSize: 13, color: "#888" }}>
+              <p className="muted" style={{ fontSize: 13 }}>
                 {isAuthenticated && !activeCategory
                   ? "Legi relevante pentru interesele și județul tău."
                   : "Ultimele actualizări legislative."}
@@ -241,7 +241,7 @@ function DashboardPage() {
           </div>
 
           {error && (
-            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#b91c1c", marginBottom: 16 }}>
+            <div className="error-box" style={{ marginBottom: 16, fontSize: 13, color: "#b91c1c" }}>
               {error}
             </div>
           )}
@@ -280,7 +280,8 @@ function DashboardPage() {
             ))}
             <Link
               to="/mps"
-              style={{ fontSize: 12, color: "#888", textDecoration: "none", display: "flex", alignItems: "center", gap: 3, marginTop: 4 }}
+              className="muted"
+              style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 3, marginTop: 4 }}
             >
               Toți parlamentarii <ChevronRight size={12} />
             </Link>

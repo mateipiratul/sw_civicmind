@@ -26,7 +26,7 @@ export function Header() {
     <header className="app-header">
       {/* Logo */}
       <Link to="/" className="logo-link">
-        <img src="/favicon.png" alt="CivicMind" className="logo-img" />
+        <img src="/favicon.png" alt="CivicMind" className="logo-img" style={{ width: 22, height: 22 }} />
         <span className="brand">CivicMind</span>
       </Link>
 

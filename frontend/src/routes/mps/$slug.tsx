@@ -41,7 +41,7 @@ function VoteRow({ vote, index }: { vote: MPVote; index: number }) {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {vote.vote_date && (
-            <span style={{ fontSize: 11.5, color: "#aaa" }}>
+            <span className="muted" style={{ fontSize: 11.5 }}>
               {new Date(vote.vote_date).toLocaleDateString("ro-RO")}
             </span>
           )}
@@ -61,7 +61,8 @@ function VoteRow({ vote, index }: { vote: MPVote; index: number }) {
           <Link
             to="/bills/$id"
             params={{ id: String(vote.bill_idp) }}
-            style={{ marginLeft: "auto", fontSize: 11.5, color: "#888", display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}
+            className="muted"
+            style={{ marginLeft: "auto", fontSize: 11.5, display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}
           >
             {vote.bill_number} <ExternalLink size={11} />
           </Link>
@@ -99,7 +100,7 @@ function MPDetailPage() {
 
   if (error || !mp) return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 24px" }}>
-      <Link to="/mps" style={{ fontSize: 13, color: "#888", display: "flex", alignItems: "center", gap: 4, marginBottom: 24 }}>
+      <Link to="/mps" className="muted" style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, marginBottom: 24 }}>
         <ChevronLeft size={14} /> Parlamentari
       </Link>
       <p style={{ color: "#dc2626", fontSize: 13 }}>{error || "Parlamentarul nu a fost găsit."}</p>
@@ -113,7 +114,7 @@ function MPDetailPage() {
   return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 24px" }}>
       {/* Back */}
-      <Link to="/mps" style={{ fontSize: 13, color: "#888", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 24, textDecoration: "none" }}>
+      <Link to="/mps" className="muted" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 24, textDecoration: "none" }}>
         <ChevronLeft size={14} /> Toți parlamentarii
       </Link>
 
@@ -144,7 +145,7 @@ function MPDetailPage() {
               <div style={{ fontSize: 36, fontWeight: 800, color: scoreColor(s.score), lineHeight: 1 }}>
                 {s.score.toFixed(0)}
               </div>
-              <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>scor impact</div>
+              <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>scor impact</div>
             </div>
           )}
         </div>
@@ -167,7 +168,7 @@ function MPDetailPage() {
               ].map(({ label, n, color }) => (
                 <span key={label} style={{ fontSize: 12.5 }}>
                   <span style={{ color, fontWeight: 700 }}>{pct(n)}%</span>
-                  <span style={{ color: "#888", marginLeft: 4 }}>{label} ({n})</span>
+                  <span className="muted" style={{ marginLeft: 4 }}>{label} ({n})</span>
                 </span>
               ))}
               <span style={{ fontSize: 12, color: "#bbb", marginLeft: "auto" }}>{total} voturi total</span>
@@ -186,13 +187,13 @@ function MPDetailPage() {
       <div style={{ background: "white", border: "1px solid #e8e8e8", borderRadius: 12, padding: "20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>Istoric Voturi</h2>
-          <span style={{ fontSize: 12, color: "#aaa" }}>ultimele {mp.recent_votes?.length ?? 0} voturi</span>
+          <span className="muted" style={{ fontSize: 12 }}>ultimele {mp.recent_votes?.length ?? 0} voturi</span>
         </div>
 
         {mp.recent_votes?.length > 0 ? (
           mp.recent_votes.map((v, i) => <VoteRow key={i} vote={v} index={i} />)
         ) : (
-          <p style={{ fontSize: 13, color: "#aaa", textAlign: "center", padding: "24px 0" }}>
+          <p className="muted" style={{ fontSize: 13, textAlign: "center", padding: "24px 0" }}>
             Nu există voturi înregistrate.
           </p>
         )}

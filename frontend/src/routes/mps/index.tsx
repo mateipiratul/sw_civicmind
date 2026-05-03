@@ -38,11 +38,11 @@ function MPRow({ mp }: { mp: Parliamentarian }) {
             )}
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {mp.county && <span style={{ fontSize: 12, color: "#aaa" }}>{mp.county}</span>}
+            {mp.county && <span className="muted" style={{ fontSize: 12 }}>{mp.county}</span>}
             <span style={{ fontSize: 12, color: "#ccc" }}>
               {mp.chamber === "deputies" ? "Deputat" : mp.chamber === "senate" ? "Senator" : mp.chamber}
             </span>
-            {t > 0 && <span style={{ fontSize: 11.5, color: "#bbb" }}>{t} voturi</span>}
+            {t > 0 && <span className="muted" style={{ fontSize: 11.5 }}>{t} voturi</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -189,7 +189,7 @@ function MPsPage() {
     <div style={{ width: "100%", maxWidth: 760, margin: "0 auto", padding: "28px 24px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 18 }}>
         <h1 style={{ fontSize: 18, fontWeight: 600, color: "#111" }}>Parlamentari</h1>
-        {total > 0 && <span style={{ fontSize: 12.5, color: "#aaa" }}>{total} rezultate</span>}
+        {total > 0 && <span className="muted" style={{ fontSize: 12.5 }}>{total} rezultate</span>}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
@@ -247,7 +247,8 @@ function MPsPage() {
             {hasFilters && (
               <button
                 onClick={() => { setSearch(""); setParty(""); setCounty(""); setPage(1); }}
-                style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#888", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "4px 6px" }}
+                className="muted"
+                style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "4px 6px" }}
               >
                 <X size={12} /> Resetează
               </button>
@@ -257,7 +258,7 @@ function MPsPage() {
       </div>
 
       {error && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "9px 12px", fontSize: 12.5, color: "#b91c1c", marginBottom: 14 }}>
+        <div className="error-box" style={{ marginBottom: 14, fontSize: 12.5, color: "#b91c1c" }}>
           {error}
         </div>
       )}
@@ -266,7 +267,7 @@ function MPsPage() {
         {loading
           ? [...Array(12)].map((_, i) => <MPRowSkeleton key={i} />)
           : mps.length === 0
-          ? <div style={{ textAlign: "center", padding: "40px 0", color: "#aaa", fontSize: 13 }}>
+          ? <div className="muted" style={{ textAlign: "center", padding: "40px 0", fontSize: 13 }}>
               {tab === "mine" ? "Nu am găsit parlamentari din județul tău." : "Nu s-au găsit parlamentari."}
             </div>
           : mps.map(mp => <MPRow key={mp.mp_slug} mp={mp} />)

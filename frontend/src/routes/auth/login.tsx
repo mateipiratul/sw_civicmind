@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGoogleLogin } from "@react-oauth/google";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -38,12 +39,31 @@ function LoginPage() {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const user = await api.googleLogin(tokenResponse.access_token);
+        login(user);
+        navigate({ to: "/" });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Autentificarea Google a esuat");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      setError("Autentificarea Google a fost anulată sau a esuat");
+    },
+  });
+
   return (
     <div className="card-centered">
       <div className="card">
         <div className="brand-row">
-          <img src="/favicon.png" alt="CivicMind" className="logo-img" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
-          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px" }}>CivicMind</span>
+          <img src="/favicon.png" alt="CivicMind" className="logo-img" />
+          <span style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.3px" }}>CivicMind</span>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -99,8 +119,8 @@ function LoginPage() {
 
         <button
           type="button"
-          disabled
-          title="Google auth is being wired to the backend."
+          disabled={isLoading}
+          onClick={() => googleLogin()}
           style={{
             display: "flex",
             alignItems: "center",
@@ -113,12 +133,12 @@ function LoginPage() {
             background: "#fafafa",
             fontSize: 14,
             fontWeight: 500,
-            color: "var(--text-muted)",
-            cursor: "not-allowed",
+            color: "var(--text)",
+            cursor: isLoading ? "not-allowed" : "pointer",
           }}
         >
           <GoogleIcon />
-          Google auth în curs
+          Continuă cu Google
         </button>
 
         <p
