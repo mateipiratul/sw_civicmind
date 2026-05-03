@@ -21,3 +21,6 @@ db.sqlite3
 
 # PyRight Configuration File
 pyrightconfig.json
+
+# Google Secrets
+client_secret_*.json
