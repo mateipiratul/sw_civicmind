@@ -120,7 +120,30 @@ DATABASES = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True # For MVP sprint
+# For production, set CORS_ALLOW_ALL_ORIGINS=False and provide a
+# comma-separated list in CORS_ALLOWED_ORIGINS. For local development
+# the defaults allow the Vite dev server.
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'False'
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+# Allow cookies to be included in cross-origin requests when True.
+CORS_ALLOW_CREDENTIALS = os.getenv('CORS_ALLOW_CREDENTIALS', 'True') == 'True'
+
+# CSRF trusted origins for local development. Include the Vite dev server
+# (http://localhost:5173) and 127.0.0.1 variant. Can be overridden by
+# setting the CSRF_TRUSTED_ORIGINS environment variable (comma-separated).
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173'
+).split(',')
+
+# Cookie / CSRF security defaults. For cross-site cookie-based auth in
+# production you will typically set SAMESITE=None and SECURE=True.
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+# Leave CSRF cookie readable by JS (default Django behavior); only set to
+# True if you use a different mechanism for providing the token to clients.
+CSRF_COOKIE_HTTPONLY = os.getenv('CSRF_COOKIE_HTTPONLY', 'False') == 'True'
 
 
 # Password validation

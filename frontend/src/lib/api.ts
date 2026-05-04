@@ -259,17 +259,26 @@ class ApiClient {
     return { Authorization: `Token ${token}` };
   };
 
+  private getCsrfToken = (): string | null => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^|; )' + 'csrftoken' + '=([^;]*)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  };
+
   private requestTo = async <T>(baseUrl: string, endpoint: string, options: RequestInit = {}): Promise<T> => {
     const url = `${baseUrl}${endpoint}`;
-    const headers = {
+    const csrfToken = this.getCsrfToken();
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
       ...this.getAuthHeader(),
-      ...options.headers,
+      ...(options.headers as Record<string, string> | undefined),
     };
 
     const response = await fetch(url, {
       ...options,
-      headers
+      headers,
+      credentials: 'include',
     });
 
     if (response.status === 204) {
@@ -315,6 +324,8 @@ class ApiClient {
 
   // Auth
   register = async (username: string, email: string, password: string): Promise<User> => {
+    // Ensure CSRF cookie is set before POSTing (required for session auth)
+    await this.requestTo<AuthResponse>(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
     const response = await this.request<AuthResponse>("/api/auth/register/", {
       method: "POST",
       body: JSON.stringify({ username, email, password }),
@@ -322,6 +333,8 @@ class ApiClient {
     return this.normalizeAuthUser(response);
   };
   login = async (username: string, password: string): Promise<User> => {
+    // Ensure CSRF cookie is set before POSTing (required for session auth)
+    await this.requestTo<AuthResponse>(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
     const response = await this.request<AuthResponse>("/api/auth/login/", {
       method: "POST",
       body: JSON.stringify({ username, password }),

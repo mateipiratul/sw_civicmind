@@ -29,8 +29,8 @@ def normalize_email(value: str) -> str:
 
 
 class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
+    class Meta:  # type: ignore[reportIncompatibleVariableOverride]
+        model = User  # type: ignore[reportAssignmentType]
         fields = ("id", "username", "email")
 
 
@@ -39,8 +39,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=254)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
-    class Meta:
-        model = User
+    class Meta: # type: ignore[reportIncompatibleVariableOverride]
+        model = User # type: ignore[reportAssignmentType]
         fields = ("id", "username", "email", "password")
 
     def validate_username(self, value: str) -> str:
