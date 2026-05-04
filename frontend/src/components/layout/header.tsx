@@ -51,9 +51,11 @@ export function Header() {
 
       {/* Right side */}
       <div className="header-actions">
-        <button className="icon-button">
-          <Bell size={15} />
-        </button>
+        {isAuthenticated && user && (
+          <button className="icon-button">
+            <Bell size={15} />
+          </button>
+        )}
         <button className="icon-button">
           <Search size={15} />
         </button>
@@ -61,7 +63,7 @@ export function Header() {
         {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="avatar-btn">
+                <Button className="avatar-btn">
                   <Avatar className="avatar-size">
                     <AvatarFallback style={{ background: "#f0f0f0", color: "#111", fontSize: 11, fontWeight: 600 }}>
                       {user.username.substring(0, 2).toUpperCase()}
