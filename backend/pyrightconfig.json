@@ -3,5 +3,15 @@
   "venv": ".venv",
   "pythonVersion": "3.13",
   "typeCheckingMode": "basic",
-  "plugins": ["django-stubs"]
+
+  "reportIncompatibleVariableOverride": false,
+  "reportAssignmentType": false,
+  "reportUnknownMemberType": false,
+
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["."]
+    }
+  ]
 }

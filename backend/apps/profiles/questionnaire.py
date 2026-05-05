@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Any
 
 
-WORK_DOMAIN_OPTIONS = [
-    {"value": "agriculture", "label": "Agricultura / fermier"},
-    {"value": "education", "label": "Educatie"},
-    {"value": "health", "label": "Sanatate"},
+WORK_DOMAIN_OPTIONS: list[dict[str, str]] = [
+    {"value": "agriculture", "label": "Agricultură / fermier"},
+    {"value": "education", "label": "Educație"},
+    {"value": "health", "label": "Sănătate"},
     {"value": "it", "label": "IT / tehnologie"},
-    {"value": "construction", "label": "Constructii"},
-    {"value": "transport", "label": "Transport / livrari"},
+    {"value": "construction", "label": "Construcții"},
+    {"value": "transport", "label": "Transport / livrări"},
     {"value": "horeca", "label": "HoReCa"},
     {"value": "retail", "label": "Retail"},
-    {"value": "public_administration", "label": "Administratie publica"},
+    {"value": "public_administration", "label": "Administrație publică"},
     {"value": "entrepreneur", "label": "Antreprenor / firma proprie"},
     {"value": "student", "label": "Student"},
     {"value": "retired", "label": "Pensionar"},
-    {"value": "job_seeker", "label": "Somer / in cautare de job"},
-    {"value": "prefer_not_to_say", "label": "Prefer sa nu spun"},
+    {"value": "job_seeker", "label": "Șomer / in cautare de job"},
+    {"value": "prefer_not_to_say", "label": "Prefer să nu spun"},
 ]
 
-EMPLOYMENT_STATUS_OPTIONS = [
+EMPLOYMENT_STATUS_OPTIONS: list[dict[str, str]] = [
     {"value": "employee", "label": "Angajat"},
     {"value": "freelancer_pfa", "label": "Freelancer / PFA"},
     {"value": "entrepreneur", "label": "Antreprenor"},
@@ -32,7 +32,7 @@ EMPLOYMENT_STATUS_OPTIONS = [
     {"value": "prefer_not_to_say", "label": "Prefer sa nu spun"},
 ]
 
-PERSONAL_INTEREST_OPTIONS = [
+PERSONAL_INTEREST_OPTIONS: list[dict[str, str]] = [
     {"value": "taxes", "label": "Taxe si impozite"},
     {"value": "labour", "label": "Salarii si munca"},
     {"value": "education", "label": "Educatie"},
@@ -51,7 +51,7 @@ PERSONAL_INTEREST_OPTIONS = [
     {"value": "family", "label": "Familie si copii"},
 ]
 
-AGE_RANGE_OPTIONS = [
+AGE_RANGE_OPTIONS: list[dict[str, str]] = [
     {"value": "under_18", "label": "Sub 18"},
     {"value": "18_24", "label": "18-24"},
     {"value": "25_34", "label": "25-34"},
@@ -60,7 +60,7 @@ AGE_RANGE_OPTIONS = [
     {"value": "65_plus", "label": "65+"},
 ]
 
-HOUSING_STATUS_OPTIONS = [
+HOUSING_STATUS_OPTIONS: list[dict[str, str]] = [
     {"value": "rent", "label": "Chirie"},
     {"value": "owner", "label": "Proprietar"},
     {"value": "with_family", "label": "Cu familia"},
@@ -70,7 +70,7 @@ HOUSING_STATUS_OPTIONS = [
     {"value": "prefer_not_to_say", "label": "Prefer sa nu spun"},
 ]
 
-MOBILITY_OPTIONS = [
+MOBILITY_OPTIONS: list[dict[str, str]] = [
     {"value": "personal_car", "label": "Masina personala"},
     {"value": "public_transport", "label": "Transport public"},
     {"value": "bike_scooter", "label": "Bicicleta / trotineta"},
@@ -80,7 +80,7 @@ MOBILITY_OPTIONS = [
     {"value": "rarely_travel", "label": "Nu folosesc des transport"},
 ]
 
-EDUCATION_CONTEXT_OPTIONS = [
+EDUCATION_CONTEXT_OPTIONS: list[dict[str, str]] = [
     {"value": "student", "label": "Sunt student"},
     {"value": "pupil", "label": "Sunt elev"},
     {"value": "parent_of_student", "label": "Am copil/copii la scoala"},
@@ -89,7 +89,7 @@ EDUCATION_CONTEXT_OPTIONS = [
     {"value": "prefer_not_to_say", "label": "Prefer sa nu spun"},
 ]
 
-ENERGY_FOCUS_OPTIONS = [
+ENERGY_FOCUS_OPTIONS: list[dict[str, str]] = [
     {"value": "electricity", "label": "Electricitate"},
     {"value": "gas", "label": "Gaz"},
     {"value": "central_heating", "label": "Incalzire centralizata"},
@@ -99,7 +99,7 @@ ENERGY_FOCUS_OPTIONS = [
     {"value": "energy_efficiency", "label": "Eficienta energetica"},
 ]
 
-PUBLIC_SERVICE_OPTIONS = [
+PUBLIC_SERVICE_OPTIONS: list[dict[str, str]] = [
     {"value": "public_healthcare", "label": "Sanatate publica"},
     {"value": "public_education", "label": "Educatie publica"},
     {"value": "local_administration", "label": "Administratie locala"},
@@ -112,7 +112,7 @@ PUBLIC_SERVICE_OPTIONS = [
 ]
 
 
-PROFILE_QUESTIONNAIRE = {
+PROFILE_QUESTIONNAIRE: dict[str, list[dict[str, str]]] = {
     "work_domains": WORK_DOMAIN_OPTIONS,
     "employment_statuses": EMPLOYMENT_STATUS_OPTIONS,
     "personal_interest_areas": PERSONAL_INTEREST_OPTIONS,
@@ -125,7 +125,7 @@ PROFILE_QUESTIONNAIRE = {
 }
 
 
-WORK_DOMAIN_TO_INTERESTS = {
+WORK_DOMAIN_TO_INTERESTS: dict[str, list[str]] = {
     "agriculture": ["agricultura"],
     "education": ["educatie"],
     "health": ["sanatate"],
@@ -141,7 +141,7 @@ WORK_DOMAIN_TO_INTERESTS = {
     "job_seeker": ["munca", "social"],
 }
 
-EMPLOYMENT_STATUS_TO_INTERESTS = {
+EMPLOYMENT_STATUS_TO_INTERESTS: dict[str, list[str]] = {
     "employee": ["munca"],
     "freelancer_pfa": ["fiscal", "munca"],
     "entrepreneur": ["fiscal", "munca"],
@@ -152,7 +152,7 @@ EMPLOYMENT_STATUS_TO_INTERESTS = {
     "informal_seasonal": ["munca", "social"],
 }
 
-PERSONAL_INTEREST_TO_INTERESTS = {
+PERSONAL_INTEREST_TO_INTERESTS: dict[str, list[str]] = {
     "taxes": ["fiscal"],
     "labour": ["munca"],
     "education": ["educatie"],
@@ -171,7 +171,7 @@ PERSONAL_INTEREST_TO_INTERESTS = {
     "family": ["social", "educatie"],
 }
 
-AGE_RANGE_TO_INTERESTS = {
+AGE_RANGE_TO_INTERESTS: dict[str, list[str]] = {
     "under_18": ["educatie", "social"],
     "18_24": ["educatie", "munca"],
     "25_34": ["munca", "social"],
@@ -180,7 +180,7 @@ AGE_RANGE_TO_INTERESTS = {
     "65_plus": ["pensii", "sanatate"],
 }
 
-HOUSING_TO_INTERESTS = {
+HOUSING_TO_INTERESTS: dict[str, list[str]] = {
     "rent": ["social"],
     "owner": ["social"],
     "with_family": ["social"],
@@ -189,7 +189,7 @@ HOUSING_TO_INTERESTS = {
     "social_housing": ["social"],
 }
 
-MOBILITY_TO_INTERESTS = {
+MOBILITY_TO_INTERESTS: dict[str, list[str]] = {
     "personal_car": ["fiscal", "social"],
     "public_transport": ["administratie", "social"],
     "bike_scooter": ["mediu", "social"],
@@ -198,14 +198,14 @@ MOBILITY_TO_INTERESTS = {
     "commercial_vehicle": ["munca", "fiscal"],
 }
 
-EDUCATION_CONTEXT_TO_INTERESTS = {
+EDUCATION_CONTEXT_TO_INTERESTS: dict[str, list[str]] = {
     "student": ["educatie"],
     "pupil": ["educatie"],
     "parent_of_student": ["educatie", "social"],
     "education_worker": ["educatie", "munca"],
 }
 
-ENERGY_TO_INTERESTS = {
+ENERGY_TO_INTERESTS: dict[str, list[str]] = {
     "electricity": ["social", "mediu"],
     "gas": ["social", "mediu"],
     "central_heating": ["social"],
@@ -215,7 +215,7 @@ ENERGY_TO_INTERESTS = {
     "energy_efficiency": ["mediu", "social"],
 }
 
-PUBLIC_SERVICE_TO_INTERESTS = {
+PUBLIC_SERVICE_TO_INTERESTS: dict[str, list[str]] = {
     "public_healthcare": ["sanatate"],
     "public_education": ["educatie"],
     "local_administration": ["administratie"],
@@ -227,7 +227,7 @@ PUBLIC_SERVICE_TO_INTERESTS = {
     "social_assistance": ["social"],
 }
 
-WORK_DOMAIN_TO_PERSONAS = {
+WORK_DOMAIN_TO_PERSONAS: dict[str, list[str]] = {
     "agriculture": ["agricultor"],
     "education": ["angajat"],
     "health": ["pacient"],
@@ -238,7 +238,7 @@ WORK_DOMAIN_TO_PERSONAS = {
     "job_seeker": ["angajat"],
 }
 
-EMPLOYMENT_STATUS_TO_PERSONAS = {
+EMPLOYMENT_STATUS_TO_PERSONAS: dict[str, list[str]] = {
     "employee": ["angajat"],
     "freelancer_pfa": ["pfa"],
     "entrepreneur": ["antreprenor"],
@@ -249,12 +249,12 @@ EMPLOYMENT_STATUS_TO_PERSONAS = {
     "informal_seasonal": ["angajat"],
 }
 
-EDUCATION_CONTEXT_TO_PERSONAS = {
+EDUCATION_CONTEXT_TO_PERSONAS: dict[str, list[str]] = {
     "student": ["student"],
     "parent_of_student": ["parinte"],
 }
 
-PUBLIC_SERVICE_TO_PERSONAS = {
+PUBLIC_SERVICE_TO_PERSONAS: dict[str, list[str]] = {
     "public_healthcare": ["pacient"],
 }
 
@@ -263,14 +263,14 @@ def _option_values(options: list[dict[str, str]]) -> set[str]:
     return {option["value"] for option in options}
 
 
-VALID_SINGLE_VALUE_FIELDS = {
+VALID_SINGLE_VALUE_FIELDS: dict[str, set[str]] = {
     "work_domain": _option_values(WORK_DOMAIN_OPTIONS),
     "employment_status": _option_values(EMPLOYMENT_STATUS_OPTIONS),
     "age_range": _option_values(AGE_RANGE_OPTIONS),
     "housing_status": _option_values(HOUSING_STATUS_OPTIONS),
 }
 
-VALID_MULTI_VALUE_FIELDS = {
+VALID_MULTI_VALUE_FIELDS: dict[str, set[str]] = {
     "personal_interest_areas": _option_values(PERSONAL_INTEREST_OPTIONS),
     "mobility_modes": _option_values(MOBILITY_OPTIONS),
     "education_context": _option_values(EDUCATION_CONTEXT_OPTIONS),
@@ -279,13 +279,13 @@ VALID_MULTI_VALUE_FIELDS = {
 }
 
 
-def derive_profile_interests(profile_data: dict) -> list[str]:
+def derive_profile_interests(profile_data: dict[str, Any]) -> list[str]:
     tags: set[str] = set(profile_data.get("interests") or [])
 
-    tags.update(WORK_DOMAIN_TO_INTERESTS.get(profile_data.get("work_domain"), []))
-    tags.update(EMPLOYMENT_STATUS_TO_INTERESTS.get(profile_data.get("employment_status"), []))
-    tags.update(AGE_RANGE_TO_INTERESTS.get(profile_data.get("age_range"), []))
-    tags.update(HOUSING_TO_INTERESTS.get(profile_data.get("housing_status"), []))
+    tags.update(WORK_DOMAIN_TO_INTERESTS.get(profile_data.get("work_domain") or "", []))
+    tags.update(EMPLOYMENT_STATUS_TO_INTERESTS.get(profile_data.get("employment_status") or "", []))
+    tags.update(AGE_RANGE_TO_INTERESTS.get(profile_data.get("age_range") or "", []))
+    tags.update(HOUSING_TO_INTERESTS.get(profile_data.get("housing_status") or "", []))
 
     for value in profile_data.get("personal_interest_areas", []):
         tags.update(PERSONAL_INTEREST_TO_INTERESTS.get(value, []))
@@ -301,11 +301,11 @@ def derive_profile_interests(profile_data: dict) -> list[str]:
     return sorted(tags)
 
 
-def derive_persona_tags(profile_data: dict) -> list[str]:
+def derive_persona_tags(profile_data: dict[str, Any]) -> list[str]:
     tags: set[str] = set(profile_data.get("persona_tags") or [])
 
-    tags.update(WORK_DOMAIN_TO_PERSONAS.get(profile_data.get("work_domain"), []))
-    tags.update(EMPLOYMENT_STATUS_TO_PERSONAS.get(profile_data.get("employment_status"), []))
+    tags.update(WORK_DOMAIN_TO_PERSONAS.get(profile_data.get("work_domain") or "", []))
+    tags.update(EMPLOYMENT_STATUS_TO_PERSONAS.get(profile_data.get("employment_status") or "", []))
 
     for value in profile_data.get("education_context", []):
         tags.update(EDUCATION_CONTEXT_TO_PERSONAS.get(value, []))
@@ -315,8 +315,8 @@ def derive_persona_tags(profile_data: dict) -> list[str]:
     return sorted(tags)
 
 
-def is_questionnaire_completed(profile_data: dict) -> bool:
-    required_single_values = [
+def is_questionnaire_completed(profile_data: dict[str, Any]) -> bool:
+    required_single_values: list[Any] = [
         profile_data.get("county"),
         profile_data.get("work_domain"),
         profile_data.get("employment_status"),
@@ -326,7 +326,7 @@ def is_questionnaire_completed(profile_data: dict) -> bool:
     if not all(required_single_values):
         return False
 
-    required_lists: Iterable[list[str]] = (
+    required_lists: tuple[Any, ...] = (
         profile_data.get("personal_interest_areas", []),
         profile_data.get("mobility_modes", []),
         profile_data.get("education_context", []),

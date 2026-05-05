@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import re
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from typing import Dict
 from rest_framework import serializers
 
 from apps.profiles.models import Profile
@@ -28,20 +31,30 @@ def normalize_email(value: str) -> str:
     return (value or "").strip().lower()
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:  # type: ignore[reportIncompatibleVariableOverride]
-        model = User  # type: ignore[reportAssignmentType]
-        fields = ("id", "username", "email")
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+
+class UserSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    role = serializers.SerializerMethodField()
+
+    def get_role(self, obj: User) -> str:
+        if obj.is_superuser:
+            return "admin"
+        if obj.is_staff:
+            return "staff"
+        return "user"
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(max_length=150)
     email = serializers.CharField(max_length=254)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    class Meta: # type: ignore[reportIncompatibleVariableOverride]
-        model = User # type: ignore[reportAssignmentType]
-        fields = ("id", "username", "email", "password")
 
     def validate_username(self, value: str) -> str:
         normalized = normalize_username(value)
@@ -66,6 +79,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return normalized
 
     def validate_password(self, value: str) -> str:
+        # Standard custom checks
         if len(value) < 8:
             raise serializers.ValidationError("Password must be at least 8 characters long.")
         if any(char.isspace() for char in value):
@@ -78,10 +92,17 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Password must contain at least 1 digit.")
         if not PASSWORD_SPECIAL_RE.search(value):
             raise serializers.ValidationError("Password must contain at least 1 special character.")
+        
+        # Django built-in production validators
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+            
         return value
 
-    def create(self, validated_data):
-        user = User.objects.create_user(
+    def create(self, validated_data: Dict[str, str]) -> User:
+        user: User = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
@@ -91,17 +112,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(trim_whitespace=False)
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    username: serializers.CharField = serializers.CharField(trim_whitespace=False)
+    password: serializers.CharField = serializers.CharField(write_only=True, trim_whitespace=False)
 
-    def validate(self, attrs):
-        username = normalize_username(attrs.get("username", ""))
-        password = attrs.get("password", "")
+    def validate(self, attrs: Dict[str, str]) -> User:
+        username: str = normalize_username(attrs.get("username", ""))
+        password: str = attrs.get("password", "")
 
         if not username or not password:
             raise serializers.ValidationError("Username and password are required.")
 
         user = authenticate(username=username, password=password)
-        if user and user.is_active:
+        if isinstance(user, User) and user.is_active:
             return user
         raise serializers.ValidationError("Incorrect Credentials")
