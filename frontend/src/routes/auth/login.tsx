@@ -63,21 +63,21 @@ function LoginPage() {
       <div className="card">
         <div className="brand-row">
           <img src="/favicon.png" alt="CivicMind" className="logo-img" />
-          <span style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.3px" }}>CivicMind</span>
+          <span className="login-brand">CivicMind</span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px" }}>
+        <div className="login-header">
+          <h1 className="login-title">
             Bine ai venit
           </h1>
-          <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
-            Intra in cont pentru a vedea feed-ul si profilul tau civic.
+          <p className="login-subtitle">
+            Intră în cont pentru a vedea feed-ul și profilul tău civic.
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="form-col">
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>
+          <div className="form-group">
+            <label className="form-label">
               Nume utilizator
             </label>
             <input
@@ -90,8 +90,8 @@ function LoginPage() {
             />
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>
+          <div className="form-group">
+            <label className="form-label">
               Parola
             </label>
             <input
@@ -107,54 +107,33 @@ function LoginPage() {
           {error && <p className="error-box">{error}</p>}
 
           <button type="submit" disabled={isLoading} className="form-button">
-            {isLoading ? "Se autentifica..." : "Autentifica-te"}
+            {isLoading ? "Se autentifică..." : "Autentifica-te"}
           </button>
         </form>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ height: 1, flex: 1, background: "#ececec" }} />
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>sau</span>
-          <div style={{ height: 1, flex: 1, background: "#ececec" }} />
+        <div className="form-divider">
+          <div className="form-divider-line" />
+          <span className="form-divider-text">sau</span>
+          <div className="form-divider-line" />
         </div>
 
         <button
           type="button"
           disabled={isLoading}
           onClick={() => googleLogin()}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-            width: "100%",
-            padding: "11px 16px",
-            borderRadius: "var(--radius-sm, 6px)",
-            border: "1px solid var(--border-input)",
-            background: "#fafafa",
-            fontSize: 14,
-            fontWeight: 500,
-            color: "var(--text)",
-            cursor: isLoading ? "not-allowed" : "pointer",
-          }}
+          className="oauth-button"
         >
           <GoogleIcon />
           Continuă cu Google
         </button>
 
-        <p
-          style={{
-            fontSize: 12,
-            color: "var(--text-muted)",
-            textAlign: "center",
-            lineHeight: 1.6,
-          }}
-        >
+        <p className="login-footer">
           Continuând, esti de acord cu{" "}
-          <a href="#" style={{ color: "var(--text)", textDecoration: "underline", textUnderlineOffset: 2 }}>
+          <a href="#" className="footer-link">
             Termenii de utilizare
           </a>{" "}
           si{" "}
-          <a href="#" style={{ color: "var(--text)", textDecoration: "underline", textUnderlineOffset: 2 }}>
+          <a href="#" className="footer-link">
             Politica de confidențialitate
           </a>.
         </p>

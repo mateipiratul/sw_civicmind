@@ -171,6 +171,21 @@ a      { color: var(--text); text-decoration: none; }
 .card-centered { justify-content:center; padding:6px; }
 .card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); width:100%; max-width:400px; padding: 40px 36px 32px; gap:24px; }
 
+/* Login Page */
+.login-brand { font-size: 30px; font-weight: 600; letter-spacing: -0.3px; }
+.login-header { display: flex; flex-direction: column; gap: 4px; }
+.login-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin: 0; }
+.login-subtitle { font-size: 13.5px; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.form-divider { display: flex; align-items: center; gap: 10px; }
+.form-divider-line { height: 1px; flex: 1; background: #ececec; }
+.form-divider-text { font-size: 11px; color: var(--text-muted); }
+.oauth-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 11px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-input); background: #fafafa; font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer; }
+.oauth-button:disabled { cursor: not-allowed; opacity: 0.6; }
+.login-footer { font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.6; margin: 0; }
+.footer-link { color: var(--text); text-decoration: underline; text-decoration-color: currentColor; text-underline-offset: 2px; }
+
 .form-col { gap:14px; }
 .form-row { gap:5px; }
 .form-input { padding:9px 12px; font-size:13.5px; border:1px solid var(--border-input); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); outline:none; font-family:var(--font); }
@@ -187,9 +202,12 @@ a      { color: var(--text); text-decoration: none; }
 .avatar-btn { padding: 0; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; }
 .avatar-size { width: 28px; height: 28px; }
 
-.dropdown-content { min-width: 180px; }
-.dropdown-label { font-weight: 500; font-size: 13px; }
-.logout-item { color: #e53e3e; }
+.dropdown-content { min-width: 240px; padding: 20px; background-color: #fff; opacity: 1; }
+.dropdown-label { font-weight: 500; font-size: 13px; padding: 12px 0; }
+.dropdown-user-info { display: flex; flex-direction: column; }
+.dropdown-username { font-size: 16px; font-weight: 600; color: #000; }
+.dropdown-email { font-size: 14px; color: #666; font-weight: 400; margin-top: 4px; }
+.dropdown-item { font-size: 16px; padding: 12px 8px; font-weight: 500; }
 
 .btn-outline { font-size: 12px; height: 28px; padding: 0 12px; }
 
