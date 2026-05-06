@@ -193,6 +193,15 @@ a      { color: var(--text); text-decoration: none; }
 
 .muted { color: var(--text-muted); font-size: 12px; }
 
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 /* Small helpers used by header and auth pages */
 .logo-link { gap: 8px; text-decoration: none; flex-shrink: 0; }
 .logo-img { object-fit: contain; flex-shrink: 0 }

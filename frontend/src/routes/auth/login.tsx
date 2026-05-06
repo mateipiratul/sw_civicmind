@@ -40,22 +40,9 @@ function LoginPage() {
   };
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const user = await api.googleLogin(tokenResponse.access_token);
-        login(user);
-        navigate({ to: "/" });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Autentificarea Google a esuat");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onError: () => {
-      setError("Autentificarea Google a fost anulată sau a esuat");
-    },
+    flow: "auth-code",
+    ux_mode: "redirect",
+    redirect_uri: `${window.location.origin}/auth/callback`,
   });
 
   return (

@@ -350,6 +350,14 @@ class ApiClient {
     return this.normalizeAuthUser(response);
   };
 
+  googleLoginWithCode = async (code: string): Promise<User> => {
+    const response = await this.request<AuthResponse>("/api/auth/google/", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+    return this.normalizeAuthUser(response);
+  };
+
   // Bills
   listBills = async (category?: string, page = 1, limit = 20): Promise<PaginatedBills> => {
     const q = new URLSearchParams({ page: String(page), limit: String(limit) });
