@@ -42,25 +42,25 @@ class ProfileSerializer(serializers.Serializer):
         for field_name, allowed_values in VALID_SINGLE_VALUE_FIELDS.items():
             value = attrs.get(field_name)
             if isinstance(value, str) and value not in allowed_values:
-                raise serializers.ValidationError({field_name: "Invalid option selected."})
+                raise serializers.ValidationError({field_name: "Opțiune invalidă."})
 
         for field_name, allowed_values in VALID_MULTI_VALUE_FIELDS.items():
             value = attrs.get(field_name)
             if value is None:
                 continue
             if not isinstance(value, list):
-                raise serializers.ValidationError({field_name: "This field must be a list."})
+                raise serializers.ValidationError({field_name: "Opțiune invalidă."})
             invalid_values = [item for item in value if item not in allowed_values]
             if invalid_values:
-                raise serializers.ValidationError({field_name: "Invalid option selected."})
+                raise serializers.ValidationError({field_name: "Opțiune invalidă."})
 
         interests = attrs.get("interests")
         if interests is not None and not isinstance(interests, list):
-            raise serializers.ValidationError({"interests": "This field must be a list."})
+            raise serializers.ValidationError({"interests": "Opțiune invalidă."})
 
         persona_tags = attrs.get("persona_tags")
         if persona_tags is not None and not isinstance(persona_tags, list):
-            raise serializers.ValidationError({"persona_tags": "This field must be a list."})
+            raise serializers.ValidationError({"persona_tags": "Opțiune invalidă."})
 
         return attrs
 
