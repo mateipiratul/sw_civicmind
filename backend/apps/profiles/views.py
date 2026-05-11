@@ -13,13 +13,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
         # Users can only see their own profile
         return self.queryset.filter(user=self.request.user)
 
-    @action(detail=False, methods=['get', 'put', 'patch'])
+    @action(detail=False, methods=['get', 'put', 'patch', 'delete'])
     def me(self, request):
         profile, created = Profile.objects.get_or_create(user=request.user)
         if request.method == 'GET':
             serializer = self.get_serializer(profile)
             return Response(serializer.data)
         
+        if request.method == 'DELETE':
+            user = request.user
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
         serializer = self.get_serializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()

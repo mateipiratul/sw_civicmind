@@ -1,5 +1,5 @@
 import math
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Case, When, Value, IntegerField
 from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -177,9 +177,15 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
         queryset = self.filter_queryset(self.get_queryset())
         if query.children:
-            queryset = queryset.filter(query).distinct()
+            queryset = queryset.annotate(
+                is_match=Case(
+                    When(query, then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            ).order_by('-is_match', '-registered_at').distinct()
         else:
-            queryset = queryset.none()
+            queryset = queryset.order_by('-registered_at')
 
         total = queryset.count()
         offset = (page - 1) * limit

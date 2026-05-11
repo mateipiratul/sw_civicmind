@@ -26,10 +26,15 @@ const CAT_DOTS: Record<string, string> = {
   Justiție: "#ef4444",
 };
 
-function FeedBillCard({ bill }: { bill: Bill }) {
+function FeedBillCard({ bill, userInterests = [] }: { bill: Bill, userInterests?: string[] }) {
   const ai = bill.ai_analysis;
   const title = ai?.title_short || bill.title;
   const isAdopted = bill.status?.toLowerCase().includes("adoptat");
+
+  const allCats = ai?.impact_categories || [];
+  const matchedCats = allCats.filter(c => userInterests.includes(c));
+  const unmatchedCats = allCats.filter(c => !userInterests.includes(c));
+  const displayCats = [...matchedCats, ...unmatchedCats].slice(0, 2);
 
   return (
     <div
@@ -47,11 +52,18 @@ function FeedBillCard({ bill }: { bill: Bill }) {
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-        {ai?.impact_categories?.slice(0, 1).map((cat) => (
-          <span key={cat} style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4, background: "#f5f5f5", color: "#555" }}>
-            {cat}
-          </span>
-        ))}
+        {displayCats.map((cat) => {
+          const isMatch = userInterests.includes(cat);
+          return (
+            <span key={cat} style={{ 
+              fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, 
+              background: isMatch ? "#111" : "#f5f5f5", 
+              color: isMatch ? "#fff" : "#555" 
+            }}>
+              {cat}
+            </span>
+          );
+        })}
         <span style={{
           fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
           background: isAdopted ? "#dcfce7" : "#f0f0f0",
@@ -251,7 +263,7 @@ function DashboardPage() {
               ? [...Array(4)].map((_, i) => <BillCardSkeleton key={i} />)
               : bills.length === 0
               ? <div style={{ textAlign: "center", padding: "48px 0", color: "#aaa", fontSize: 13 }}>Nu există proiecte în această categorie.</div>
-              : bills.map((bill) => <FeedBillCard key={bill.idp} bill={bill} />)
+              : bills.map((bill) => <FeedBillCard key={bill.idp} bill={bill} userInterests={user?.interests || []} />)
             }
           </div>
 

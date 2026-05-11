@@ -434,6 +434,11 @@ class ApiClient {
     return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
   };
   
+  deleteAccount = async (): Promise<void> => {
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    await this.request("/api/profiles/me/", { method: "DELETE" });
+  };
+  
   logout = async (): Promise<void> => { localStorage.removeItem("auth_token"); };
 
   // Admin

@@ -3,7 +3,6 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/profile/")({
@@ -12,30 +11,19 @@ export const Route = createFileRoute("/profile/")({
 
 function ProfileSkeleton() {
   return (
-    <div className="flex min-h-screen bg-white font-sans">
-      <div className="flex-1 px-10 lg:px-20 py-20 max-w-[850px] mx-auto space-y-16">
-        <Skeleton className="h-12 w-80" />
-        <div className="flex items-center gap-8 pb-14 border-b border-border">
-          <Skeleton className="h-20 w-20 rounded-full" />
-          <div className="space-y-4">
-            <Skeleton className="h-7 w-56" />
-            <Skeleton className="h-5 w-72" />
-          </div>
-        </div>
-        <div className="space-y-10 py-14 border-b border-border">
-          <Skeleton className="h-6 w-48" />
-          <div className="grid grid-cols-2 gap-8">
-            <Skeleton className="h-16 w-full rounded-lg" />
-            <Skeleton className="h-16 w-full rounded-lg" />
-          </div>
-        </div>
+    <div className="card-centered" style={{ padding: "40px 16px" }}>
+      <div className="card" style={{ maxWidth: 640 }}>
+        <Skeleton className="h-10 w-48 mb-6" />
+        <Skeleton className="h-6 w-full mb-4" />
+        <Skeleton className="h-6 w-full mb-4" />
+        <Skeleton className="h-10 w-full mt-4" />
       </div>
     </div>
   );
 }
 
 export default function ProfilePage() {
-  const { user, refreshUser, updateUser, isAuthenticated, isLoading } = useAuth();
+  const { user, refreshUser, updateUser, isAuthenticated, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   
   const [username, setUsername] = useState("");
@@ -43,6 +31,8 @@ export default function ProfilePage() {
   const [county, setCounty] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [countyOpen, setCountyOpen] = useState(false);
   
@@ -102,197 +92,196 @@ export default function ProfilePage() {
     );
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setToast(null);
+    try {
+      await api.deleteAccount();
+      await logout();
+      navigate({ to: "/" });
+    } catch (err) {
+      setToast({ type: "err", msg: err instanceof Error ? err.message : "Ștergerea contului a eșuat" });
+      setIsDeleting(false);
+      setShowConfirmDelete(false);
+    }
+  };
+
   if (isLoading || !user) {
     return <ProfileSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-black selection:text-white">
-      <div className="flex flex-col min-h-screen center">
-        <main className="flex-1 px-10 lg:px-20 py-20 max-w-[900px] w-full mx-auto">
-          {/* Page title */}
-          <div className="mb-16">
-            <p className="text-[13px] font-medium tracking-[0.16em] uppercase text-muted-foreground mb-4">Cont</p>
-            <h1 className="text-[38px] font-semibold tracking-[-0.03em] leading-tight">
-              Profil utilizator
-            </h1>
-            <p className="text-lg text-muted-foreground mt-3">
-              Gestionează setările contului și interesele civice.
-            </p>
+    <div className="card-centered" style={{ padding: "40px 16px", alignItems: "flex-start" }}>
+      <div className="card" style={{ maxWidth: 640 }}>
+        
+        <div className="login-header" style={{ marginBottom: 16 }}>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="h-12 w-12 rounded-full bg-foreground text-background flex items-center justify-center text-lg font-semibold tracking-wide shrink-0">
+              {initials}
+            </div>
+            <div>
+              <h1 className="login-title">Profil utilizator</h1>
+              <p className="login-subtitle">Gestionează setările contului tău.</p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleUpdateProfile} className="form-col" style={{ gap: 24 }}>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="form-group">
+              <label className="form-label">Nume utilizator</label>
+              <input
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                required
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="form-input"
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className="space-y-0">
-            {/* Identity block */}
-            <div className="flex items-start gap-8 pb-14 border-b border-border">
-              <div className="h-20 w-20 rounded-full bg-foreground text-background flex items-center justify-center text-2xl font-semibold tracking-wide shrink-0">
-                {initials}
-              </div>
-              <div className="flex-1 min-w-0 pt-2">
-                <p className="font-semibold text-foreground text-xl leading-tight truncate">{username || "Utilizator"}</p>
-                <p className="text-lg text-muted-foreground mt-2 truncate">{email}</p>
-              </div>
-            </div>
-
-            {/* Basic Fields */}
-            <div className="py-14 border-b border-border space-y-10">
-              <p className="text-[13px] font-semibold tracking-[0.16em] uppercase text-muted-foreground">Informații de bază</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <Field label="Nume utilizator">
-                  <input
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    required
-                    placeholder="Ex: Alexandru Popescu"
-                    className="w-full px-4 py-3.5 rounded-lg border border-border bg-card text-foreground text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-foreground transition"
-                  />
-                </Field>
-                <Field label="Adresă de email">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    placeholder="email@exemplu.ro"
-                    className="w-full px-4 py-3.5 rounded-lg border border-border bg-card text-foreground text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-foreground transition"
-                  />
-                </Field>
-              </div>
-            </div>
-
-            {/* Reședință */}
-            <div className="py-14 border-b border-border space-y-8">
-              <p className="text-[13px] font-semibold tracking-[0.16em] uppercase text-muted-foreground">Reședință</p>
-              <Field label="Județ de reședință" hint="Vom prioritiza legile și reprezentanții din acest județ în feed.">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setCountyOpen(o => !o)}
-                    className="w-full px-4 py-3.5 rounded-lg border border-border bg-card text-foreground text-lg text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-foreground transition hover:bg-muted/50"
-                  >
-                    <span>{county || "Selectează un județ"}</span>
-                    <svg className={cn("w-6 h-6 text-muted-foreground transition-transform", countyOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {countyOpen && (
-                    <div className="absolute z-20 mt-3 w-full bg-card border border-border rounded-lg shadow-2xl max-h-72 overflow-y-auto py-3 animate-in fade-in zoom-in-95 duration-100">
-                      {metadata?.counties.map(c => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => { setCounty(c); setCountyOpen(false); }}
-                          className={cn(
-                            "w-full px-5 py-3 text-lg text-left hover:bg-muted transition-colors flex items-center gap-4",
-                            county === c ? "font-medium text-foreground bg-muted/30" : "text-muted-foreground"
-                          )}
-                        >
-                          {county === c && <span className="w-2.5 h-2.5 rounded-full bg-foreground" />}
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Field>
-            </div>
-
-            {/* Interests */}
-            <div className="py-14 border-b border-border space-y-8">
-              <div className="flex items-baseline justify-between">
-                <p className="text-[13px] font-semibold tracking-[0.16em] uppercase text-muted-foreground">Interese civice</p>
-                {selectedInterests.length > 0 && (
-                  <span className="text-sm text-muted-foreground font-mono">
-                    {selectedInterests.length} selectate
-                  </span>
-                )}
-              </div>
-              <p className="text-base text-muted-foreground -mt-3">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
-              <div className="flex flex-wrap gap-3">
-                {metadata?.impact_categories.map(cat => {
-                  const active = selectedInterests.includes(cat);
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => toggleInterest(cat)}
-                      className={cn(
-                        "px-5 py-2.5 rounded-md text-base font-medium transition-all border",
-                        active
-                          ? "bg-foreground text-background border-foreground shadow-sm"
-                          : "bg-card text-muted-foreground border-border hover:border-muted-foreground/30 hover:text-foreground"
-                      )}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Toast Notification */}
-            {toast && (
-              <div
-                className={cn(
-                  "mt-10 px-6 py-5 rounded-lg text-lg font-medium flex items-center gap-4 border transition-all animate-in slide-in-from-top-2",
-                  toast.type === "ok"
-                    ? "bg-[#f0faf4] text-[#1a6b3c] border-[#b6e4cc]"
-                    : "bg-[#fef2f2] text-[#b91c1c] border-[#fecaca]"
-                )}
-              >
-                {toast.type === "ok" ? (
-                  <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                )}
-                {toast.msg}
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="pt-14 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-              <button
-                type="submit"
-                disabled={isUpdating}
-                className="px-10 py-4 rounded-lg bg-foreground text-background text-lg font-semibold hover:bg-foreground/85 active:scale-[0.98] transition-all disabled:opacity-50"
-              >
-                {isUpdating ? "Se salvează…" : "Salvează modificările"}
-              </button>
+          <div className="form-group">
+            <label className="form-label">Județ de reședință</label>
+            <p className="text-xs text-muted-foreground mb-1">Folosit pentru a prioritiza reprezentanții din județul tău.</p>
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => refreshUser()}
-                className="px-10 py-4 rounded-lg bg-card text-foreground text-lg font-medium border border-border hover:bg-muted transition-colors"
+                onClick={() => setCountyOpen(o => !o)}
+                className="form-input w-full text-left flex items-center justify-between"
+                style={{ cursor: "pointer", background: "var(--surface)" }}
               >
-                Sincronizează datele
+                <span>{county || "Selectează un județ"}</span>
+                <svg className={cn("w-4 h-4 text-muted-foreground transition-transform", countyOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
+              {countyOpen && (
+                <div className="absolute z-20 mt-2 w-full bg-card border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto py-2">
+                  {metadata?.counties.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { setCounty(c); setCountyOpen(false); }}
+                      className={cn(
+                        "w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-3",
+                        county === c ? "font-medium text-foreground bg-muted/50" : "text-muted-foreground"
+                      )}
+                    >
+                      {county === c && <span className="w-2 h-2 rounded-full bg-foreground" />}
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+          </div>
 
-          </form>
-        </main>
+          <div className="form-group">
+            <div className="flex items-baseline justify-between mb-1">
+              <label className="form-label">Interese civice</label>
+              {selectedInterests.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {selectedInterests.length} selectate
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
+            <div className="flex flex-wrap gap-2">
+              {metadata?.impact_categories.map(cat => {
+                const active = selectedInterests.includes(cat);
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleInterest(cat)}
+                    className={cn(
+                      "interest-pill",
+                      active && "active"
+                    )}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {toast && (
+            <div
+              className={cn(
+                "px-4 py-3 rounded-md text-[13.5px] font-medium border",
+                toast.type === "ok"
+                  ? "bg-[#f0faf4] text-[#1a6b3c] border-[#b6e4cc]"
+                  : "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]"
+              )}
+            >
+              {toast.msg}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={isUpdating} className="form-button" style={{ flex: 1 }}>
+              {isUpdating ? "Se salvează…" : "Salvează modificările"}
+            </button>
+          </div>
+        </form>
+
+        <div className="form-divider" style={{ margin: "10px 0" }}>
+          <div className="form-divider-line" />
+        </div>
+
+        <div className="danger-zone" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--color-destructive)" }}>Zona Periculoasă</h3>
+            <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Odată șters, contul și toate datele tale nu mai pot fi recuperate.</p>
+          </div>
+          
+          {showConfirmDelete ? (
+            <div style={{ background: "#fef2f2", padding: 12, borderRadius: 8, border: "1px solid #fecaca" }}>
+              <p style={{ fontSize: 13, color: "#b91c1c", margin: "0 0 12px 0", fontWeight: 500 }}>
+                Ești absolut sigur că vrei să ștergi acest cont definitiv?
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button 
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="form-button"
+                  style={{ background: "#dc2626", flex: 1, padding: "8px 12px", fontSize: 13 }}
+                >
+                  {isDeleting ? "Se șterge..." : "Da, șterge contul"}
+                </button>
+                <button 
+                  onClick={() => setShowConfirmDelete(false)}
+                  disabled={isDeleting}
+                  className="form-button"
+                  style={{ background: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)", flex: 1, padding: "8px 12px", fontSize: 13 }}
+                >
+                  Anulează
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setShowConfirmDelete(true)}
+              className="form-button"
+              style={{ background: "var(--surface)", color: "#dc2626", border: "1px solid #fecaca" }}
+            >
+              Șterge contul
+            </button>
+          )}
+        </div>
+
       </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-2 w-full">
-      <label className="block text-sm font-semibold tracking-[0.06em] uppercase text-muted-foreground">
-        {label}
-      </label>
-      {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

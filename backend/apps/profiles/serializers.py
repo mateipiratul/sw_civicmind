@@ -19,15 +19,15 @@ class ProfileSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
-    county = serializers.CharField(required=False, allow_null=True)
-    preferred_party = serializers.CharField(required=False, allow_null=True)
+    county = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    preferred_party = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     interests = serializers.ListField(child=serializers.CharField(), required=False)
     persona_tags = serializers.ListField(child=serializers.CharField(), required=False)
-    work_domain = serializers.CharField(required=False, allow_null=True)
-    employment_status = serializers.CharField(required=False, allow_null=True)
+    work_domain = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    employment_status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     personal_interest_areas = serializers.ListField(child=serializers.CharField(), required=False)
-    age_range = serializers.CharField(required=False, allow_null=True)
-    housing_status = serializers.CharField(required=False, allow_null=True)
+    age_range = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    housing_status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     mobility_modes = serializers.ListField(child=serializers.CharField(), required=False)
     education_context = serializers.ListField(child=serializers.CharField(), required=False)
     energy_focus = serializers.ListField(child=serializers.CharField(), required=False)
@@ -78,8 +78,11 @@ class ProfileSerializer(serializers.Serializer):
     def _prepare_profile_data(self, validated_data: Dict[str, Union[str, List[str], bool, None]], instance: Profile | None = None) -> Dict[str, Union[str, List[str], bool, None]]:
         profile_data = self._merge_with_existing(instance, validated_data)
 
-        validated_data["interests"] = derive_profile_interests(profile_data)
-        validated_data["persona_tags"] = derive_persona_tags(profile_data)
+        if "interests" not in validated_data:
+            validated_data["interests"] = derive_profile_interests(profile_data)
+            
+        if "persona_tags" not in validated_data:
+            validated_data["persona_tags"] = derive_persona_tags(profile_data)
 
         if "questionnaire_completed" not in validated_data:
             validated_data["questionnaire_completed"] = is_questionnaire_completed(profile_data)
