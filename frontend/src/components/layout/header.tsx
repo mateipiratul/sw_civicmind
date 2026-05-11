@@ -29,7 +29,7 @@ export function Header() {
         <img src="/favicon.png" alt="CivicMind" className="logo-img" style={{ width: 22, height: 22 }} />
         <span className="brand">CivicMind</span>
       </Link>
-
+    
       {/* Nav */}
       <nav className="nav-links">
         {[

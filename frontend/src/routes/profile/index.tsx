@@ -2,15 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/profile/")({
@@ -19,46 +12,29 @@ export const Route = createFileRoute("/profile/")({
 
 function ProfileSkeleton() {
   return (
-    <div className="container mx-auto px-4 max-w-4xl py-10 space-y-8">
-      <Skeleton className="h-6 w-32" />
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-6 w-96" />
-      </div>
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="items-center">
-              <Skeleton className="h-20 w-20 rounded-full mb-2" />
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-6 w-full" />
-              <Skeleton className="h-6 w-full" />
-              <Separator />
-            </CardContent>
-          </Card>
+    <div className="flex min-h-screen bg-white font-sans">
+      <div className="flex-1 px-10 lg:px-20 py-20 max-w-[850px] mx-auto space-y-16">
+        <Skeleton className="h-12 w-80" />
+        <div className="flex items-center gap-8 pb-14 border-b border-border">
+          <Skeleton className="h-20 w-20 rounded-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-5 w-72" />
+          </div>
         </div>
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-24" />
-            </CardContent>
-          </Card>
+        <div className="space-y-10 py-14 border-b border-border">
+          <Skeleton className="h-6 w-48" />
+          <div className="grid grid-cols-2 gap-8">
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function ProfilePage() {
+export default function ProfilePage() {
   const { user, refreshUser, updateUser, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
@@ -67,10 +43,10 @@ function ProfilePage() {
   const [county, setCounty] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [countyOpen, setCountyOpen] = useState(false);
   
   const [metadata, setMetadata] = useState<{ impact_categories: string[], counties: string[] } | null>(null);
-  const [isMetadataLoading, setIsMetadataLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -88,24 +64,15 @@ function ProfilePage() {
   }, [user]);
 
   useEffect(() => {
-    const fetchMetadata = async () => {
-      try {
-        setIsMetadataLoading(true);
-        const data = await api.getMetadata();
-        setMetadata(data);
-      } catch (err) {
-        console.error("Failed to fetch metadata", err);
-      } finally {
-        setIsMetadataLoading(false);
-      }
-    };
-    fetchMetadata();
+    api.getMetadata().then(setMetadata).catch(console.error);
   }, []);
+
+  const initials = username.trim().split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?";
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
-    setMessage(null);
+    setToast(null);
 
     try {
       const updated = await api.updateProfile({ 
@@ -115,11 +82,12 @@ function ProfilePage() {
         interests: selectedInterests 
       });
       updateUser(updated);
-      setMessage({ type: "success", text: "Profil actualizat cu succes!" });
+      setToast({ type: "ok", msg: "Profil actualizat cu succes!" });
+      setTimeout(() => setToast(null), 3500);
     } catch (err) {
-      setMessage({ 
-        type: "error", 
-        text: err instanceof Error ? err.message : "Actualizarea profilului a eșuat" 
+      setToast({ 
+        type: "err", 
+        msg: err instanceof Error ? err.message : "Actualizarea profilului a eșuat" 
       });
     } finally {
       setIsUpdating(false);
@@ -139,161 +107,192 @@ function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-4xl py-10 space-y-8 text-[#111]">
-      <Breadcrumbs items={[{ label: "Profil" }]} />
-      
-      <div>
-        <h1 className="text-4xl font-semibold tracking-tight">Profil Utilizator</h1>
-        <p className="text-gray-500 text-lg mt-1.5">Gestionează setările contului și interesele civice.</p>
-      </div>
+    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-black selection:text-white">
+      <div className="flex flex-col min-h-screen center">
+        <main className="flex-1 px-10 lg:px-20 py-20 max-w-[900px] w-full mx-auto">
+          {/* Page title */}
+          <div className="mb-16">
+            <p className="text-[13px] font-medium tracking-[0.16em] uppercase text-muted-foreground mb-4">Cont</p>
+            <h1 className="text-[38px] font-semibold tracking-[-0.03em] leading-tight">
+              Profil utilizator
+            </h1>
+            <p className="text-lg text-muted-foreground mt-3">
+              Gestionează setările contului și interesele civice.
+            </p>
+          </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-1 space-y-6">
-          <Card className="shadow-none border border-[#e2e2e2] overflow-hidden rounded-xl">
-            <CardHeader className="text-center bg-gray-50/50 pb-8 pt-10">
-              <div className="mx-auto h-20 w-20 rounded-full bg-white shadow-sm border-2 border-white flex items-center justify-center text-3xl text-gray-400 font-bold uppercase mb-4">
-                {user.username?.charAt(0) || "?"}
+          <form onSubmit={handleUpdateProfile} className="space-y-0">
+            {/* Identity block */}
+            <div className="flex items-start gap-8 pb-14 border-b border-border">
+              <div className="h-20 w-20 rounded-full bg-foreground text-background flex items-center justify-center text-2xl font-semibold tracking-wide shrink-0">
+                {initials}
               </div>
-              <CardTitle className="text-xl font-semibold">{user.username || "Utilizator"}</CardTitle>
-              <CardDescription className="text-gray-400 font-medium">{user.email}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6 px-6 pb-8">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-400 font-medium">Rol</span>
-                <Badge variant="outline" className="capitalize px-2 py-0.5 font-semibold text-[11px] border-gray-200 text-gray-500">
-                  {user.role}
-                </Badge>
+              <div className="flex-1 min-w-0 pt-2">
+                <p className="font-semibold text-foreground text-xl leading-tight truncate">{username || "Utilizator"}</p>
+                <p className="text-lg text-muted-foreground mt-2 truncate">{email}</p>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-400 font-medium">Status</span>
-                <Badge 
-                  variant={user.status === "active" ? "default" : "destructive"} 
-                  className={cn(
-                    "capitalize px-2 py-0.5 font-semibold text-[11px] border-0",
-                    user.status === "active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-                  )}
-                >
-                  {user.status}
-                </Badge>
+            </div>
+
+            {/* Basic Fields */}
+            <div className="py-14 border-b border-border space-y-10">
+              <p className="text-[13px] font-semibold tracking-[0.16em] uppercase text-muted-foreground">Informații de bază</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <Field label="Nume utilizator">
+                  <input
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    required
+                    placeholder="Ex: Alexandru Popescu"
+                    className="w-full px-4 py-3.5 rounded-lg border border-border bg-card text-foreground text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-foreground transition"
+                  />
+                </Field>
+                <Field label="Adresă de email">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    placeholder="email@exemplu.ro"
+                    className="w-full px-4 py-3.5 rounded-lg border border-border bg-card text-foreground text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-foreground transition"
+                  />
+                </Field>
               </div>
-              <Separator className="bg-[#f0f0f0] my-2" />
-              <Button 
-                variant="outline" 
-                className="w-full font-semibold rounded-lg border-[#e2e2e2] text-sm py-5" 
-                onClick={() => refreshUser()}
-              >
-                Actualizează Datele
-              </Button>
-              {user.role === "admin" && (
-                <Button 
-                  variant="secondary" 
-                  className="w-full mt-1 bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold rounded-lg text-sm py-5"
-                  onClick={() => navigate({ to: "/admin/stats" })}
-                >
-                  Panou Admin
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        <div className="md:col-span-2 space-y-6">
-          <Card className="shadow-none border border-[#e2e2e2] rounded-xl overflow-hidden bg-white">
-            <CardHeader className="bg-gray-50/30 px-6 py-6 border-b border-[#f0f0f0]">
-              <CardTitle className="text-lg font-semibold">Informații Cont</CardTitle>
-              <CardDescription className="text-gray-400">Actualizează detaliile de bază ale profilului tău.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-8">
-              <form onSubmit={handleUpdateProfile} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nume utilizator</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="py-5 rounded-lg border-[#e2e2e2] focus:ring-1 focus:ring-gray-300 text-sm"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="py-5 rounded-lg border-[#e2e2e2] focus:ring-1 focus:ring-gray-300 text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-[#f8f8f8]">
-                  <div className="space-y-2">
-                    <Label htmlFor="county" className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Județ de reședință</Label>
-                    <Select value={county} onValueChange={setCounty}>
-                      <SelectTrigger className="w-full py-5 rounded-lg border-[#e2e2e2] text-sm">
-                        <SelectValue placeholder="Selectează un județ" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {metadata?.counties.map((c) => (
-                          <SelectItem key={c} value={c} className="text-sm">
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[11px] text-gray-400">Vom prioritiza legile și reprezentanții din acest județ în feed.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-[#f8f8f8]">
-                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Interese Civice</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {metadata?.impact_categories.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => toggleInterest(cat)}
-                        className={cn(
-                          "px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left flex items-center justify-between",
-                          selectedInterests.includes(cat)
-                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                            : "bg-white text-gray-500 border-[#e2e2e2] hover:border-gray-300"
-                        )}
-                      >
-                        {cat}
-                        {selectedInterests.includes(cat) && <span className="h-1.5 w-1.5 rounded-full bg-white ml-2" />}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-gray-400">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
-                </div>
-
-                {message && (
-                  <div className={cn(
-                    "p-4 rounded-lg text-sm font-semibold flex items-center gap-3",
-                    message.type === "success" ? "bg-green-50 text-green-700 border border-green-100" : "bg-red-50 text-red-700 border border-red-100"
-                  )}>
-                    {message.text}
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  <Button 
-                    type="submit" 
-                    disabled={isUpdating} 
-                    className="px-10 py-5 rounded-lg font-semibold text-sm bg-[#111] hover:bg-gray-800 active:scale-[0.98] transition-all"
+            {/* Reședință */}
+            <div className="py-14 border-b border-border space-y-8">
+              <p className="text-[13px] font-semibold tracking-[0.16em] uppercase text-muted-foreground">Reședință</p>
+              <Field label="Județ de reședință" hint="Vom prioritiza legile și reprezentanții din acest județ în feed.">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setCountyOpen(o => !o)}
+                    className="w-full px-4 py-3.5 rounded-lg border border-border bg-card text-foreground text-lg text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-foreground transition hover:bg-muted/50"
                   >
-                    {isUpdating ? "Se salvează..." : "Salvează Modificările"}
-                  </Button>
+                    <span>{county || "Selectează un județ"}</span>
+                    <svg className={cn("w-6 h-6 text-muted-foreground transition-transform", countyOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {countyOpen && (
+                    <div className="absolute z-20 mt-3 w-full bg-card border border-border rounded-lg shadow-2xl max-h-72 overflow-y-auto py-3 animate-in fade-in zoom-in-95 duration-100">
+                      {metadata?.counties.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => { setCounty(c); setCountyOpen(false); }}
+                          className={cn(
+                            "w-full px-5 py-3 text-lg text-left hover:bg-muted transition-colors flex items-center gap-4",
+                            county === c ? "font-medium text-foreground bg-muted/30" : "text-muted-foreground"
+                          )}
+                        >
+                          {county === c && <span className="w-2.5 h-2.5 rounded-full bg-foreground" />}
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+              </Field>
+            </div>
+
+            {/* Interests */}
+            <div className="py-14 border-b border-border space-y-8">
+              <div className="flex items-baseline justify-between">
+                <p className="text-[13px] font-semibold tracking-[0.16em] uppercase text-muted-foreground">Interese civice</p>
+                {selectedInterests.length > 0 && (
+                  <span className="text-sm text-muted-foreground font-mono">
+                    {selectedInterests.length} selectate
+                  </span>
+                )}
+              </div>
+              <p className="text-base text-muted-foreground -mt-3">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
+              <div className="flex flex-wrap gap-3">
+                {metadata?.impact_categories.map(cat => {
+                  const active = selectedInterests.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleInterest(cat)}
+                      className={cn(
+                        "px-5 py-2.5 rounded-md text-base font-medium transition-all border",
+                        active
+                          ? "bg-foreground text-background border-foreground shadow-sm"
+                          : "bg-card text-muted-foreground border-border hover:border-muted-foreground/30 hover:text-foreground"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Toast Notification */}
+            {toast && (
+              <div
+                className={cn(
+                  "mt-10 px-6 py-5 rounded-lg text-lg font-medium flex items-center gap-4 border transition-all animate-in slide-in-from-top-2",
+                  toast.type === "ok"
+                    ? "bg-[#f0faf4] text-[#1a6b3c] border-[#b6e4cc]"
+                    : "bg-[#fef2f2] text-[#b91c1c] border-[#fecaca]"
+                )}
+              >
+                {toast.type === "ok" ? (
+                  <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                {toast.msg}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="pt-14 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="px-10 py-4 rounded-lg bg-foreground text-background text-lg font-semibold hover:bg-foreground/85 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {isUpdating ? "Se salvează…" : "Salvează modificările"}
+              </button>
+              <button
+                type="button"
+                onClick={() => refreshUser()}
+                className="px-10 py-4 rounded-lg bg-card text-foreground text-lg font-medium border border-border hover:bg-muted transition-colors"
+              >
+                Sincronizează datele
+              </button>
+            </div>
+
+          </form>
+        </main>
       </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2 w-full">
+      <label className="block text-sm font-semibold tracking-[0.06em] uppercase text-muted-foreground">
+        {label}
+      </label>
+      {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

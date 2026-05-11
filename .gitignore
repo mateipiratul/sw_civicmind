@@ -37,3 +37,6 @@ legislative-intelligence/data/processed/
 
 # ignore claude
 .claude/
+
+# ignore frontend mockups
+figma*/

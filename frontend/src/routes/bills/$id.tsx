@@ -35,27 +35,27 @@ type BillChatMessage = {
 };
 
 const pageStyle: CSSProperties = {
-  minHeight: "calc(100vh - 52px)",
-  padding: "28px 24px",
+  minHeight: "calc(100vh - 60px)",
+  padding: "40px 60px",
 };
 
 const containerStyle: CSSProperties = {
-  maxWidth: 1120,
+  maxWidth: 1200,
   margin: "0 auto",
   display: "flex",
   flexDirection: "column",
-  gap: 16,
+  gap: 24,
 };
 
 const cardStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #e8e8e8",
-  borderRadius: 10,
+  borderRadius: 12,
 };
 
 const sectionCardStyle: CSSProperties = {
   ...cardStyle,
-  padding: 18,
+  padding: 24,
 };
 
 const eyebrowStyle: CSSProperties = {
@@ -419,8 +419,8 @@ function BillDetailPage() {
           <div style={{ ...cardStyle, padding: 28, maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
             <div
               style={{
-                width: 52,
-                height: 52,
+                width: 60,
+                height: 60,
                 margin: "0 auto 18px",
                 borderRadius: "50%",
                 background: "#f4f4f1",
@@ -451,12 +451,12 @@ function BillDetailPage() {
   const adoptedDate = bill.adopted_at ? new Date(bill.adopted_at).toLocaleDateString("ro-RO") : null;
   const layoutStyle: CSSProperties = {
     display: "grid",
-    gap: 16,
-    gridTemplateColumns: "minmax(0, 1.7fr) 280px",
+    gap: 24,
+    gridTemplateColumns: "minmax(0, 1.7fr) 320px",
   };
 
   return (
-    <div style={pageStyle}>
+    <div style={{ ...pageStyle, background: "#f8f8f7" }}>
       <div style={containerStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <Breadcrumbs items={[{ label: "Feed", href: "/" }, { label: bill.bill_number }]} />
@@ -466,85 +466,86 @@ function BillDetailPage() {
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              padding: "7px 12px",
+              padding: "8px 16px",
               borderRadius: 999,
               background: "#ffffff",
               border: "1px solid #e3e3dd",
-              fontSize: 12.5,
+              fontSize: 13.5,
               fontWeight: 600,
               color: "#111",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             }}
           >
-            <ChevronLeft size={14} />
-            Back to feed
+            <ChevronLeft size={16} />
+            Înapoi la feed
           </Link>
         </div>
 
-        <section style={{ ...cardStyle, padding: 18 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <section style={{ ...cardStyle, padding: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               <span style={{ ...pillStyle(), background: "#ffffff", border: "1px solid #dddcd4" }}>{bill.bill_number}</span>
               <span style={statusStyle(bill.status)}>{bill.status || "In progres"}</span>
               {bill.procedure ? <span style={pillStyle()}>{bill.procedure}</span> : null}
             </div>
 
-            <div style={{ display: "grid", gap: 16, gridTemplateColumns: "minmax(0, 1fr) 260px", alignItems: "start" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <h1 style={{ fontSize: 28, lineHeight: 1.15, fontWeight: 600, color: "#111", maxWidth: 620 }}>
+            <div style={{ display: "grid", gap: 24, gridTemplateColumns: "minmax(0, 1fr) 300px", alignItems: "start" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 600, color: "#111", maxWidth: 720 }}>
                   {title}
                 </h1>
-                <p style={{ fontSize: 13, lineHeight: 1.55, color: "#666", maxWidth: 560 }}>
+                <p style={{ fontSize: 15, lineHeight: 1.6, color: "#555", maxWidth: 640 }}>
                   {ai?.key_ideas?.[0]
                     ? ai.key_ideas[0]
-                    : "This page gathers the official status, AI summary, source documents, and impact tags for this legislative initiative."}
+                    : "Această pagină reunește statusul oficial, rezumatul AI, documentele sursă și indicatorii de impact pentru acest proiect legislativ."}
                 </p>
               </div>
 
               <div
                 style={{
-                  borderRadius: 8,
+                  borderRadius: 12,
                   border: "1px solid #e8e8e8",
                   background: "#fafafa",
-                  padding: 12,
+                  padding: 16,
                 }}
               >
-                <div style={eyebrowStyle}>Transparency note</div>
-                <p style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.55, color: "#666" }}>
-                  Every summary here should map back to the underlying bill record and official source documents. This page is meant to help someone verify, not just skim.
+                <div style={eyebrowStyle}>Notă transparență</div>
+                <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.6, color: "#666" }}>
+                  Rezumatul este generat automat pe baza documentelor oficiale. Consultă sursele de mai jos pentru verificarea detaliilor.
                 </p>
               </div>
             </div>
 
-            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
-              <MetaCard icon={<User size={15} />} label="Initiator" value={bill.initiator_name || bill.initiator_type || "Unknown"} />
-              <MetaCard icon={<Calendar size={15} />} label="Registered" value={registeredDate} />
-              <MetaCard icon={<FileText size={15} />} label="Law type" value={bill.law_type || "Proiect de lege"} />
-              <MetaCard icon={<Scale size={15} />} label="Adopted" value={adoptedDate || "Pending"} />
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+              <MetaCard icon={<User size={18} />} label="Inițiator" value={bill.initiator_name || bill.initiator_type || "Necunoscut"} />
+              <MetaCard icon={<Calendar size={18} />} label="Înregistrat" value={registeredDate} />
+              <MetaCard icon={<FileText size={18} />} label="Tip Lege" value={bill.law_type || "Proiect de lege"} />
+              <MetaCard icon={<Scale size={18} />} label="Adoptat" value={adoptedDate || "În analiză"} />
             </div>
           </div>
         </section>
 
         <div style={layoutStyle}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <Section eyebrow="AI synthesis" title="What this bill is trying to do" icon={<Sparkles size={17} />}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <Section eyebrow="Sinteză AI" title="Ce prevede acest proiect" icon={<Sparkles size={20} />}>
               {ai?.key_ideas?.length ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {ai.key_ideas.map((idea, index) => (
                     <div
                       key={`${index}-${idea}`}
                       style={{
                         display: "flex",
-                        gap: 12,
-                        padding: "12px 14px",
-                        borderRadius: 10,
+                        gap: 16,
+                        padding: "16px 20px",
+                        borderRadius: 12,
                         border: "1px solid #e8e8e8",
                         background: "#fff",
                       }}
                     >
                       <div
                         style={{
-                          width: 26,
-                          height: 26,
+                          width: 32,
+                          height: 32,
                           borderRadius: "50%",
                           background: "#ffffff",
                           border: "1px solid #ececec",
@@ -552,93 +553,93 @@ function BillDetailPage() {
                           alignItems: "center",
                           justifyContent: "center",
                           color: "#999",
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: 700,
                           flexShrink: 0,
                         }}
                       >
                         {index + 1}
                       </div>
-                      <p style={{ fontSize: 13.5, lineHeight: 1.55, color: "#333" }}>{idea}</p>
+                      <p style={{ fontSize: 15, lineHeight: 1.6, color: "#333" }}>{idea}</p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div
                   style={{
-                    padding: 14,
-                    borderRadius: 10,
+                    padding: 20,
+                    borderRadius: 12,
                     border: "1px dashed #e0e0e0",
                     background: "#fafafa",
-                    fontSize: 13,
-                    lineHeight: 1.55,
+                    fontSize: 14,
+                    lineHeight: 1.6,
                     color: "#777",
                   }}
                 >
-                  The AI summary has not been generated yet. The official documents are still available in the source panel.
+                  Rezumatul AI nu a fost încă generat. Documentele oficiale sunt disponibile în panoul lateral.
                 </div>
               )}
             </Section>
 
-            <Section eyebrow="Debate surface" title="Arguments for and against" icon={<MessageSquareText size={17} />}>
-              <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+            <Section eyebrow="Analiză dezbatere" title="Argumente Pro și Contra" icon={<MessageSquareText size={20} />}>
+              <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
                 <div
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 12,
                     border: "1px solid #d9efe1",
                     background: "#f3fbf4",
-                    padding: 14,
+                    padding: 20,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#17663e", marginBottom: 10 }}>
-                    <ShieldCheck size={15} />
-                    <h3 style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Arguments pro</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#17663e", marginBottom: 14 }}>
+                    <ShieldCheck size={18} />
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Argumente PRO</h3>
                   </div>
                   {ai?.pro_arguments?.length ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {ai.pro_arguments.map((argument, index) => (
-                        <p key={`${index}-${argument}`} style={{ fontSize: 13, lineHeight: 1.55, color: "#1c472d" }}>
+                        <p key={`${index}-${argument}`} style={{ fontSize: 14.5, lineHeight: 1.6, color: "#1c472d" }}>
                           {argument}
                         </p>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "#477458" }}>No supporting argument set has been extracted yet.</p>
+                    <p style={{ fontSize: 14, lineHeight: 1.5, color: "#477458" }}>Nu au fost extrase argumente de susținere.</p>
                   )}
                 </div>
 
                 <div
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 12,
                     border: "1px solid #f1dddd",
                     background: "#fff5f5",
-                    padding: 14,
+                    padding: 20,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#b73b3b", marginBottom: 10 }}>
-                    <ShieldAlert size={15} />
-                    <h3 style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Arguments contra</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#b73b3b", marginBottom: 14 }}>
+                    <ShieldAlert size={18} />
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Argumente CONTRA</h3>
                   </div>
                   {ai?.con_arguments?.length ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {ai.con_arguments.map((argument, index) => (
-                        <p key={`${index}-${argument}`} style={{ fontSize: 13, lineHeight: 1.55, color: "#612f2f" }}>
+                        <p key={`${index}-${argument}`} style={{ fontSize: 14.5, lineHeight: 1.6, color: "#612f2f" }}>
                           {argument}
                         </p>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "#8a5d5d" }}>No criticism set has been extracted yet.</p>
+                    <p style={{ fontSize: 14, lineHeight: 1.5, color: "#8a5d5d" }}>Nu au fost extrase critici pentru acest proiect.</p>
                   )}
                 </div>
               </div>
             </Section>
 
-            <Section eyebrow="Why it matters" title="Impact tags and affected groups" icon={<Scale size={17} />}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <Section eyebrow="Impact vizat" title="Categorii și Grupuri Afectate" icon={<Scale size={20} />}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 <div>
-                  <div style={{ ...eyebrowStyle, marginBottom: 10 }}>Policy areas</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ ...eyebrowStyle, marginBottom: 12 }}>Domenii de impact</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {ai?.impact_categories?.length ? (
                       ai.impact_categories.map((category) => (
                         <span
@@ -646,11 +647,11 @@ function BillDetailPage() {
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            padding: "7px 10px",
+                            padding: "8px 14px",
                             borderRadius: 999,
                             background: "#1e1e1b",
                             color: "#ffffff",
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: 600,
                           }}
                         >
@@ -658,14 +659,14 @@ function BillDetailPage() {
                         </span>
                       ))
                     ) : (
-                      <span style={{ fontSize: 13, color: "#777" }}>No impact categories yet.</span>
+                      <span style={{ fontSize: 14, color: "#777" }}>Fără categorii de impact identificate.</span>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ ...eyebrowStyle, marginBottom: 10 }}>Affected profiles</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ ...eyebrowStyle, marginBottom: 12 }}>Profiluri vizate</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {ai?.affected_profiles?.length ? (
                       ai.affected_profiles.map((profile) => (
                         <span
@@ -673,11 +674,11 @@ function BillDetailPage() {
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            padding: "7px 10px",
+                            padding: "8px 14px",
                             borderRadius: 999,
                             background: "#fafaf8",
                             color: "#3f3f3a",
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: 600,
                             border: "1px solid #e4e4de",
                           }}
@@ -686,87 +687,24 @@ function BillDetailPage() {
                         </span>
                       ))
                     ) : (
-                      <span style={{ fontSize: 13, color: "#777" }}>No profile targeting extracted yet.</span>
+                      <span style={{ fontSize: 14, color: "#777" }}>Nu au fost extrase profiluri specifice.</span>
                     )}
                   </div>
                 </div>
               </div>
             </Section>
-
-            <div style={{ display: "none" }}>
-                {(qaAnswer || qaLoading) && (
-                  <div
-                    ref={qaAnswerRef}
-                    style={{
-                      padding: "14px 16px", borderRadius: 10, background: "#fafafa",
-                      border: "1px solid #e8e8e8", fontSize: 13.5, lineHeight: 1.7,
-                      color: "#333", maxHeight: 320, overflowY: "auto", whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {qaLoading && !qaAnswer
-                      ? <span style={{ color: "#aaa" }}>Se generează răspunsul...</span>
-                      : qaAnswer}
-                  </div>
-                )}
-
-                {qaSources.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {qaSources.slice(0, 4).map((src, i) => (
-                      <div key={i} style={{
-                        display: "flex", alignItems: "center", gap: 5, padding: "4px 8px",
-                        borderRadius: 6, background: "#f5f5f5", border: "1px solid #e8e8e8",
-                        fontSize: 11.5, color: "#666", maxWidth: 260, overflow: "hidden",
-                      }}>
-                        <FileText size={11} style={{ flexShrink: 0, color: "#aaa" }} />
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {src.title || src.document_id}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <form onSubmit={handleQaSubmit} style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="text"
-                    value={qaQuestion}
-                    onChange={e => setQaQuestion(e.target.value)}
-                    placeholder="Ex: Cum afectează această lege pensionarii?"
-                    disabled={qaLoading}
-                    style={{
-                      flex: 1, padding: "10px 14px", fontSize: 13.5,
-                      border: "1px solid #e2e2e2", borderRadius: 8,
-                      background: "white", color: "#111", outline: "none",
-                      fontFamily: "var(--font)",
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={qaLoading || !qaQuestion.trim()}
-                    style={{
-                      padding: "10px 14px", borderRadius: 8, border: "none",
-                      background: qaLoading || !qaQuestion.trim() ? "#ccc" : "#111",
-                      color: "white", cursor: qaLoading || !qaQuestion.trim() ? "default" : "pointer",
-                      display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
-                      fontFamily: "var(--font)", fontSize: 13, fontWeight: 500,
-                    }}
-                  >
-                    <Send size={14} />
-                    {qaLoading ? "Se generează..." : "Trimite"}
-                  </button>
-                </form>
-              </div>
           </div>
 
-          <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {/* Right Diff Panel */}
+          <aside style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {/* Votes */}
-            <section style={sectionCardStyle}>
+            <section style={{ ...sectionCardStyle, position: "sticky", top: 100 }}>
               <button
                 onClick={() => setVotesExpanded(v => !v)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: votes ? 12 : 0 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: votes ? 16 : 0 }}
               >
                 <div style={eyebrowStyle}>Voturi</div>
-                <ChevronDown size={13} style={{ color: "#aaa", transform: votesExpanded ? "rotate(180deg)" : "none", transition: "transform 0.15s", flexShrink: 0 }} />
+                <ChevronDown size={16} style={{ color: "#aaa", transform: votesExpanded ? "rotate(180deg)" : "none", transition: "transform 0.15s", flexShrink: 0 }} />
               </button>
 
               {votes ? (() => {
@@ -781,14 +719,14 @@ function BillDetailPage() {
                 ];
                 return (
                   <>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {bars.map(({ label, count, color }) => (
                         <div key={label}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
                             <span style={{ color: "#555", fontWeight: 500 }}>{label}</span>
                             <span style={{ color, fontWeight: 600 }}>{count} ({pct(count)}%)</span>
                           </div>
-                          <div style={{ height: 5, borderRadius: 99, background: "#f0f0f0", overflow: "hidden" }}>
+                          <div style={{ height: 6, borderRadius: 99, background: "#f0f0f0", overflow: "hidden" }}>
                             <div style={{ width: `${pct(count)}%`, height: "100%", background: color, borderRadius: 99 }} />
                           </div>
                         </div>
@@ -796,15 +734,14 @@ function BillDetailPage() {
                     </div>
 
                     {votesExpanded && (
-                      <div style={{ marginTop: 14, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
-                        {/* Vote type filter */}
-                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+                      <div style={{ marginTop: 18, borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                           {(["Toți", "Pentru", "Contra", "Abținere", "Absent"] as const).map(tab => (
                             <button
                               key={tab}
                               onClick={() => setVoteFilter(tab)}
                               style={{
-                                fontSize: 11, padding: "3px 8px", borderRadius: 4, cursor: "pointer",
+                                fontSize: 12, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
                                 border: `1px solid ${voteFilter === tab ? "#111" : "#e0e0e0"}`,
                                 background: voteFilter === tab ? "#111" : "transparent",
                                 color: voteFilter === tab ? "white" : "#666",
@@ -816,15 +753,14 @@ function BillDetailPage() {
                           ))}
                         </div>
 
-                        {/* Party filter */}
                         {uniqueParties.length > 1 && (
                           <select
                             value={partyFilter}
                             onChange={e => setPartyFilter(e.target.value)}
                             style={{
-                              width: "100%", padding: "5px 8px", fontSize: 12,
-                              border: "1px solid #e2e2e2", borderRadius: 6,
-                              background: "white", color: "#111", marginBottom: 10,
+                              width: "100%", padding: "7px 10px", fontSize: 13,
+                              border: "1px solid #e2e2e2", borderRadius: 8,
+                              background: "white", color: "#111", marginBottom: 12,
                               fontFamily: "var(--font)", outline: "none",
                             }}
                           >
@@ -833,21 +769,20 @@ function BillDetailPage() {
                           </select>
                         )}
 
-                        {/* MP list */}
-                        <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+                        <div style={{ maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column" }}>
                           {filteredMPs.length === 0 ? (
-                            <div style={{ fontSize: 12, color: "#aaa", textAlign: "center", padding: "12px 0" }}>Nicio înregistrare.</div>
+                            <div style={{ fontSize: 13, color: "#aaa", textAlign: "center", padding: "16px 0" }}>Nicio înregistrare.</div>
                           ) : filteredMPs.map(mp => (
                             <div
                               key={`${mp.mp_slug}-${mp.bucket}`}
-                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f5f5f5", gap: 6 }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #f5f5f5", gap: 8 }}
                             >
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 11.5, fontWeight: 500, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mp.mp_name}</div>
-                                <div style={{ fontSize: 10.5, color: "#aaa" }}>{mp.party}</div>
+                                <div style={{ fontSize: 13, fontWeight: 500, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mp.mp_name}</div>
+                                <div style={{ fontSize: 11.5, color: "#aaa" }}>{mp.party}</div>
                               </div>
                               <span style={{
-                                fontSize: 10.5, fontWeight: 600, flexShrink: 0,
+                                fontSize: 11.5, fontWeight: 600, flexShrink: 0,
                                 color: mp.bucket === "Pentru" ? "#16a34a" : mp.bucket === "Contra" ? "#dc2626" : "#aaa",
                               }}>
                                 {mp.bucket}
@@ -855,7 +790,7 @@ function BillDetailPage() {
                             </div>
                           ))}
                         </div>
-                        <div style={{ fontSize: 11, color: "#bbb", marginTop: 8 }}>
+                        <div style={{ fontSize: 12, color: "#bbb", marginTop: 10 }}>
                           {filteredMPs.length} / {allVotedMPs.length} voturi
                         </div>
                       </div>
@@ -863,15 +798,16 @@ function BillDetailPage() {
                   </>
                 );
               })() : (
-                <div style={{ fontSize: 12.5, color: "#aaa", textAlign: "center", padding: "10px 0" }}>
+                <div style={{ fontSize: 13.5, color: "#aaa", textAlign: "center", padding: "12px 0" }}>
                   Nu există date de vot.
                 </div>
               )}
             </section>
 
             {/* Documents */}
-            <Section eyebrow="Documente oficiale" title="Surse și referințe" icon={<ArrowUpRight size={17} />}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <section style={sectionCardStyle}>
+              <div style={{ ...eyebrowStyle, marginBottom: 16 }}>Surse și referințe</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {sourceDocuments.length ? (
                   sourceDocuments.map((document) => (
                     <a
@@ -883,19 +819,19 @@ function BillDetailPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        gap: 10,
-                        padding: "9px 10px",
-                        borderRadius: 8,
+                        gap: 12,
+                        padding: "10px 12px",
+                        borderRadius: 10,
                         border: "1px solid #e8e8e8",
                         background: "#fff",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div
                           style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: 8,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 10,
                             background: "#ffffff",
                             border: "1px solid #ececec",
                             display: "flex",
@@ -905,31 +841,30 @@ function BillDetailPage() {
                             flexShrink: 0,
                           }}
                         >
-                          <FileText size={14} />
+                          <FileText size={16} />
                         </div>
-                        <span style={{ fontSize: 12.5, fontWeight: 600, color: "#333" }}>{document.label}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "#333" }}>{document.label}</span>
                       </div>
-                      <ArrowUpRight size={14} color="#7a7a72" />
+                      <ArrowUpRight size={16} color="#7a7a72" />
                     </a>
                   ))
                 ) : (
                   <div
                     style={{
-                      padding: "14px 12px",
-                      borderRadius: 8,
+                      padding: "16px 14px",
+                      borderRadius: 10,
                       border: "1px dashed #e0e0e0",
                       background: "#fafafa",
-                      fontSize: 12.5,
-                      lineHeight: 1.5,
+                      fontSize: 13.5,
+                      lineHeight: 1.6,
                       color: "#777",
                     }}
                   >
-                    Nu sunt atașate documente oficiale pentru acest proiect.
+                    Nu sunt atașate documente oficiale.
                   </div>
                 )}
               </div>
-            </Section>
-
+            </section>
           </aside>
         </div>
         {!qaOpen && (
