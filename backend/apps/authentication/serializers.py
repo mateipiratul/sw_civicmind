@@ -116,13 +116,20 @@ class LoginSerializer(serializers.Serializer):
     password: serializers.CharField = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate(self, attrs: Dict[str, str]) -> User:
-        username: str = normalize_username(attrs.get("username", ""))
+        username_input: str = attrs.get("username", "").strip()
         password: str = attrs.get("password", "")
 
-        if not username or not password:
+        if not username_input or not password:
             raise serializers.ValidationError("Numele de utilizator / Emailul și parola sunt necesare.")
 
-        user = authenticate(username=username, password=password)
+        if "@" in username_input:
+            user_by_email = User.objects.filter(email__iexact=username_input).first()
+            if user_by_email:
+                username_input = user_by_email.username
+        else:
+            username_input = normalize_username(username_input)
+
+        user = authenticate(username=username_input, password=password)
         if isinstance(user, User) and user.is_active:
             return user
         raise serializers.ValidationError("Nume de utilizator / Email sau parolă incorecte")

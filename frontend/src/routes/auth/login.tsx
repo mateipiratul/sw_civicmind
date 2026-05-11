@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -22,6 +23,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,7 +67,7 @@ function LoginPage() {
         <form onSubmit={handleLogin} className="form-col">
           <div className="form-group">
             <label className="form-label">
-              Nume utilizator
+              Nume utilizator sau Email
             </label>
             <input
               type="text"
@@ -78,17 +80,48 @@ function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">
-              Parola
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              disabled={isLoading}
-              autoComplete="current-password"
-              className="form-input"
-            />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <label className="form-label">
+                Parola
+              </label>
+              <Link 
+                to="/auth/forgot-password" 
+                style={{ fontSize: 12, color: "var(--primary)", textDecoration: "none" }}
+              >
+                Ai uitat parola?
+              </Link>
+            </div>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={isLoading}
+                autoComplete="current-password"
+                className="form-input"
+                style={{ paddingRight: 40, width: "100%", boxSizing: "border-box" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  padding: 4,
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           {error && <p className="error-box">{error}</p>}

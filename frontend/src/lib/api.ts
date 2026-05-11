@@ -358,6 +358,22 @@ class ApiClient {
     return this.normalizeAuthUser(response);
   };
 
+  requestPasswordReset = async (email: string): Promise<void> => {
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    await this.request("/api/auth/password/reset/", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  };
+
+  confirmPasswordReset = async (data: any): Promise<void> => {
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    await this.request("/api/auth/password/reset/confirm/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  };
+
   // Bills
   listBills = async (category?: string, page = 1, limit = 20): Promise<PaginatedBills> => {
     const q = new URLSearchParams({ page: String(page), limit: String(limit) });

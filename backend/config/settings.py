@@ -223,3 +223,9 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@civicmind.ro'
+# URL to which the user will be directed from the password reset email
+# dj-rest-auth replaces {uid} and {token} dynamically
+PASSWORD_RESET_URL = 'http://localhost:5173/auth/reset-password?uid={uid}&token={token}'
