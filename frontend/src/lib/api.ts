@@ -285,7 +285,23 @@ class ApiClient {
       return {} as T;
     }
 
-    const data = await response.json();
+    const contentType = response.headers.get("content-type") || "";
+    let data: any;
+    if (contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      // Try to parse as JSON anyway (some servers omit content-type)
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Backend returned HTML/text - surface a readable error
+        if (!response.ok) {
+          throw new ApiError(`Server error (${response.status}). Backend may be restarting.`, response.status);
+        }
+        return {} as T;
+      }
+    }
 
     if (!response.ok) {
       // Handle Django REST Framework validation errors (object with field names as keys)
@@ -386,7 +402,16 @@ class ApiClient {
   };
 
   getMetadata = async (): Promise<{ impact_categories: string[], affected_profiles: string[], counties: string[] }> => {
-    return this.request("/api/bills/metadata/");
+    const cached = sessionStorage.getItem("civicmind_metadata");
+    if (cached) {
+      this.request<{ impact_categories: string[], affected_profiles: string[], counties: string[] }>("/api/bills/metadata/")
+        .then(data => sessionStorage.setItem("civicmind_metadata", JSON.stringify(data)))
+        .catch(() => {});
+      return JSON.parse(cached);
+    }
+    const data = await this.request<{ impact_categories: string[], affected_profiles: string[], counties: string[] }>("/api/bills/metadata/");
+    sessionStorage.setItem("civicmind_metadata", JSON.stringify(data));
+    return data;
   };
 
   // Parliamentarians
@@ -434,9 +459,16 @@ class ApiClient {
     return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
   };
   
-  deleteAccount = async (): Promise<void> => {
+  analyzeOnboardingProfile = async (text: string, available_counties: string[], available_categories: string[]): Promise<{county: string | null, interests: string[]}> => {
+    return this.requestTo(this.aiBaseUrl, "/profiles/analyze-onboarding", {
+      method: "POST",
+      body: JSON.stringify({ text, available_counties, available_categories })
+    });
+  };
+  
+  deleteAccount = async (password: string): Promise<void> => {
     await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
-    await this.request("/api/profiles/me/", { method: "DELETE" });
+    await this.request("/api/profiles/me/", { method: "DELETE", body: JSON.stringify({ password }) });
   };
   
   logout = async (): Promise<void> => { localStorage.removeItem("auth_token"); };

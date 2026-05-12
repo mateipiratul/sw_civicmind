@@ -72,7 +72,7 @@ function RegisterPage() {
       console.log("API Success, logging in...");
       login(user);
       console.log("Login success, navigating...");
-      navigate({ to: "/" });
+      navigate({ to: "/onboarding" });
     } catch (err) {
       console.error("Register error:", err);
       setError(err instanceof Error ? err.message : "Înregistrarea a eșuat");

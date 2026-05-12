@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Sparkles, Send, Check, RotateCcw } from "lucide-react";
 
 export const Route = createFileRoute("/profile/")({
   component: ProfilePage,
@@ -31,12 +32,23 @@ export default function ProfilePage() {
   const [county, setCounty] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"idle" | "password" | "confirm" | "done">("idle");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [countyOpen, setCountyOpen] = useState(false);
   
   const [metadata, setMetadata] = useState<{ impact_categories: string[], counties: string[] } | null>(null);
+
+  // AI interests mode
+  const [interestsMode, setInterestsMode] = useState<"manual" | "ai">("manual");
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiStep, setAiStep] = useState<"input" | "confirm">("input");
+  const [aiSuggested, setAiSuggested] = useState<string[]>([]);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const aiTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -92,17 +104,48 @@ export default function ProfilePage() {
     );
   };
 
+  const handleAiAnalyze = async () => {
+    const text = aiInput.trim();
+    if (!text || aiLoading) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const meta = metadata ?? await api.getMetadata();
+      const analysis = await api.analyzeOnboardingProfile(text, meta.counties, meta.impact_categories);
+      if (analysis.county) setCounty(analysis.county);
+      setAiSuggested(analysis.interests ?? []);
+      setSelectedInterests(analysis.interests ?? []);
+      setAiStep("confirm");
+    } catch {
+      setAiError("Nu am putut analiza descrierea. Verifică că serviciul AI este pornit.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAiConfirm = () => {
+    setAiStep("input");
+    setAiInput("");
+    setAiSuggested([]);
+    setInterestsMode("manual");
+  };
+
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
-    setToast(null);
+    setDeleteError(null);
     try {
-      await api.deleteAccount();
-      await logout();
-      navigate({ to: "/" });
+      await api.deleteAccount(deletePassword);
+      setDeleteStep("done");
+      // Give the success modal a moment to show, then log out and redirect
+      setTimeout(async () => {
+        await logout();
+        navigate({ to: "/" });
+      }, 2800);
     } catch (err) {
-      setToast({ type: "err", msg: err instanceof Error ? err.message : "Ștergerea contului a eșuat" });
+      setDeleteError(err instanceof Error ? err.message : "Ștergerea contului a eșuat.");
+      setDeleteStep("confirm"); // stay on confirm so they can retry
+    } finally {
       setIsDeleting(false);
-      setShowConfirmDelete(false);
     }
   };
 
@@ -187,33 +230,192 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-group">
-            <div className="flex items-baseline justify-between mb-1">
-              <label className="form-label">Interese civice</label>
-              {selectedInterests.length > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {selectedInterests.length} selectate
-                </span>
-              )}
+            {/* Header: label + mode toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <label className="form-label" style={{ margin: 0 }}>Interese civice</label>
+                {selectedInterests.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{selectedInterests.length} selectate</span>
+                )}
+              </div>
+              {/* Mode toggle pill */}
+              <div style={{ display: "flex", background: "var(--muted, #f3f4f6)", borderRadius: 8, padding: 3, gap: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => { setInterestsMode("manual"); setAiStep("input"); }}
+                  style={{
+                    padding: "4px 10px", borderRadius: 6, border: "none", fontSize: 12,
+                    fontWeight: interestsMode === "manual" ? 600 : 400,
+                    background: interestsMode === "manual" ? "var(--surface)" : "transparent",
+                    color: interestsMode === "manual" ? "var(--text)" : "var(--text-muted)",
+                    cursor: "pointer",
+                    boxShadow: interestsMode === "manual" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                    transition: "all 0.15s", fontFamily: "var(--font)",
+                  }}
+                >
+                  Selectează manual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setInterestsMode("ai"); setTimeout(() => aiTextareaRef.current?.focus(), 50); }}
+                  style={{
+                    padding: "4px 10px", borderRadius: 6, border: "none", fontSize: 12,
+                    fontWeight: interestsMode === "ai" ? 600 : 400,
+                    background: interestsMode === "ai" ? "var(--surface)" : "transparent",
+                    color: interestsMode === "ai" ? "#6366f1" : "var(--text-muted)",
+                    cursor: "pointer",
+                    boxShadow: interestsMode === "ai" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                    transition: "all 0.15s", fontFamily: "var(--font)",
+                    display: "flex", alignItems: "center", gap: 4,
+                  }}
+                >
+                  <Sparkles size={11} /> Descrie-te AI-ului
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-2">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
-            <div className="flex flex-wrap gap-2">
-              {metadata?.impact_categories.map(cat => {
-                const active = selectedInterests.includes(cat);
-                return (
+
+            {/* ── Manual mode ── */}
+            {interestsMode === "manual" && (
+              <>
+                <p className="text-xs text-muted-foreground mb-2">Selectează ariile care te afectează direct pentru un feed personalizat.</p>
+                <div className="flex flex-wrap gap-2">
+                  {metadata?.impact_categories.map(cat => {
+                    const active = selectedInterests.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleInterest(cat)}
+                        className={cn("interest-pill", active && "active")}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* ── AI mode: input step ── */}
+            {interestsMode === "ai" && aiStep === "input" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <p className="text-xs text-muted-foreground">
+                  Descrie-te în câteva cuvinte și AI-ul va sugera automat categoriile și județul.{" "}
+                  <em>Ex: „Sunt avocat în Cluj, interesat de justiție și antreprenoriat."</em>
+                </p>
+                <div style={{ position: "relative" }}>
+                  <textarea
+                    ref={aiTextareaRef}
+                    value={aiInput}
+                    onChange={e => setAiInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAiAnalyze(); } }}
+                    disabled={aiLoading}
+                    placeholder="Descrie-ți profesia, orașul sau interesele civice..."
+                    rows={3}
+                    style={{
+                      width: "100%", padding: "10px 46px 10px 12px", fontSize: 13.5,
+                      border: "1.5px solid var(--border-input)", borderRadius: 8,
+                      background: "var(--surface)", color: "var(--text)",
+                      fontFamily: "var(--font)", resize: "vertical", boxSizing: "border-box", outline: "none",
+                    }}
+                  />
                   <button
-                    key={cat}
                     type="button"
-                    onClick={() => toggleInterest(cat)}
-                    className={cn(
-                      "interest-pill",
-                      active && "active"
-                    )}
+                    onClick={handleAiAnalyze}
+                    disabled={!aiInput.trim() || aiLoading}
+                    style={{
+                      position: "absolute", right: 8, bottom: 8, width: 30, height: 30,
+                      borderRadius: 7,
+                      background: !aiInput.trim() || aiLoading ? "var(--border-input)" : "#6366f1",
+                      border: "none",
+                      cursor: !aiInput.trim() || aiLoading ? "not-allowed" : "pointer",
+                      color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "background 0.15s",
+                    }}
                   >
-                    {cat}
+                    <Send size={13} />
                   </button>
-                );
-              })}
-            </div>
+                </div>
+                {aiLoading && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#6366f1", fontSize: 13 }}>
+                    <Sparkles size={13} /> Se analizează...
+                  </div>
+                )}
+                {aiError && (
+                  <p style={{ fontSize: 12.5, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "7px 11px", margin: 0 }}>
+                    {aiError}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ── AI mode: confirm step ── */}
+            {interestsMode === "ai" && aiStep === "confirm" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {/* AI bubble */}
+                <div style={{ background: "linear-gradient(135deg,#f5f3ff,#ede9fe)", border: "1px solid #c4b5fd", borderRadius: 10, padding: "11px 14px", display: "flex", gap: 9, alignItems: "flex-start" }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Sparkles size={13} color="white" />
+                  </div>
+                  <p style={{ fontSize: 13, color: "#4c1d95", margin: 0, lineHeight: 1.55 }}>
+                    <strong>Am identificat {aiSuggested.length} categorii</strong> — marcate cu ✦ mai jos.
+                    {county && <> Am setat și județul <strong>{county}</strong>.</>}{" "}
+                    Poți ajusta selecția înainte de a salva.
+                  </p>
+                </div>
+
+                {/* All pills, suggested ones highlighted */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {metadata?.impact_categories.map(cat => {
+                    const active = selectedInterests.includes(cat);
+                    const wasSuggested = aiSuggested.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleInterest(cat)}
+                        style={{
+                          padding: "5px 12px", borderRadius: 20,
+                          border: `1.5px solid ${active ? (wasSuggested ? "#6366f1" : "var(--primary)") : "var(--border-input)"}`,
+                          background: active ? (wasSuggested ? "#ede9fe" : "var(--primary)") : "transparent",
+                          color: active ? (wasSuggested ? "#4c1d95" : "var(--primary-text)") : "var(--text-muted)",
+                          fontSize: 12.5, cursor: "pointer", fontFamily: "var(--font)",
+                          display: "flex", alignItems: "center", gap: 4,
+                          transition: "all 0.12s", whiteSpace: "nowrap",
+                          fontWeight: active && wasSuggested ? 600 : 400,
+                        }}
+                      >
+                        {active && <Check size={11} />}
+                        {cat}
+                        {wasSuggested && !active && <span style={{ fontSize: 9, opacity: 0.7 }}>✦</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: 11, color: "var(--text-muted)", margin: 0 }}>✦ = sugerat de AI · Apasă orice categorie pentru a adăuga/elimina</p>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={handleAiConfirm}
+                    style={{
+                      padding: "7px 14px", borderRadius: 7, background: "#6366f1", color: "white",
+                      border: "none", fontSize: 13, fontWeight: 500, cursor: "pointer",
+                      fontFamily: "var(--font)", display: "flex", alignItems: "center", gap: 5,
+                    }}
+                  >
+                    <Check size={13} /> Confirmă selecția
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAiStep("input"); setAiSuggested([]); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, padding: 0, fontFamily: "var(--font)" }}
+                  >
+                    <RotateCcw size={11} /> Rescrie
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {toast && (
@@ -245,41 +447,129 @@ export default function ProfilePage() {
             <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--color-destructive)" }}>Zona Periculoasă</h3>
             <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Odată șters, contul și toate datele tale nu mai pot fi recuperate.</p>
           </div>
-          
-          {showConfirmDelete ? (
-            <div style={{ background: "#fef2f2", padding: 12, borderRadius: 8, border: "1px solid #fecaca" }}>
-              <p style={{ fontSize: 13, color: "#b91c1c", margin: "0 0 12px 0", fontWeight: 500 }}>
-                Ești absolut sigur că vrei să ștergi acest cont definitiv?
-              </p>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button 
-                  onClick={handleDeleteAccount}
-                  disabled={isDeleting}
-                  className="form-button"
-                  style={{ background: "#dc2626", flex: 1, padding: "8px 12px", fontSize: 13 }}
-                >
-                  {isDeleting ? "Se șterge..." : "Da, șterge contul"}
-                </button>
-                <button 
-                  onClick={() => setShowConfirmDelete(false)}
-                  disabled={isDeleting}
-                  className="form-button"
-                  style={{ background: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)", flex: 1, padding: "8px 12px", fontSize: 13 }}
-                >
-                  Anulează
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button 
-              onClick={() => setShowConfirmDelete(true)}
-              className="form-button"
-              style={{ background: "var(--surface)", color: "#dc2626", border: "1px solid #fecaca" }}
-            >
-              Șterge contul
-            </button>
-          )}
+          <button
+            onClick={() => { setDeleteStep("password"); setDeletePassword(""); setDeleteError(null); }}
+            className="form-button"
+            style={{ background: "var(--surface)", color: "#dc2626", border: "1px solid #fecaca" }}
+          >
+            Șterge contul
+          </button>
         </div>
+
+        {/* ── Delete Modal Overlay ── */}
+        {deleteStep !== "idle" && (
+          <div
+            style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(2px)",
+              zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget && deleteStep !== "done" && !isDeleting) { setDeleteStep("idle"); setDeletePassword(""); setDeleteError(null); } }}
+          >
+            <div style={{
+              background: "var(--card, #fff)", borderRadius: 16, padding: "28px 28px 24px",
+              maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              display: "flex", flexDirection: "column", gap: 20,
+            }}>
+
+              {/* Step 1 — Password */}
+              {deleteStep === "password" && (
+                <>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 6px", color: "var(--text)" }}>Confirmă identitatea</h2>
+                    <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0 }}>
+                      Introdu parola contului tău pentru a continua.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <input
+                      type="password"
+                      autoFocus
+                      value={deletePassword}
+                      onChange={e => setDeletePassword(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter" && deletePassword.trim()) setDeleteStep("confirm"); }}
+                      placeholder="Parola ta"
+                      className="form-input"
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      onClick={() => { if (deletePassword.trim()) setDeleteStep("confirm"); }}
+                      disabled={!deletePassword.trim()}
+                      style={{
+                        flex: 1, padding: "10px 16px", borderRadius: 8, border: "none",
+                        background: deletePassword.trim() ? "#dc2626" : "var(--border-input)",
+                        color: "white", fontSize: 14, fontWeight: 500,
+                        cursor: deletePassword.trim() ? "pointer" : "not-allowed",
+                        fontFamily: "var(--font)",
+                      }}
+                    >
+                      Continuă
+                    </button>
+                    <button
+                      onClick={() => { setDeleteStep("idle"); setDeletePassword(""); }}
+                      style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)" }}
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 2 — Confirmation */}
+              {deleteStep === "confirm" && (
+                <>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>⚠️</div>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 6px", color: "#b91c1c" }}>Ești sigur?</h2>
+                    <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
+                      Această acțiune este <strong>ireversibilă</strong>. Contul tău, profilul și toate datele asociate vor fi șterse permanent.
+                    </p>
+                  </div>
+                  {deleteError && (
+                    <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#b91c1c" }}>
+                      {deleteError}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting}
+                      style={{
+                        flex: 1, padding: "10px 16px", borderRadius: 8, border: "none",
+                        background: "#dc2626", color: "white", fontSize: 14, fontWeight: 500,
+                        cursor: isDeleting ? "not-allowed" : "pointer", opacity: isDeleting ? 0.7 : 1,
+                        fontFamily: "var(--font)",
+                      }}
+                    >
+                      {isDeleting ? "Se șterge..." : "Da, șterge contul definitiv"}
+                    </button>
+                    <button
+                      onClick={() => { setDeleteStep("idle"); setDeletePassword(""); setDeleteError(null); }}
+                      disabled={isDeleting}
+                      style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)" }}
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 3 — Done / Success */}
+              {deleteStep === "done" && (
+                <div style={{ textAlign: "center", padding: "10px 0" }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px", color: "var(--text)" }}>Cont șters cu succes</h2>
+                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
+                    Contul tău a fost șters definitiv. Îți mulțumim că ai folosit CivicMind.<br />
+                    Ești redirecționat...
+                  </p>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
