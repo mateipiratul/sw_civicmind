@@ -36,12 +36,18 @@ function MPRow({ mp }: { mp: Parliamentarian }) {
                 {mp.party}
               </span>
             )}
+            {mp.county && (
+              <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 5, background: "#f5f5f5", color: "#666", fontWeight: 500 }}>
+                {mp.county}
+              </span>
+            )}
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {mp.county && <span className="muted" style={{ fontSize: 13 }}>{mp.county}</span>}
-            <span style={{ fontSize: 13, color: "#ccc" }}>
-              {mp.chamber === "deputies" ? "Deputat" : mp.chamber === "senate" ? "Senator" : mp.chamber}
-            </span>
+            {mp.chamber && (
+              <span style={{ fontSize: 13, color: "#ccc" }}>
+                {mp.chamber === "deputies" ? "Deputat" : mp.chamber === "senate" ? "Senator" : mp.chamber}
+              </span>
+            )}
             {t > 0 && <span className="muted" style={{ fontSize: 12.5 }}>{t} voturi</span>}
           </div>
         </div>
