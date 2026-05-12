@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [county, setCounty] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateStep, setUpdateStep] = useState<"idle" | "confirm" | "done">("idle");
   const [deleteStep, setDeleteStep] = useState<"idle" | "password" | "confirm" | "done">("idle");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -73,6 +74,10 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUpdateStep("confirm");
+  };
+
+  const executeProfileUpdate = async () => {
     setIsUpdating(true);
     setToast(null);
 
@@ -84,13 +89,19 @@ export default function ProfilePage() {
         interests: selectedInterests 
       });
       updateUser(updated);
-      setToast({ type: "ok", msg: "Profil actualizat cu succes!" });
-      setTimeout(() => setToast(null), 3500);
+      setUpdateStep("done");
+      // Show success message briefly but don't redirect
+      setTimeout(() => {
+        setUpdateStep("idle");
+        setToast({ type: "ok", msg: "Profil actualizat cu succes!" });
+        setTimeout(() => setToast(null), 3500);
+      }, 1500);
     } catch (err) {
       setToast({ 
         type: "err", 
         msg: err instanceof Error ? err.message : "Actualizarea profilului a eșuat" 
       });
+      setUpdateStep("idle");
     } finally {
       setIsUpdating(false);
     }
@@ -186,10 +197,10 @@ export default function ProfilePage() {
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="form-input"
+                disabled
+                className="form-input opacity-60 cursor-not-allowed"
               />
+              <p className="text-xs text-muted-foreground mt-1">Email-ul nu poate fi modificat.</p>
             </div>
           </div>
 
@@ -418,19 +429,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {toast && (
-            <div
-              className={cn(
-                "px-4 py-3 rounded-md text-[13.5px] font-medium border",
-                toast.type === "ok"
-                  ? "bg-[#f0faf4] text-[#1a6b3c] border-[#b6e4cc]"
-                  : "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]"
-              )}
-            >
-              {toast.msg}
-            </div>
-          )}
-
           <div className="flex gap-3 pt-2">
             <button type="submit" disabled={isUpdating} className="form-button" style={{ flex: 1 }}>
               {isUpdating ? "Se salvează…" : "Salvează modificările"}
@@ -455,6 +453,70 @@ export default function ProfilePage() {
             Șterge contul
           </button>
         </div>
+
+        {/* ── Profile Update Modal Overlay ── */}
+        {updateStep !== "idle" && (
+          <div
+            style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(2px)",
+              zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget && updateStep !== "done" && !isUpdating) { setUpdateStep("idle"); } }}
+          >
+            <div style={{
+              background: "var(--card, #fff)", borderRadius: 16, padding: "28px 28px 24px",
+              maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              display: "flex", flexDirection: "column", gap: 20,
+            }}>
+
+              {/* Confirmation step */}
+              {updateStep === "confirm" && (
+                <>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>✎</div>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 6px", color: "var(--text)" }}>Confirmă modificările</h2>
+                    <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
+                      Ești sigur că vrei să salvezi aceste modificări?
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      onClick={executeProfileUpdate}
+                      disabled={isUpdating}
+                      style={{
+                        flex: 1, padding: "10px 16px", borderRadius: 8, border: "none",
+                        background: "#6366f1", color: "white", fontSize: 14, fontWeight: 500,
+                        cursor: isUpdating ? "not-allowed" : "pointer", opacity: isUpdating ? 0.7 : 1,
+                        fontFamily: "var(--font)",
+                      }}
+                    >
+                      {isUpdating ? "Se salvează..." : "Da, salvează modificările"}
+                    </button>
+                    <button
+                      onClick={() => { setUpdateStep("idle"); }}
+                      disabled={isUpdating}
+                      style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)" }}
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Success step */}
+              {updateStep === "done" && (
+                <div style={{ textAlign: "center", padding: "10px 0" }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px", color: "var(--text)" }}>Profil actualizat</h2>
+                  <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
+                    Modificările au fost salvate cu succes.
+                  </p>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
 
         {/* ── Delete Modal Overlay ── */}
         {deleteStep !== "idle" && (
