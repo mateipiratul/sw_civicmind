@@ -34,7 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(prev => {
         if (!prev) return null;
         const updated = { ...prev, ...profile };
-        localStorage.setItem("auth_user", JSON.stringify(profile));
+        const { token, ...userData } = updated;
+        localStorage.setItem("auth_user", JSON.stringify(userData));
         return updated;
       });
       console.log("[AuthContext] Profile refreshed.");
@@ -60,8 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // BG Refresh
         api.getProfile().then(profile => {
-          setUser(prev => prev ? { ...prev, ...profile } : null);
-          localStorage.setItem("auth_user", JSON.stringify(profile));
+          setUser(prev => {
+            if (!prev) return null;
+            const updated = { ...prev, ...profile };
+            const { token, ...userData } = updated;
+            localStorage.setItem("auth_user", JSON.stringify(userData));
+            return updated;
+          });
         }).catch(err => {
           if (err instanceof Error && err.message.includes("401")) {
              console.warn("[AuthContext] BG Refresh 401");
@@ -85,7 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { token, ...userData } = newUser;
     localStorage.setItem("auth_user", JSON.stringify(userData));
     setUser(newUser);
-  }, []);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const refreshUser = useCallback(async () => {
     await fetchProfile();

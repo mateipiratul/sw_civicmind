@@ -22,7 +22,7 @@ class RegisterView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         # set session cookie for browser-based flows
-        django_login(request, user)
+        django_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             "user": UserSerializer(user, context=self.get_serializer_context()).data,
@@ -39,7 +39,7 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
         # create a session cookie for browser flows
-        django_login(request, user)
+        django_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         token, _ = Token.objects.get_or_create(user=user)
         return Response({
             "user": UserSerializer(user, context=self.get_serializer_context()).data,

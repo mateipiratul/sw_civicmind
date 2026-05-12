@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import re
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from typing import Dict
 from rest_framework import serializers
 
 from apps.profiles.models import Profile
@@ -28,60 +31,78 @@ def normalize_email(value: str) -> str:
     return (value or "").strip().lower()
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:  # type: ignore[reportIncompatibleVariableOverride]
-        model = User  # type: ignore[reportAssignmentType]
-        fields = ("id", "username", "email")
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+
+class UserSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    role = serializers.SerializerMethodField()
+
+    def get_role(self, obj: User) -> str:
+        if obj.is_superuser:
+            return "admin"
+        if obj.is_staff:
+            return "staff"
+        return "user"
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(max_length=150)
     email = serializers.CharField(max_length=254)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
-    class Meta: # type: ignore[reportIncompatibleVariableOverride]
-        model = User # type: ignore[reportAssignmentType]
-        fields = ("id", "username", "email", "password")
-
     def validate_username(self, value: str) -> str:
         normalized = normalize_username(value)
         if not normalized:
-            raise serializers.ValidationError("Username is required.")
+            raise serializers.ValidationError("Numele de utilizator este necesar.")
         if not STRICT_USERNAME_RE.fullmatch(normalized):
             raise serializers.ValidationError(
-                "Username must be 3-30 characters and contain only letters, numbers, dots, underscores, or hyphens."
+                "Numele de utilizator trebuie să aibă între 3 și 30 de caractere și să conțină doar litere, numere, puncte, underscore-uri sau cratime."
             )
         if User.objects.filter(username__iexact=normalized).exists():
-            raise serializers.ValidationError("A user with this username already exists.")
+            raise serializers.ValidationError("Un utilizator cu acest nume există deja.")
         return normalized
 
     def validate_email(self, value: str) -> str:
         normalized = normalize_email(value)
         if not normalized:
-            raise serializers.ValidationError("Email is required.")
+            raise serializers.ValidationError("Emailul este necesar.")
         if not STRICT_EMAIL_RE.fullmatch(normalized):
-            raise serializers.ValidationError("Enter a valid email address.")
+            raise serializers.ValidationError("Introduceți o adresă de email validă.")
         if User.objects.filter(email__iexact=normalized).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
+            raise serializers.ValidationError("Un utilizator cu acest email există deja.")
         return normalized
 
     def validate_password(self, value: str) -> str:
+        # Standard custom checks
         if len(value) < 8:
-            raise serializers.ValidationError("Password must be at least 8 characters long.")
+            raise serializers.ValidationError("Parola trebuie să aibă cel puțin 8 caractere.")
         if any(char.isspace() for char in value):
-            raise serializers.ValidationError("Password must not contain spaces.")
+            raise serializers.ValidationError("Parola nu trebuie să conțină spații.")
         if not PASSWORD_UPPER_RE.search(value):
-            raise serializers.ValidationError("Password must contain at least 1 uppercase letter.")
+            raise serializers.ValidationError("Parola trebuie să conțină cel puțin o literă mare.")
         if not PASSWORD_LOWER_RE.search(value):
-            raise serializers.ValidationError("Password must contain at least 1 lowercase letter.")
+            raise serializers.ValidationError("Parola trebuie să conțină cel puțin o literă mică.")
         if not PASSWORD_DIGIT_RE.search(value):
-            raise serializers.ValidationError("Password must contain at least 1 digit.")
+            raise serializers.ValidationError("Parola trebuie să conțină cel puțin un cifră.")
         if not PASSWORD_SPECIAL_RE.search(value):
-            raise serializers.ValidationError("Password must contain at least 1 special character.")
+            raise serializers.ValidationError("Parola trebuie să conțină cel puțin un caracter special.")
+        
+        # Django built-in production validators
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+            
         return value
 
-    def create(self, validated_data):
-        user = User.objects.create_user(
+    def create(self, validated_data: Dict[str, str]) -> User:
+        user: User = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
@@ -91,17 +112,24 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(trim_whitespace=False)
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    username: serializers.CharField = serializers.CharField(trim_whitespace=False)
+    password: serializers.CharField = serializers.CharField(write_only=True, trim_whitespace=False)
 
-    def validate(self, attrs):
-        username = normalize_username(attrs.get("username", ""))
-        password = attrs.get("password", "")
+    def validate(self, attrs: Dict[str, str]) -> User:
+        username_input: str = attrs.get("username", "").strip()
+        password: str = attrs.get("password", "")
 
-        if not username or not password:
-            raise serializers.ValidationError("Username and password are required.")
+        if not username_input or not password:
+            raise serializers.ValidationError("Numele de utilizator / Emailul și parola sunt necesare.")
 
-        user = authenticate(username=username, password=password)
-        if user and user.is_active:
+        if "@" in username_input:
+            user_by_email = User.objects.filter(email__iexact=username_input).first()
+            if user_by_email:
+                username_input = user_by_email.username
+        else:
+            username_input = normalize_username(username_input)
+
+        user = authenticate(username=username_input, password=password)
+        if isinstance(user, User) and user.is_active:
             return user
-        raise serializers.ValidationError("Incorrect Credentials")
+        raise serializers.ValidationError("Nume de utilizator / Email sau parolă incorecte")

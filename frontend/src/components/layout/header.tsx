@@ -29,7 +29,7 @@ export function Header() {
         <img src="/favicon.png" alt="CivicMind" className="logo-img" style={{ width: 22, height: 22 }} />
         <span className="brand">CivicMind</span>
       </Link>
-
+    
       {/* Nav */}
       <nav className="nav-links">
         {[
@@ -73,14 +73,16 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="dropdown-content">
                 <DropdownMenuLabel className="dropdown-label">
-                  <div>{user.username}</div>
-                  <div style={{ fontSize: 11, color: "#888", fontWeight: 400 }}>{user.email}</div>
+                  <div className="dropdown-user-info">
+                    <div className="dropdown-username">{user.username}</div>
+                    <div className="dropdown-email">{user.email}</div>
+                  </div>
                 </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile" style={{ fontSize: 13 }}>Profil</Link>
+                <Link to="/profile" className="dropdown-item">Profil</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="logout-item" style={{ fontSize: 13 }}>
+              <DropdownMenuItem onClick={handleLogout} className="dropdown-item" style={{ color: "#911e1e" }}>
                 Ieșire
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate, createFileRoute, Link } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -33,6 +34,8 @@ function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [showPasswordLocal, setShowPasswordLocal] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordRequirements = useMemo(() => checkPasswordRequirements(password), [password]);
   const allRequirementsMet = Object.values(passwordRequirements).every(Boolean);
@@ -69,7 +72,7 @@ function RegisterPage() {
       console.log("API Success, logging in...");
       login(user);
       console.log("Login success, navigating...");
-      navigate({ to: "/" });
+      navigate({ to: "/onboarding" });
     } catch (err) {
       console.error("Register error:", err);
       setError(err instanceof Error ? err.message : "Înregistrarea a eșuat");
@@ -113,6 +116,7 @@ function RegisterPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
+              style={inputStyle}
             />
           </div>
 
@@ -129,20 +133,42 @@ function RegisterPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Parolă</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setShowPasswordRequirements(true);
-              }}
-              onFocus={() => setShowPasswordRequirements(true)}
-              onBlur={() => {
-                if (password.length === 0) setShowPasswordRequirements(false);
-              }}
-              disabled={isLoading}
-              style={inputStyle}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPasswordLocal ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setShowPasswordRequirements(true);
+                }}
+                onFocus={() => setShowPasswordRequirements(true)}
+                onBlur={() => {
+                  if (password.length === 0) setShowPasswordRequirements(false);
+                }}
+                disabled={isLoading}
+                style={{ ...inputStyle, width: "100%", paddingRight: 40, boxSizing: "border-box" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswordLocal(!showPasswordLocal)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  padding: 4,
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                {showPasswordLocal ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {showPasswordRequirements && password.length > 0 && (
               <div style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 4, marginTop: 4, padding: 10, background: "#f9fafb", borderRadius: 6, border: "1px solid var(--border-input)" }}>
                 {Object.entries(PASSWORD_REQUIREMENTS).map(([key, { label }]) => (
@@ -161,13 +187,35 @@ function RegisterPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <label style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Confirmă parola</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isLoading}
-              style={inputStyle}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isLoading}
+                style={{ ...inputStyle, width: "100%", paddingRight: 40, boxSizing: "border-box" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  padding: 4,
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {password.length > 0 && !passwordsMatch && (
               <p style={{ fontSize: 12, color: "#dc2626", margin: 0, marginTop: 4 }}>Parolele nu coincid</p>
             )}

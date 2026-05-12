@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MpsRouteImport } from './routes/mps'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -17,13 +18,21 @@ import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as MpsIndexRouteImport } from './routes/mps/index'
 import { Route as MpsSlugRouteImport } from './routes/mps/$slug'
 import { Route as BillsIdRouteImport } from './routes/bills/$id'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLogoutRouteImport } from './routes/auth/logout'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminStatsRouteImport } from './routes/admin/stats'
 import { Route as AdminBillsRouteImport } from './routes/admin/bills'
 
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MpsRoute = MpsRouteImport.update({
   id: '/mps',
   path: '/mps',
@@ -64,6 +73,11 @@ const BillsIdRoute = BillsIdRouteImport.update({
   path: '/bills/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
   path: '/auth/register',
@@ -77,6 +91,16 @@ const AuthLogoutRoute = AuthLogoutRouteImport.update({
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/auth/login',
   path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -100,12 +124,16 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/mps': typeof MpsRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/logout': typeof AuthLogoutRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/bills/$id': typeof BillsIdRoute
   '/mps/$slug': typeof MpsSlugRoute
   '/mps/': typeof MpsIndexRoute
@@ -115,12 +143,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
+  '/onboarding': typeof OnboardingRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/logout': typeof AuthLogoutRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/bills/$id': typeof BillsIdRoute
   '/mps/$slug': typeof MpsSlugRoute
   '/mps': typeof MpsIndexRoute
@@ -132,12 +164,16 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/mps': typeof MpsRouteWithChildren
+  '/onboarding': typeof OnboardingRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/logout': typeof AuthLogoutRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/bills/$id': typeof BillsIdRoute
   '/mps/$slug': typeof MpsSlugRoute
   '/mps/': typeof MpsIndexRoute
@@ -150,12 +186,16 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat'
     | '/mps'
+    | '/onboarding'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
+    | '/auth/callback'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
+    | '/auth/reset-password'
     | '/bills/$id'
     | '/mps/$slug'
     | '/mps/'
@@ -165,12 +205,16 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/chat'
+    | '/onboarding'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
+    | '/auth/callback'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
+    | '/auth/reset-password'
     | '/bills/$id'
     | '/mps/$slug'
     | '/mps'
@@ -181,12 +225,16 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat'
     | '/mps'
+    | '/onboarding'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
+    | '/auth/callback'
+    | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
+    | '/auth/reset-password'
     | '/bills/$id'
     | '/mps/$slug'
     | '/mps/'
@@ -198,15 +246,26 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   ChatRoute: typeof ChatRoute
   MpsRoute: typeof MpsRouteWithChildren
+  OnboardingRoute: typeof OnboardingRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthLogoutRoute: typeof AuthLogoutRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   BillsIdRoute: typeof BillsIdRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mps': {
       id: '/mps'
       path: '/mps'
@@ -263,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/register': {
       id: '/auth/register'
       path: '/auth/register'
@@ -282,6 +348,20 @@ declare module '@tanstack/react-router' {
       path: '/auth/login'
       fullPath: '/auth/login'
       preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
@@ -339,9 +419,13 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   ChatRoute: ChatRoute,
   MpsRoute: MpsRouteWithChildren,
+  OnboardingRoute: OnboardingRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthLogoutRoute: AuthLogoutRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   BillsIdRoute: BillsIdRoute,
   ProfileIndexRoute: ProfileIndexRoute,
 }

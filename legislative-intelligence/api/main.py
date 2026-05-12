@@ -455,6 +455,48 @@ class UserProfileUpsertRequest(BaseModel):
     notification_preferences: Optional[NotificationPreferencesBody] = None
 
 
+class OnboardingAnalysisRequest(BaseModel):
+    text: str
+    available_counties: list[str]
+    available_categories: list[str]
+
+
+class OnboardingAnalysisResponse(BaseModel):
+    county: Optional[str] = None
+    interests: list[str] = []
+
+
+@app.post("/profiles/analyze-onboarding", response_model=OnboardingAnalysisResponse)
+def analyze_onboarding(req: OnboardingAnalysisRequest):
+    try:
+        from langchain_mistralai import ChatMistralAI
+        from env_setup import load_project_env
+        load_project_env()
+
+        llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+        structured_llm = llm.with_structured_output(OnboardingAnalysisResponse)
+        
+        prompt = f"""
+        Ești un asistent de profilare pentru aplicația CivicMind. 
+        Scopul tău este să extragi județul și interesele civice din descrierea utilizatorului.
+        
+        Reguli:
+        1. `county` (județul) trebuie să fie unul exact din lista de mai jos sau null dacă nu este menționat. Dacă se menționează un oraș (ex: Cluj, Iași), returnează județul aferent.
+        2. `interests` trebuie să fie o listă de categorii extrase strict din lista de mai jos. Fă corespondența cât mai bine cu ce a spus utilizatorul.
+        
+        Județe disponibile: {", ".join(req.available_counties)}
+        Categorii disponibile: {", ".join(req.available_categories)}
+        
+        Descrierea utilizatorului:
+        "{req.text}"
+        """
+        
+        result = structured_llm.invoke(prompt)
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
 @app.post("/qa")
 def ask_question(req: QARequest):
     bill = _bills_by_idp().get(req.idp)

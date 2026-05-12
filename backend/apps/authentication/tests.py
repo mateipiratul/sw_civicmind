@@ -76,4 +76,4 @@ class AuthenticationValidationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["user"]["id"], user.id)
+        self.assertEqual(response.data["user"]["id"], user.id)  # type: ignore
