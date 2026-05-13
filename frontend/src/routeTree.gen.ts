@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MpsRouteImport } from './routes/mps'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -28,6 +29,11 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminStatsRouteImport } from './routes/admin/stats'
 import { Route as AdminBillsRouteImport } from './routes/admin/bills'
 
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/mps': typeof MpsRouteWithChildren
   '/onboarding': typeof OnboardingRoute
+  '/search': typeof SearchRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/onboarding': typeof OnboardingRoute
+  '/search': typeof SearchRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/mps': typeof MpsRouteWithChildren
   '/onboarding': typeof OnboardingRoute
+  '/search': typeof SearchRoute
   '/admin/bills': typeof AdminBillsRoute
   '/admin/stats': typeof AdminStatsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/mps'
     | '/onboarding'
+    | '/search'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/chat'
     | '/onboarding'
+    | '/search'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/mps'
     | '/onboarding'
+    | '/search'
     | '/admin/bills'
     | '/admin/stats'
     | '/admin/users'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   MpsRoute: typeof MpsRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
+  SearchRoute: typeof SearchRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -259,6 +272,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -420,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   MpsRoute: MpsRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
+  SearchRoute: SearchRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,

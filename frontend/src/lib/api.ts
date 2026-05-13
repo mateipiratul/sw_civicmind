@@ -208,6 +208,48 @@ export interface MPMetadata {
   hasCountyData: boolean;
 }
 
+export interface TrendingTopic {
+  label: string;
+  count: number;
+}
+
+export interface SearchMPRelation {
+  keyword: string;
+  relatedBills: number;
+  forVotes: number;
+}
+
+export interface SearchMP extends Parliamentarian {
+  relation?: SearchMPRelation;
+}
+
+export interface GlobalSearchFilters {
+  laws: {
+    statuses: string[];
+    initiators: string[];
+    categories: string[];
+  };
+  mps: {
+    parties: string[];
+    counties: string[];
+    chambers: string[];
+  };
+}
+
+export interface GlobalSearchCounts {
+  laws: number;
+  mps: number;
+}
+
+export interface GlobalSearchResponse {
+  query: string;
+  exactMatch: Bill | null;
+  laws: Bill[];
+  mps: SearchMP[];
+  filters: GlobalSearchFilters;
+  counts: GlobalSearchCounts;
+}
+
 export interface PaginatedMPList {
   page: number;
   limit: number;
@@ -412,6 +454,15 @@ class ApiClient {
     const data = await this.request<{ impact_categories: string[], affected_profiles: string[], counties: string[] }>("/api/bills/metadata/");
     sessionStorage.setItem("civicmind_metadata", JSON.stringify(data));
     return data;
+  };
+
+  getTrendingTopics = async (): Promise<{ topics: TrendingTopic[] }> => {
+    return this.request("/api/bills/trending/");
+  };
+
+  searchGlobal = async (query: string): Promise<GlobalSearchResponse> => {
+    const q = new URLSearchParams({ q: query });
+    return this.request(`/api/search/?${q}`);
   };
 
   // Parliamentarians

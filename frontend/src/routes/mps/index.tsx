@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, ChevronDown, ChevronUp, ExternalLink, X } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, X } from "lucide-react";
 import { api, type Parliamentarian, type MPMetadata } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -137,7 +137,6 @@ function MPsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | "mine">("all");
-  const [search, setSearch] = useState("");
   const [party, setParty] = useState("");
   const [county, setCounty] = useState("");
   const [page, setPage] = useState(1);
@@ -147,7 +146,7 @@ function MPsPage() {
     api.getMPMetadata().then(setMetadata).catch(() => {});
   }, []);
 
-  const load = useCallback(async (tabVal: string, searchVal: string, partyVal: string, countyVal: string, pageVal: number) => {
+  const load = useCallback(async (tabVal: string, partyVal: string, countyVal: string, pageVal: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -156,7 +155,7 @@ function MPsPage() {
         setMps(res.parliamentarians);
         setTotal(res.total);
       } else {
-        const res = await api.listMPs({ search: searchVal || undefined, party: partyVal || undefined, county: countyVal || undefined, page: pageVal, limit: pageSize });
+        const res = await api.listMPs({ party: partyVal || undefined, county: countyVal || undefined, page: pageVal, limit: pageSize });
         setMps(res.parliamentarians);
         setTotal(res.total);
       }
@@ -168,14 +167,11 @@ function MPsPage() {
   }, [user?.county]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      load(tab, search, party, county, page);
-    }, search ? 300 : 0);
-    return () => clearTimeout(timer);
-  }, [tab, search, party, county, page, load]);
+    load(tab, party, county, page);
+  }, [tab, party, county, page, load]);
 
   const totalPages = Math.ceil(total / pageSize);
-  const hasFilters = search || party || county;
+  const hasFilters = party || county;
   const partyOptions = useMemo(
     () => [...new Set([...(metadata?.parties ?? []), ...mps.map(mp => mp.party).filter(Boolean)])].sort(),
     [metadata?.parties, mps],
@@ -222,22 +218,6 @@ function MPsPage() {
 
         {tab === "all" && (
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ position: "relative", flex: "1 1 240px", minWidth: 200 }}>
-              <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa", pointerEvents: "none" }} />
-              <input
-                type="text"
-                placeholder="Caută după nume..."
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-                style={{
-                  width: "100%", padding: "8px 12px 8px 32px", fontSize: 13.5,
-                  border: "1px solid #e2e2e2", borderRadius: 8,
-                  background: "white", color: "#111", outline: "none", fontFamily: "inherit",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
             <select value={party} onChange={e => { setParty(e.target.value); setPage(1); }} style={selectStyle}>
               <option value="">Toate partidele</option>
               {partyOptions.map(p => <option key={p} value={p}>{p}</option>)}
@@ -252,7 +232,7 @@ function MPsPage() {
 
             {hasFilters && (
               <button
-                onClick={() => { setSearch(""); setParty(""); setCounty(""); setPage(1); }}
+                onClick={() => { setParty(""); setCounty(""); setPage(1); }}
                 className="muted"
                 style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "6px 8px", fontSize: 13.5 }}
               >
