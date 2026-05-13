@@ -22,9 +22,12 @@ const EMPTY_MP_FILTERS = {
 type SearchTab = "all" | "laws" | "mps";
 
 export const Route = createFileRoute("/search")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): { q: string; tab: SearchTab } => {
     const q = typeof search.q === "string" ? search.q : "";
-    const tab = search.tab === "laws" || search.tab === "mps" || search.tab === "all" ? search.tab : "all";
+    const tab =
+      search.tab === "laws" || search.tab === "mps" || search.tab === "all"
+        ? (search.tab as SearchTab)
+        : "all";
     return { q, tab };
   },
   component: SearchPage,
@@ -53,8 +56,8 @@ function MpResultCard({ mp, query }: { mp: SearchMP; query: string }) {
           <div className="search-mp-name">{mp.mp_name}</div>
           <div className="search-mp-meta">
             {mp.party && <span>{mp.party}</span>}
-            {mp.county && <span>· {mp.county}</span>}
-            {mp.chamber && <span>· {formatChamber(mp.chamber)}</span>}
+            {mp.county && <span> · {mp.county}</span>}
+            {mp.chamber && <span> · {formatChamber(mp.chamber)}</span>}
           </div>
         </div>
         {mp.impact_score?.score != null && (

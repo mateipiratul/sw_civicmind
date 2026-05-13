@@ -29,15 +29,15 @@ function MPRow({ mp }: { mp: Parliamentarian }) {
         style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: expanded ? 14 : 0, cursor: "pointer", userSelect: "none" }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
             <span style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>{mp.mp_name}</span>
-            {mp.party && (
-              <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "#f0f0f0", color: "#555", fontWeight: 500 }}>
+            {mp.party?.trim() && (
+              <span className="span-partycounty">
                 {mp.party}
               </span>
             )}
-            {mp.county && (
-              <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 5, background: "#f5f5f5", color: "#666", fontWeight: 500 }}>
+            {mp.county?.trim() && (
+              <span className="span-partycounty">
                 {mp.county}
               </span>
             )}
@@ -110,9 +110,9 @@ function MPRowSkeleton() {
     <div style={{ width: "100%", background: "white", border: "1px solid #e8e8e8", borderRadius: 10, padding: "18px 22px", marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
             <div style={{ height: 16, width: 180, background: "#f0f0f0", borderRadius: 4 }} />
-            <div style={{ height: 20, width: 50, background: "#f5f5f5", borderRadius: 4 }} />
+            <div style={{ height: 18, width: 60, background: "#f5f5f5", borderRadius: 4 }} />
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <div style={{ height: 14, width: 80, background: "#f5f5f5", borderRadius: 4 }} />
