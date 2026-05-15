@@ -1,17 +1,41 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import { api, type ParliamentarianDetail, type MPVote } from "@/lib/api";
 
 export const Route = createFileRoute("/mps/$slug")({
+  validateSearch: (search: Record<string, unknown>): { q?: string; billIds?: string; billNumbers?: string } => {
+    const validated: { q?: string; billIds?: string; billNumbers?: string } = {};
+    if (typeof search.q === "string") validated.q = search.q;
+    if (typeof search.billIds === "string") validated.billIds = search.billIds;
+    if (typeof search.billNumbers === "string") validated.billNumbers = search.billNumbers;
+    return validated;
+  },
   component: MPDetailPage,
 });
 
 const VOTE_COLORS: Record<string, string> = {
+  for: "#16a34a",
+  against: "#dc2626",
+  abstain: "#888",
+  absent: "#bbb",
   Pentru: "#16a34a",
   Contra: "#dc2626",
   Abtinere: "#888",
+  "Abținere": "#888",
   Absent: "#bbb",
+};
+
+const VOTE_LABELS: Record<string, string> = {
+  for: "Pentru",
+  against: "Contra",
+  abstain: "Abținere",
+  absent: "Absent",
+  Pentru: "Pentru",
+  Contra: "Contra",
+  Abtinere: "Abținere",
+  "Abținere": "Abținere",
+  Absent: "Absent",
 };
 
 function scoreColor(score?: number | null) {
@@ -21,7 +45,10 @@ function scoreColor(score?: number | null) {
   return "#dc2626";
 }
 
-function VoteRow({ vote, index }: { vote: MPVote; index: number }) {
+function VoteRow({ vote }: { vote: MPVote }) {
+  const voteColor = VOTE_COLORS[vote.vote] ?? "#aaa";
+  const voteLabel = VOTE_LABELS[vote.vote] ?? vote.vote;
+
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: 12,
@@ -29,11 +56,11 @@ function VoteRow({ vote, index }: { vote: MPVote; index: number }) {
     }}>
       <span style={{
         fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
-        color: VOTE_COLORS[vote.vote] ?? "#aaa",
-        background: `${VOTE_COLORS[vote.vote] ?? "#aaa"}18`,
+        color: voteColor,
+        background: `${voteColor}18`,
         padding: "3px 8px", borderRadius: 5, minWidth: 64, textAlign: "center",
       }}>
-        {vote.vote}
+        {voteLabel}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, fontWeight: 500, color: "#111", lineHeight: 1.4, marginBottom: 4 }}>
@@ -74,17 +101,34 @@ function VoteRow({ vote, index }: { vote: MPVote; index: number }) {
 
 function MPDetailPage() {
   const { slug } = Route.useParams();
+  const { q, billIds, billNumbers } = Route.useSearch();
+  const filterQuery = q ?? "";
+  const billIdsParam = billIds ?? "";
+  const billNumbersParam = billNumbers ?? "";
+  const filteredBillIds = useMemo(
+    () =>
+      billIdsParam
+        .split(",")
+        .map((item) => Number(item))
+        .filter((item) => Number.isInteger(item) && item > 0),
+    [billIdsParam],
+  );
+  const filteredBillNumbers = useMemo(
+    () => billNumbersParam.split(",").map((item) => item.trim()).filter(Boolean),
+    [billNumbersParam],
+  );
+  const isFilteredHistory = filterQuery.length > 0 && (filteredBillNumbers.length > 0 || filteredBillIds.length > 0);
   const [mp, setMp] = useState<ParliamentarianDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    api.getMPDetail(slug)
+    api.getMPDetail(slug, { billIds: filteredBillIds, billNumbers: filteredBillNumbers })
       .then(setMp)
       .catch(err => setError(err instanceof Error ? err.message : "Eroare la încărcare"))
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, filteredBillIds, filteredBillNumbers]);
 
   if (loading) return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 24px" }}>
@@ -186,15 +230,19 @@ function MPDetailPage() {
       {/* Vote history */}
       <div style={{ background: "white", border: "1px solid #e8e8e8", borderRadius: 12, padding: "20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>Istoric Voturi</h2>
-          <span className="muted" style={{ fontSize: 12 }}>ultimele {mp.recent_votes?.length ?? 0} voturi</span>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+            {isFilteredHistory ? `Voturi pentru "${filterQuery}"` : "Istoric Voturi"}
+          </h2>
+          <span className="muted" style={{ fontSize: 12 }}>
+            {isFilteredHistory ? `${mp.recent_votes?.length ?? 0} voturi filtrate` : `ultimele ${mp.recent_votes?.length ?? 0} voturi`}
+          </span>
         </div>
 
         {mp.recent_votes?.length > 0 ? (
-          mp.recent_votes.map((v, i) => <VoteRow key={i} vote={v} index={i} />)
+          mp.recent_votes.map((v, i) => <VoteRow key={i} vote={v} />)
         ) : (
           <p className="muted" style={{ fontSize: 13, textAlign: "center", padding: "24px 0" }}>
-            Nu există voturi înregistrate.
+            {isFilteredHistory ? "Nu există voturi pentru aceste legi filtrate." : "Nu există voturi înregistrate."}
           </p>
         )}
       </div>

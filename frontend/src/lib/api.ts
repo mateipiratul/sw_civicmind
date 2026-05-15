@@ -215,8 +215,13 @@ export interface TrendingTopic {
 
 export interface SearchMPRelation {
   keyword: string;
+  billIds: number[];
+  billNumbers: string[];
   relatedBills: number;
   forVotes: number;
+  againstVotes: number;
+  abstainVotes: number;
+  absentVotes: number;
 }
 
 export interface SearchMP extends Parliamentarian {
@@ -480,8 +485,12 @@ class ApiClient {
     return this.request(`/api/mps/${slug}/`);
   };
 
-  getMPDetail = async (slug: string): Promise<ParliamentarianDetail> => {
-    return this.request(`/api/mps/${slug}/`);
+  getMPDetail = async (slug: string, params: { billIds?: number[]; billNumbers?: string[] } = {}): Promise<ParliamentarianDetail> => {
+    const q = new URLSearchParams();
+    if (params.billNumbers?.length) q.append("bill_numbers", params.billNumbers.join(","));
+    else if (params.billIds?.length) q.append("bill_ids", params.billIds.join(","));
+    const suffix = q.toString() ? `?${q}` : "";
+    return this.request(`/api/mps/${slug}/${suffix}`);
   };
 
   getMPMetadata = async (): Promise<MPMetadata> => {

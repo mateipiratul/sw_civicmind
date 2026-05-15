@@ -3,7 +3,7 @@ import re
 import unicodedata
 from collections import Counter
 from django.db import connection
-from django.db.models import Prefetch, Q, Case, When, Value, IntegerField, Count, F, TextField
+from django.db.models import Prefetch, Q, Case, When, Value, IntegerField, F, TextField
 from django.db.models.functions import Lower, Replace
 from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
@@ -36,6 +36,17 @@ DEFAULT_TRENDING_TOPICS = [
     "Fiscal",
     "Muncă",
 ]
+
+FOR_VOTE_VALUES = ("for", "Pentru")
+AGAINST_VOTE_VALUES = ("against", "Contra")
+ABSTAIN_VOTE_VALUES = ("abstain", "Abtinere", "Abținere")
+ABSENT_VOTE_VALUES = ("absent", "Absent", "Absentat")
+VOTE_BUCKETS = {
+    **{value.casefold(): "for" for value in FOR_VOTE_VALUES},
+    **{value.casefold(): "against" for value in AGAINST_VOTE_VALUES},
+    **{value.casefold(): "abstain" for value in ABSTAIN_VOTE_VALUES},
+    **{value.casefold(): "absent" for value in ABSENT_VOTE_VALUES},
+}
 
 def _normalize_text(value: str) -> str:
     return " ".join((value or "").split())
@@ -149,6 +160,9 @@ def _apply_or_filters(base: Q, filters, field_name: str) -> Q:
     for value in filters:
         conditions |= Q(**{f"{field_name}__iexact": value})
     return base & conditions
+
+def _vote_bucket(value: str):
+    return VOTE_BUCKETS.get((value or "").casefold())
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bill.objects.all().order_by('-registered_at')
@@ -472,6 +486,7 @@ class GlobalSearchView(APIView):
         matched_counties, matched_parties, law_tokens = _extract_entity_filters(tokens)
 
         matched_law_ids = []
+        matched_law_codes = []
         bill_list = []
         total_laws = 0
 
@@ -558,83 +573,112 @@ class GlobalSearchView(APIView):
             total_laws = bill_queryset.count()
             bill_list = list(bill_queryset[:200])
             matched_law_ids = [bill.idp for bill in bill_list]
+            matched_law_codes = [bill.bill_number for bill in bill_list if bill.bill_number]
 
         if exact_bill is not None:
             matched_law_ids.append(exact_bill.idp)
+            if exact_bill.bill_number:
+                matched_law_codes.append(exact_bill.bill_number)
+
+        matched_law_codes = list(dict.fromkeys(matched_law_codes))
 
         mp_queryset = Parliamentarian.objects.select_related('impact_score')
-        if matched_law_ids:
-            initiator_names = list(
-                Bill.objects
-                .filter(idp__in=matched_law_ids)
-                .exclude(initiator_name__isnull=True)
-                .exclude(initiator_name='')
-                .values_list('initiator_name', flat=True)
+        if matched_law_codes:
+            relation_query = Q(
+                votes__vote_session__bill__bill_number__in=matched_law_codes,
             )
-            initiator_slugs = []
-            if initiator_names:
-                mp_name_rows = Parliamentarian.objects.exclude(mp_name__isnull=True).exclude(mp_name='').values_list('mp_slug', 'mp_name')
-                normalized_initiators = [_normalize_for_search(item) for item in initiator_names if item]
-                for mp_slug, mp_name in mp_name_rows:
-                    normalized_mp = _normalize_for_search(mp_name)
-                    if not normalized_mp:
-                        continue
-                    if any(normalized_mp in initiator for initiator in normalized_initiators):
-                        initiator_slugs.append(mp_slug)
-
-            relation_query = Q(votes__vote_session__bill__idp__in=matched_law_ids)
-            if initiator_slugs:
-                relation_query |= Q(mp_slug__in=initiator_slugs)
-
             mp_queryset = mp_queryset.filter(relation_query).distinct()
         else:
-            if law_tokens:
-                mp_queryset = mp_queryset.annotate(n_mp_name=_strip_diacritics_expr('mp_name'))
-                mp_name_query = None
-                for token in law_tokens:
-                    normalized_token = _normalize_for_search(token)
-                    if not normalized_token:
-                        continue
-                    per_token = Q(mp_name__icontains=token) | Q(n_mp_name__icontains=normalized_token)
-                    mp_name_query = per_token if mp_name_query is None else mp_name_query & per_token
-                if mp_name_query is not None:
-                    mp_queryset = mp_queryset.filter(mp_name_query)
+            mp_queryset = mp_queryset.none()
 
         mp_filter_query = Q()
         mp_filter_query = _apply_or_filters(mp_filter_query, matched_counties, 'county')
         mp_filter_query = _apply_or_filters(mp_filter_query, matched_parties, 'party')
-        if mp_filter_query.children:
-            mp_queryset = mp_queryset.filter(mp_filter_query)
+        mp_queryset = mp_queryset.filter(mp_filter_query).distinct()
 
         mp_queryset = mp_queryset.order_by('mp_name')
-        total_mps = mp_queryset.count()
-        mp_list = list(mp_queryset[:200])
+        mp_list = list(mp_queryset)
 
         relation_map = {}
-        if matched_law_ids:
-            stats = (
+        if matched_law_codes:
+            vote_rows = (
                 ParliamentarianVote.objects
-                .filter(vote_session__bill__idp__in=matched_law_ids)
-                .values('parliamentarian__mp_slug')
-                .annotate(
-                    related_bills=Count('vote_session__bill', distinct=True),
-                    for_votes=Count('id', filter=Q(vote__iexact='Pentru')),
+                .filter(vote_session__bill__bill_number__in=matched_law_codes)
+                .values(
+                    'parliamentarian__mp_slug',
+                    'vote_session__bill__idp',
+                    'vote_session__bill__bill_number',
+                    'vote',
                 )
             )
-            relation_map = {
-                row['parliamentarian__mp_slug']: {
+            relation_sets = {}
+            for row in vote_rows:
+                mp_slug = row['parliamentarian__mp_slug']
+                bill_id = row['vote_session__bill__idp']
+                if not mp_slug or bill_id is None:
+                    continue
+
+                relation = relation_sets.setdefault(
+                    mp_slug,
+                    {
+                        'billIds': set(),
+                        'billNumbers': set(),
+                        'for': set(),
+                        'against': set(),
+                        'abstain': set(),
+                        'absent': set(),
+                    },
+                )
+                relation['billIds'].add(bill_id)
+                bill_number = row['vote_session__bill__bill_number']
+                if bill_number:
+                    relation['billNumbers'].add(bill_number)
+                bucket = _vote_bucket(row['vote'])
+                if bucket and bill_number:
+                    relation[bucket].add(bill_number)
+
+            relation_map = {}
+            for mp_slug, relation in relation_sets.items():
+                bill_ids = sorted(relation['billIds'])
+                bill_numbers = sorted(relation['billNumbers'])
+                relation_map[mp_slug] = {
                     'keyword': query,
-                    'relatedBills': row['related_bills'],
-                    'forVotes': row['for_votes'],
+                    'billIds': bill_ids,
+                    'billNumbers': bill_numbers,
+                    'relatedBills': len(bill_numbers),
+                    'forVotes': len(relation['for']),
+                    'againstVotes': len(relation['against']),
+                    'abstainVotes': len(relation['abstain']),
+                    'absentVotes': len(relation['absent']),
                 }
-                for row in stats
-            }
 
         bill_data = BillListSerializer(bill_list, many=True).data
-        mp_data = ParliamentarianListSerializer(mp_list, many=True).data
-        for row in mp_data:
-            relation = relation_map.get(row['mp_slug'], {'keyword': query, 'relatedBills': 0, 'forVotes': 0})
+        scoped_mp_data = []
+        for row in ParliamentarianListSerializer(mp_list, many=True).data:
+            relation = relation_map.get(row['mp_slug'], {
+                'keyword': query,
+                'billIds': [],
+                'billNumbers': [],
+                'relatedBills': 0,
+                'forVotes': 0,
+                'againstVotes': 0,
+                'abstainVotes': 0,
+                'absentVotes': 0,
+            })
+            if relation['relatedBills'] < 1:
+                continue
             row['relation'] = relation
+            scoped_mp_data.append(row)
+
+        mp_data = sorted(
+            scoped_mp_data,
+            key=lambda row: (
+                -row['relation']['relatedBills'],
+                -(row['relation']['forVotes'] + row['relation']['againstVotes'] + row['relation']['abstainVotes'] + row['relation']['absentVotes']),
+                row['mp_name'] or '',
+            ),
+        )
+        total_mps = len(mp_data)
 
         status_options = sorted({bill.status for bill in bill_list if bill.status})
         initiator_options = sorted({bill.initiator_name for bill in bill_list if bill.initiator_name})[:40]

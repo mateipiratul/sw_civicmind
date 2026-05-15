@@ -81,7 +81,7 @@ class ParliamentarianDetailSerializer(serializers.Serializer):
         votes_manager = getattr(obj, 'votes', None)
         if votes_manager is None:
             return []
-            
+
         qs: QuerySet[MPVote] = (
             votes_manager
             .select_related(
@@ -89,8 +89,16 @@ class ParliamentarianDetailSerializer(serializers.Serializer):
                 'vote_session__bill',
                 'vote_session__bill__ai_analysis',
             )
-            .order_by('-vote_session__date')[:50]
+            .order_by('-vote_session__date')
         )
+        bill_numbers = self.context.get('bill_numbers') or []
+        bill_ids = self.context.get('bill_ids') or []
+        if bill_numbers:
+            qs = qs.filter(vote_session__bill__bill_number__in=bill_numbers)
+        elif bill_ids:
+            qs = qs.filter(vote_session__bill__idp__in=bill_ids)
+        else:
+            qs = qs[:50]
         return MPVoteSerializer(qs, many=True).data
 
 

@@ -1,0 +1,42 @@
+import type { Bill } from "@/lib/api";
+import type { FilterChip } from "@/lib/search-filters";
+import { ExactMatchCard } from "@/components/search/exact-match-card";
+import { FilterChips } from "@/components/search/filter-chips";
+import { BillResultsGrid } from "@/components/search/result-grids";
+import { SearchEmptyState } from "@/components/search/search-empty-state";
+
+type SearchLawsTabProps = {
+  exactMatch: Bill | null;
+  lawChips: FilterChip[];
+  filteredLaws: Bill[];
+  showEmptyState: boolean;
+  onClearChip: (key: string) => void;
+  onResetFilters: () => void;
+};
+
+export function SearchLawsTab({
+  exactMatch,
+  lawChips,
+  filteredLaws,
+  showEmptyState,
+  onClearChip,
+  onResetFilters,
+}: SearchLawsTabProps) {
+  return (
+    <div className="search-results">
+      <FilterChips chips={lawChips} onClear={onClearChip} />
+
+      {exactMatch && <ExactMatchCard bill={exactMatch} />}
+
+      {showEmptyState ? (
+        <SearchEmptyState
+          message="Nu am găsit rezultate cu aceste filtre. Încearcă să elimini din filtrele selectate."
+          actionLabel="Șterge filtrele"
+          onAction={onResetFilters}
+        />
+      ) : (
+        <BillResultsGrid bills={filteredLaws} />
+      )}
+    </div>
+  );
+}

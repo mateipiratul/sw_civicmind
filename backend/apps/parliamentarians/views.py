@@ -67,6 +67,21 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_class = ParliamentarianFilterSet
     search_fields = ['mp_name', 'party', 'county']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        raw_bill_ids = self.request.query_params.get('bill_ids', '')
+        raw_bill_numbers = self.request.query_params.get('bill_numbers', '')
+        bill_ids = []
+        for item in raw_bill_ids.split(','):
+            try:
+                if item.strip():
+                    bill_ids.append(int(item))
+            except (TypeError, ValueError):
+                continue
+        context['bill_ids'] = bill_ids
+        context['bill_numbers'] = [item.strip() for item in raw_bill_numbers.split(',') if item.strip()]
+        return context
+
     def get_queryset(self):
         if self.action in {'vote_map', 'my_representatives'}:
             vote_queryset = (
