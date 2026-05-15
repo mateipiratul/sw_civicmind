@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { FilterDrawer } from "@/components/search/filter-drawer";
 import { SearchAllTab } from "@/components/search/search-all-tab";
@@ -38,6 +38,12 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [lawFilters, setLawFilters] = useState(EMPTY_FILTERS);
   const [mpFilters, setMpFilters] = useState(EMPTY_MP_FILTERS);
+
+  // Reset filters when query changes
+  useEffect(() => {
+    setLawFilters(EMPTY_FILTERS);
+    setMpFilters(EMPTY_MP_FILTERS);
+  }, [q]);
 
   const laws = data?.laws ?? [];
   const mps = data?.mps ?? [];
@@ -147,7 +153,6 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
           exactMatch={exactMatch}
           lawChips={lawChips}
           filteredLaws={filteredLaws}
-          showEmptyState={lawFilterCount > 0 && filteredLaws.length === 0}
           onClearChip={handleLawChipClear}
           onResetFilters={resetLawFilters}
         />
@@ -157,7 +162,6 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
         <SearchMpsTab
           mpChips={mpChips}
           filteredMps={filteredMps}
-          showEmptyState={mpFilterCount > 0 && filteredMps.length === 0}
           query={q}
           onClearChip={handleMpChipClear}
           onResetFilters={resetMpFilters}

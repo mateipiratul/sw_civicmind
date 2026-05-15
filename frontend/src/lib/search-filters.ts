@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Bill, SearchMP } from "@/lib/api";
+import { formatChamber } from "@/lib/utils";
 
 export const EMPTY_FILTERS = {
   status: "",
@@ -22,13 +23,6 @@ export type FilterChip = { key: string; label: string };
 export type LawFilterOptions = { statuses: string[]; initiators: string[]; categories: string[] };
 export type MpFilterOptions = { parties: string[]; counties: string[]; chambers: string[] };
 
-export function formatChamber(chamber?: string | null) {
-  if (!chamber) return "";
-  if (chamber === "deputies") return "Camera Deputaților";
-  if (chamber === "senate") return "Senat";
-  return chamber;
-}
-
 export function buildLawFilterChips(filters: LawFilters) {
   const chips: FilterChip[] = [];
   if (filters.status) chips.push({ key: "status", label: `Status: ${filters.status}` });
@@ -43,7 +37,7 @@ export function buildMpFilterChips(filters: MpFilters) {
   const chips: FilterChip[] = [];
   if (filters.party) chips.push({ key: "party", label: `Partid: ${filters.party}` });
   if (filters.county) chips.push({ key: "county", label: `Județ: ${filters.county}` });
-  if (filters.chamber) chips.push({ key: "chamber", label: `Comisie: ${formatChamber(filters.chamber)}` });
+  if (filters.chamber) chips.push({ key: "chamber", label: `Cameră: ${formatChamber(filters.chamber)}` });
   return chips;
 }
 

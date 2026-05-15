@@ -1,13 +1,13 @@
-import type { ChangeEvent } from "react";
+import { useEffect, type ChangeEvent } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  formatChamber,
-  type LawFilterOptions,
-  type LawFilters,
-  type MpFilterOptions,
-  type MpFilters,
-  type SearchTab,
+import { formatChamber } from "@/lib/utils";
+import type {
+  LawFilterOptions,
+  LawFilters,
+  MpFilterOptions,
+  MpFilters,
+  SearchTab,
 } from "@/lib/search-filters";
 
 type FilterDrawerProps = {
@@ -35,6 +35,15 @@ export function FilterDrawer({
   onLawChange,
   onMpChange,
 }: FilterDrawerProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
   if (!open || activeTab === "all") return null;
 
   const handleLawSelectChange =
@@ -46,14 +55,24 @@ export function FilterDrawer({
     onMpChange(key, event.target.value);
 
   return (
-    <div className="filter-overlay" onClick={onClose}>
-      <div className="filter-drawer" onClick={(event) => event.stopPropagation()}>
+    <div
+      className="filter-overlay"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="filter-drawer"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filter-title"
+      >
         <div className="filter-header">
           <div>
-            <h3>Filtrează</h3>
+            <h3 id="filter-title">Filtrează</h3>
             <p>{activeTab === "laws" ? "Selectează filtre pentru Legi" : "Selectează filtre pentru Parlamentari"}</p>
           </div>
-          <button className="icon-button" onClick={onClose}>
+          <button className="icon-button" onClick={onClose} aria-label="Închide">
             <X size={14} />
           </button>
         </div>
@@ -132,9 +151,9 @@ export function FilterDrawer({
             </label>
 
             <label>
-              Comisie
+              Cameră
               <select value={mpFilters.chamber} onChange={handleMpSelectChange("chamber")}>
-                <option value="">Toate comisiile</option>
+                <option value="">Toate camerele</option>
                 {mpOptions.chambers.map((chamber) => (
                   <option key={chamber} value={chamber}>
                     {formatChamber(chamber)}

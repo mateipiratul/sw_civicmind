@@ -7,7 +7,6 @@ import { SearchEmptyState } from "@/components/search/search-empty-state";
 type SearchMpsTabProps = {
   mpChips: FilterChip[];
   filteredMps: SearchMP[];
-  showEmptyState: boolean;
   query: string;
   onClearChip: (key: string) => void;
   onResetFilters: () => void;
@@ -16,21 +15,28 @@ type SearchMpsTabProps = {
 export function SearchMpsTab({
   mpChips,
   filteredMps,
-  showEmptyState,
   query,
   onClearChip,
   onResetFilters,
 }: SearchMpsTabProps) {
+  const isFiltered = mpChips.length > 0;
+
   return (
     <div className="search-results">
       <FilterChips chips={mpChips} onClear={onClearChip} />
 
-      {showEmptyState ? (
-        <SearchEmptyState
-          message="Nu am găsit rezultate cu aceste filtre. Încearcă să elimini din filtrele selectate."
-          actionLabel="Șterge filtrele"
-          onAction={onResetFilters}
-        />
+      {filteredMps.length === 0 ? (
+        <div className="search-empty-container">
+          {isFiltered ? (
+            <SearchEmptyState
+              message="Nu am găsit rezultate cu aceste filtre. Încearcă să elimini din filtrele selectate."
+              actionLabel="Șterge filtrele"
+              onAction={onResetFilters}
+            />
+          ) : (
+            <div className="search-empty">Nu am găsit parlamentari care să se potrivească căutării tale.</div>
+          )}
+        </div>
       ) : (
         <MpResultsGrid mps={filteredMps} query={query} />
       )}

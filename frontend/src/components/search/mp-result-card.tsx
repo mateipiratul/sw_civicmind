@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { SearchMP } from "@/lib/api";
-import { formatChamber } from "@/lib/search-filters";
+import { formatChamber, pluralizeLege } from "@/lib/utils";
 
 type MpResultCardProps = {
   mp: SearchMP;
@@ -14,7 +14,7 @@ export function MpResultCard({ mp, query }: MpResultCardProps) {
   const billNumbers = relation?.billNumbers ?? [];
   const keyword = relation?.keyword || query;
   const relationText = relatedBills > 0
-    ? `Voturi pe ${relatedBills} ${relatedBills === 1 ? "lege" : "legi"} legate de '${keyword}'.`
+    ? `Voturi pe ${relatedBills} ${pluralizeLege(relatedBills)} legate de '${keyword}'.`
     : `Nu am găsit voturi directe legate de '${keyword}'.`;
   const voteCounts = [
     { key: "for", label: "Pentru", count: relation?.forVotes ?? 0 },
@@ -23,24 +23,34 @@ export function MpResultCard({ mp, query }: MpResultCardProps) {
     { key: "absent", label: "Absent", count: relation?.absentVotes ?? 0 },
   ];
 
+  const metaItems = [
+    mp.party,
+    mp.county,
+    formatChamber(mp.chamber)
+  ].filter(Boolean);
+
   return (
     <div className="search-mp-card">
       <div className="search-mp-header">
         <div>
           <div className="search-mp-name">{mp.mp_name}</div>
           <div className="search-mp-meta">
-            {mp.party && <span>{mp.party}</span>}
-            {mp.county && <span>· {mp.county}</span>}
-            {mp.chamber && <span>· {formatChamber(mp.chamber)}</span>}
+            {metaItems.map((item, idx) => (
+              <span key={idx}>
+                {idx > 0 && " · "}
+                {item}
+              </span>
+            ))}
           </div>
         </div>
         {relatedBills > 0 && (
-          <div className="search-mp-match-count" aria-label={`${relatedBills} legi potrivite`}>
+          <div className="search-mp-match-count" aria-label={`${relatedBills} ${pluralizeLege(relatedBills)} potrivite`}>
             <strong>{relatedBills}</strong>
-            <span>{relatedBills === 1 ? "lege" : "legi"}</span>
+            <span>{pluralizeLege(relatedBills)}</span>
           </div>
         )}
       </div>
+
       <div className="search-mp-relation">{relationText}</div>
       {relatedBills > 0 && (
         <div className="search-mp-vote-counts" aria-label={`Voturi legate de ${keyword}`}>
