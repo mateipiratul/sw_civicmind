@@ -628,4 +628,6 @@ a      { color: var(--text); text-decoration: none; }
   .filter-button { margin-left: 0; }
 }
 
+/* Parliamentarian profile */
 
+.span-partycounty { font-size: 12px; padding: 3px 10px; border-radius: 5px; background: #f0f0f0; color: #666; font-weight: 500; }

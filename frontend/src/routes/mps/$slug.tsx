@@ -169,16 +169,19 @@ function MPDetailPage() {
             <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 10 }}>{mp.mp_name}</h1>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {mp.party && (
-                <span style={{ fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 5, background: "#f0f0f0", color: "#444" }}>{mp.party}</span>
+                <span className="span-partycounty">{mp.party}</span>
               )}
               {mp.county && (
-                <span style={{ fontSize: 12, fontWeight: 500, padding: "3px 10px", borderRadius: 5, background: "#f5f5f5", color: "#666" }}>{mp.county}</span>
+                <span className="span-partycounty">{mp.county}</span>
               )}
-              <span style={{ fontSize: 12, fontWeight: 500, padding: "3px 10px", borderRadius: 5, background: "#f5f5f5", color: "#888" }}>
-                {mp.chamber === "deputies" ? "Camera Deputaților" : mp.chamber === "senate" ? "Senat" : mp.chamber}
-              </span>
+              {/* chamber always empty, must add field */}
+              {mp.chamber && (
+                <span className="span-partycounty">
+                  {mp.chamber === "deputies" ? "Camera Deputaților" : mp.chamber === "senate" ? "Senat" : mp.chamber}
+                </span>
+              )}
               {mp.email && (
-                <a href={`mailto:${mp.email}`} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 5, background: "#f0f8ff", color: "#2457d6", textDecoration: "none" }}>
+                <a href={`mailto:${mp.email}`} className="span-partycounty" style={{ background: "#f0f8ff", color: "#2457d6", textDecoration: "none" }}>
                   {mp.email}
                 </a>
               )}
