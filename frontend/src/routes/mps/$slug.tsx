@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import { api, type ParliamentarianDetail, type MPVote } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 
 export const Route = createFileRoute("/mps/$slug")({
   validateSearch: (search: Record<string, unknown>): { q?: string; billIds?: string; billNumbers?: string } => {
@@ -69,7 +70,7 @@ function VoteRow({ vote }: { vote: MPVote }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {vote.vote_date && (
             <span className="muted" style={{ fontSize: 11.5 }}>
-              {new Date(vote.vote_date).toLocaleDateString("ro-RO")}
+              {formatDate(vote.vote_date)}
             </span>
           )}
           {vote.vote_type && (

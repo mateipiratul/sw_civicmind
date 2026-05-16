@@ -195,6 +195,8 @@ function MPsPage() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 28 }}>
+        {/* remove filter buttons for now */}
+        {/*
         <div style={{ display: "flex", gap: 6 }}>
           {[
             { id: "all", label: "Toți" },
@@ -215,6 +217,7 @@ function MPsPage() {
             </button>
           ))}
         </div>
+        */}
 
         {tab === "all" && (
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>

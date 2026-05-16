@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Bill } from "@/lib/api";
 import { ChevronRight } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
 type LawResultCardProps = {
   bill: Bill;
@@ -22,17 +23,14 @@ export function LawResultCard({ bill }: LawResultCardProps) {
         <div className={`search-law-status ${statusClass}`}>
           {bill.status || "În analiză"}
         </div>
-      </div>      
+      </div>
 
       <div className="search-law-meta">
-        {bill.registered_at && (
-          <span>{new Date(bill.registered_at).toLocaleDateString("ro-RO")}</span>
-        )}
+        <span>{formatDate(bill.registered_at)}</span>
         {bill.law_type && (
           <span> · {bill.law_type}</span>
         )}
       </div>
-
       <div className="search-law-categories">
         {analysis?.impact_categories?.slice(0, 3).map((cat) => (
           <span key={cat} className="search-law-category">

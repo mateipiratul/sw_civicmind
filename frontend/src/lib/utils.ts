@@ -18,3 +18,12 @@ export function pluralize(count: number, singular: string, plural: string, prepo
 export function pluralizeLege(count: number) {
   return pluralize(count, "lege", "legi", "de legi");
 }
+
+export function formatDate(date: string | null | undefined) {
+  if (!date) return "—";
+  try {
+    return new Date(date).toLocaleDateString("ro-RO");
+  } catch (e) {
+    return "—";
+  }
+}

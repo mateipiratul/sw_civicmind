@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BillCardSkeleton } from "@/components/bill-card-skeleton";
 import { Pagination } from "@/components/ui/pagination";
 import { Calendar, FileText, ChevronRight, RefreshCw } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
 const CATEGORIES = [
   { id: undefined, label: "Pentru Tine" },
@@ -94,7 +95,7 @@ function FeedBillCard({ bill, userInterests = [] }: { bill: Bill, userInterests?
         {bill.registered_at && (
           <span style={{ fontSize: 11.5, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
             <Calendar size={12} />
-            {new Date(bill.registered_at).toLocaleDateString("ro-RO")}
+            {formatDate(bill.registered_at)}
           </span>
         )}
         {bill.law_type && (

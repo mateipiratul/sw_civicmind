@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ExternalLink, Send } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { Markdown } from "@/components/ui/markdown";
 import remarkGfm from "remark-gfm";
 
 import { ApiError, api, type RagSource } from "@/lib/api";
@@ -63,78 +63,6 @@ function buildErrorMessage(error: unknown) {
     return `Conversația nu a reușit: ${error.message}`;
   }
   return "Conversația nu a reușit. Verifică dacă serviciul AI rulează pe portul configurat și încearcă din nou.";
-}
-
-function MarkdownContent({ content }: { content: string }) {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        p: ({ children }) => (
-          <p style={{ margin: "0 0 10px", lineHeight: 1.62 }}>{children}</p>
-        ),
-        ul: ({ children }) => (
-          <ul style={{ margin: "0 0 10px 18px", padding: 0, lineHeight: 1.62 }}>{children}</ul>
-        ),
-        ol: ({ children }) => (
-          <ol style={{ margin: "0 0 10px 18px", padding: 0, lineHeight: 1.62 }}>{children}</ol>
-        ),
-        li: ({ children }) => <li style={{ marginBottom: 4 }}>{children}</li>,
-        h1: ({ children }) => (
-          <h1 style={{ margin: "0 0 10px", fontSize: 20, lineHeight: 1.3 }}>{children}</h1>
-        ),
-        h2: ({ children }) => (
-          <h2 style={{ margin: "0 0 10px", fontSize: 17, lineHeight: 1.35 }}>{children}</h2>
-        ),
-        h3: ({ children }) => (
-          <h3 style={{ margin: "0 0 8px", fontSize: 15, lineHeight: 1.35 }}>{children}</h3>
-        ),
-        strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
-        em: ({ children }) => <em style={{ fontStyle: "italic" }}>{children}</em>,
-        code: ({ children }) => (
-          <code
-            style={{
-              background: "#f3f3f1",
-              border: "1px solid #e7e7e2",
-              borderRadius: 6,
-              padding: "1px 5px",
-              fontSize: "0.92em",
-            }}
-          >
-            {children}
-          </code>
-        ),
-        pre: ({ children }) => (
-          <pre
-            style={{
-              background: "#f7f7f4",
-              border: "1px solid #e7e7e2",
-              borderRadius: 10,
-              padding: "10px 12px",
-              overflowX: "auto",
-              margin: "0 0 10px",
-              lineHeight: 1.55,
-            }}
-          >
-            {children}
-          </pre>
-        ),
-        a: ({ href, children }) => (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#2457d6", textDecoration: "underline" }}
-          >
-            {children}
-          </a>
-        ),
-        hr: () => <hr style={{ border: 0, borderTop: "1px solid #e7e7e2", margin: "12px 0" }} />,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
 }
 
 function ChatPage() {
@@ -260,7 +188,7 @@ function ChatPage() {
               {message.role === "assistant" && <div className="avatar">AI</div>}
               <div className={`message-bubble ${message.role === "user" ? "user" : "assistant"}`}>
                 {message.role === "assistant" ? (
-                  <MarkdownContent content={message.content} />
+                  <Markdown content={message.content} />
                 ) : (
                   <div style={{ whiteSpace: "pre-wrap" }}>{message.content}</div>
                 )}
