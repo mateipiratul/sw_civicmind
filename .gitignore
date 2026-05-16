@@ -35,8 +35,9 @@ backend/media/
 legislative-intelligence/data/raw/
 legislative-intelligence/data/processed/
 
-# ignore claude
+# ignore agents
 .claude/
+.codex*/
 
 # ignore frontend mockups
 figma*/
