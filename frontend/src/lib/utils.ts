@@ -23,7 +23,7 @@ export function formatDate(date: string | null | undefined) {
   if (!date) return "—";
   try {
     return new Date(date).toLocaleDateString("ro-RO");
-  } catch (e) {
+  } catch {
     return "—";
   }
 }

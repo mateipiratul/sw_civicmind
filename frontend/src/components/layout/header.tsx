@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/use-auth";
 import { Bell } from "lucide-react";
 import {
   DropdownMenu,

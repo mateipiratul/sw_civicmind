@@ -355,10 +355,11 @@ class ApiClient {
       if (typeof data === 'object' && !Array.isArray(data) && !data.detail && !data.error) {
         const errors: string[] = [];
         for (const [field, messages] of Object.entries(data)) {
+          const fieldPrefix = field === "non_field_errors" || field === "detail" ? "" : `${field}: `;
           if (Array.isArray(messages)) {
-            errors.push(...messages.map(m => `${m}`));
+            errors.push(...messages.map(m => `${fieldPrefix}${m}`));
           } else if (typeof messages === 'string') {
-            errors.push(messages);
+            errors.push(`${fieldPrefix}${messages}`);
           }
         }
         if (errors.length > 0) {

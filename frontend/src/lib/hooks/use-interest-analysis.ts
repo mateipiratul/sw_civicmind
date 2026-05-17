@@ -27,7 +27,7 @@ export function useInterestAnalysis() {
         county: analysis.county ?? null,
         interests: analysis.interests ?? [],
       };
-    } catch (err) {
+    } catch {
       setError("Nu am putut analiza descrierea. Încearcă din nou.");
       return null;
     } finally {

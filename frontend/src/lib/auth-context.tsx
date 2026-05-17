@@ -1,22 +1,26 @@
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "./api";
 import type { User } from "./api";
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  login: (user: User) => void;
-  logout: () => void;
-  refreshUser: () => Promise<void>;
-  updateUser: (data: Partial<User>) => void;
-  isAuthenticated: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from "./auth-context-core";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem("auth_token");
+    const userData = localStorage.getItem("auth_user");
+    if (token && userData) {
+      try {
+        return { ...JSON.parse(userData), token };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  
+  // Since we check storage synchronously in useState initializer, 
+  // we're not "loading" the initial state anymore.
+  const [isLoading] = useState(false);
 
   // 1. Stable logout reference
   const logout = useCallback(() => {
@@ -34,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(prev => {
         if (!prev) return null;
         const updated = { ...prev, ...profile };
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { token, ...userData } = updated;
         localStorage.setItem("auth_user", JSON.stringify(userData));
         return updated;
@@ -48,46 +53,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [logout]);
 
-  // 3. Initial load effect
+  // 3. BG Refresh effect
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const userData = localStorage.getItem("auth_user");
-
-    if (token && userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        console.log("[AuthContext] Restoring session:", parsedUser.username);
-        setUser({ ...parsedUser, token });
-        
-        // BG Refresh
-        api.getProfile().then(profile => {
-          setUser(prev => {
-            if (!prev) return null;
-            const updated = { ...prev, ...profile };
-            const { token, ...userData } = updated;
-            localStorage.setItem("auth_user", JSON.stringify(userData));
-            return updated;
-          });
-        }).catch(err => {
-          if (err instanceof Error && err.message.includes("401")) {
-             console.warn("[AuthContext] BG Refresh 401");
-             logout();
-          }
+    if (user) {
+      // BG Refresh
+      api.getProfile().then(profile => {
+        setUser(prev => {
+          if (!prev) return null;
+          const updated = { ...prev, ...profile };
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { token, ...userData } = updated;
+          localStorage.setItem("auth_user", JSON.stringify(userData));
+          return updated;
         });
-      } catch (e) {
-        console.error("[AuthContext] Corrupt storage");
-        logout();
-      }
+      }).catch(err => {
+        if (err instanceof Error && err.message.includes("401")) {
+           console.warn("[AuthContext] BG Refresh 401");
+           logout();
+        }
+      });
     }
-
-    setIsLoading(false);
-  }, [logout]); // logout is stable, so this is safe
+  }, [logout]); // logout is stable, user is handled inside effect but not in deps to avoid loops
 
   const login = useCallback((newUser: User) => {
     console.log("[AuthContext] Login logic...");
     if (newUser.token) {
       localStorage.setItem("auth_token", newUser.token);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token, ...userData } = newUser;
     localStorage.setItem("auth_user", JSON.stringify(userData));
     setUser(newUser);
@@ -102,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(prev => {
       if (!prev) return null;
       const updatedUser = { ...prev, ...data };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { token, ...userData } = updatedUser;
       localStorage.setItem("auth_user", JSON.stringify(userData));
       return updatedUser;
@@ -123,12 +117,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
 }

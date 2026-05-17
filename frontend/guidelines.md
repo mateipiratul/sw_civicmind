@@ -19,7 +19,7 @@ Based on the current architecture and static analysis, the following code smells
 ### B. Fast Refresh Compatibility (`react-refresh/only-export-components`)
 - **The Smell:** Exporting non-component items (like constants, utility functions, or mock data) from files that contain React components (especially TanStack route files). This breaks Vite's Fast Refresh.
 - **The Fix:** 
-  - Move constants, helper functions, and types into separate utility files (e.g., `src/components/feed/constants.ts` or `src/lib/types.ts`).
+  - Move constants, helper functions, and types into separate utility files (e.g., `src/components/feed/constants.ts` or `src/lib/utils.ts`).
   - Ensure files containing React components *only* export React components (and the TanStack `Route` object for route files).
 
 ### C. Type Safety & Unused Code

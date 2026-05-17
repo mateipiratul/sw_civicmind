@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Trash2, X, Check, Lock } from "lucide-react";
+import { AlertTriangle, Trash2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DangerZoneProps {

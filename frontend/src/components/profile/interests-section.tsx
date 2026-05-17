@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Sparkles, Check, Send, RotateCcw, X } from "lucide-react";
+import { Sparkles, Check, Send, RotateCcw } from "lucide-react";
 import { useInterestAnalysis } from "@/lib/hooks/use-interest-analysis";
 import { cn } from "@/lib/utils";
 

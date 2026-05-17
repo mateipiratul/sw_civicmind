@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, TrendingUp } from "lucide-react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { api, type TrendingTopic } from "@/lib/api";
+import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 const QUICK_FILTERS = ["Sănătate", "Educație", "Mediu", "Justiție", "Fiscal", "Muncă"];
 
@@ -14,27 +15,34 @@ export function GlobalSearch() {
   const searchState = useRouterState({
     select: (state) => state.location.search as Record<string, unknown>,
   });
-  const [value, setValue] = useState("");
+  
+  // Derived state to initialize/sync search input with URL
+  const [value, setValue] = useState(() => normalizeSearch(searchState));
+  
+  // Keep input in sync with URL changes (e.g., browser back/forward)
+  const currentUrlQ = normalizeSearch(searchState);
+  const [prevUrlQ, setPrevUrlQ] = useState(currentUrlQ);
+  if (currentUrlQ !== prevUrlQ) {
+    setPrevUrlQ(currentUrlQ);
+    setValue(currentUrlQ);
+  }
+
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [topics, setTopics] = useState<TrendingTopic[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setValue(normalizeSearch(searchState));
-  }, [searchState]);
+  const {
+    data,
+    isLoading: loading,
+    error: queryError
+  } = useQuery({
+    queryKey: ["trending-topics"],
+    queryFn: () => api.getTrendingTopics(),
+    enabled: open, // Only fetch when dropdown is open
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  useEffect(() => {
-    if (!open || topics.length > 0 || loading) return;
-    setLoading(true);
-    setError(null);
-    api
-      .getTrendingTopics()
-      .then((data) => setTopics(data.topics || []))
-      .catch((err) => setError(err instanceof Error ? err.message : "Nu am putut încărca trending"))
-      .finally(() => setLoading(false));
-  }, [open, topics.length, loading]);
+  const topics = useMemo(() => data?.topics || [], [data?.topics]);
+  const error = queryError instanceof Error ? queryError.message : null;
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {

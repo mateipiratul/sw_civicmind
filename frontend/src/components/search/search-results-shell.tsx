@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { FilterDrawer } from "@/components/search/filter-drawer";
 import { SearchAllTab } from "@/components/search/search-all-tab";
@@ -28,12 +28,6 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [lawFilters, setLawFilters] = useState(EMPTY_FILTERS);
   const [mpFilters, setMpFilters] = useState(EMPTY_MP_FILTERS);
-
-  // Reset filters when query changes
-  useEffect(() => {
-    setLawFilters(EMPTY_FILTERS);
-    setMpFilters(EMPTY_MP_FILTERS);
-  }, [q]);
 
   const laws = data?.laws ?? [];
   const mps = data?.mps ?? [];
