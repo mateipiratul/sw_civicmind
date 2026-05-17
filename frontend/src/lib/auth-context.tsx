@@ -18,11 +18,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   });
   
-  // Since we check storage synchronously in useState initializer, 
-  // we're not "loading" the initial state anymore.
+  // check storage synchronously in useState initializer 
   const [isLoading] = useState(false);
 
-  // 1. Stable logout reference
   const logout = useCallback(() => {
     console.log("[AuthContext] Logging out, clearing storage.");
     setUser(null);
@@ -30,7 +28,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("auth_user");
   }, []);
 
-  // 2. Stable profile fetch reference
   const fetchProfile = useCallback(async () => {
     try {
       console.log("[AuthContext] Fetching latest profile...");
@@ -38,7 +35,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(prev => {
         if (!prev) return null;
         const updated = { ...prev, ...profile };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { token, ...userData } = updated;
         localStorage.setItem("auth_user", JSON.stringify(userData));
         return updated;
@@ -53,15 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [logout]);
 
-  // 3. BG Refresh effect
   useEffect(() => {
     if (user) {
-      // BG Refresh
       api.getProfile().then(profile => {
         setUser(prev => {
           if (!prev) return null;
           const updated = { ...prev, ...profile };
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { token, ...userData } = updated;
           localStorage.setItem("auth_user", JSON.stringify(userData));
           return updated;
@@ -73,14 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
     }
-  }, [logout]); // logout is stable, user is handled inside effect but not in deps to avoid loops
+  }, [logout]);
 
   const login = useCallback((newUser: User) => {
     console.log("[AuthContext] Login logic...");
     if (newUser.token) {
       localStorage.setItem("auth_token", newUser.token);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token, ...userData } = newUser;
     localStorage.setItem("auth_user", JSON.stringify(userData));
     setUser(newUser);
@@ -95,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(prev => {
       if (!prev) return null;
       const updatedUser = { ...prev, ...data };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { token, ...userData } = updatedUser;
       localStorage.setItem("auth_user", JSON.stringify(userData));
       return updatedUser;

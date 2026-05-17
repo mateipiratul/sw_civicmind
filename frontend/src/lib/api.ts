@@ -18,7 +18,7 @@ export interface AIAnalysis {
   key_ideas: string[];
   impact_categories: string[];
   affected_profiles: string[];
-  arguments: Record<string, any>;
+  arguments: Record<string, unknown>;
   pro_arguments: string[];
   con_arguments: string[];
   controversy_score: number | null;
@@ -67,7 +67,7 @@ export interface VoteSession {
   against: number;
   abstain: number;
   absent: number;
-  by_party: any[];
+  by_party: Record<string, unknown>[];
 }
 
 export interface PaginatedBills {
@@ -333,7 +333,7 @@ class ApiClient {
     }
 
     const contentType = response.headers.get("content-type") || "";
-    let data: any;
+    let data: unknown;
     if (contentType.includes("application/json")) {
       data = await response.json();
     } else {
@@ -352,26 +352,34 @@ class ApiClient {
 
     if (!response.ok) {
       // Handle Django REST Framework validation errors (object with field names as keys)
-      if (typeof data === 'object' && !Array.isArray(data) && !data.detail && !data.error) {
-        const errors: string[] = [];
-        for (const [field, messages] of Object.entries(data)) {
-          const fieldPrefix = field === "non_field_errors" || field === "detail" ? "" : `${field}: `;
-          if (Array.isArray(messages)) {
-            errors.push(...messages.map(m => `${fieldPrefix}${m}`));
-          } else if (typeof messages === 'string') {
-            errors.push(`${fieldPrefix}${messages}`);
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const errorObj = data as Record<string, unknown>;
+        if (!errorObj.detail && !errorObj.error) {
+          const errors: string[] = [];
+          for (const [field, messages] of Object.entries(errorObj)) {
+            const fieldPrefix = field === "non_field_errors" || field === "detail" ? "" : `${field}: `;
+            if (Array.isArray(messages)) {
+              errors.push(...messages.map(m => `${fieldPrefix}${m}`));
+            } else if (typeof messages === 'string') {
+              errors.push(`${fieldPrefix}${messages}`);
+            }
+          }
+          if (errors.length > 0) {
+            throw new ApiError(errors.join(", "), response.status);
           }
         }
-        if (errors.length > 0) {
-          throw new ApiError(errors.join(", "), response.status);
-        }
       }
+      
       // Handle custom errors array format
-      if (data.errors && Array.isArray(data.errors)) {
-        const errorMessage = data.errors.map((e: any) => `${e.field}: ${e.message}`).join(", ");
+      if (data && typeof data === 'object' && 'errors' in data && Array.isArray((data as Record<string, unknown>).errors)) {
+        const errorData = data as { errors: { field: string; message: string }[] };
+        const errorMessage = errorData.errors.map((e) => `${e.field}: ${e.message}`).join(", ");
         throw new ApiError(errorMessage, response.status);
       }
-      throw new ApiError(data.detail || data.error || `API Error: ${response.status}`, response.status);
+      
+      const errorObj = data as Record<string, unknown> | null;
+      const detailMsg = errorObj?.detail || errorObj?.error || `API Error: ${response.status}`;
+      throw new ApiError(String(detailMsg), response.status);
     }
 
     return data as T;
@@ -430,7 +438,7 @@ class ApiClient {
     });
   };
 
-  confirmPasswordReset = async (data: any): Promise<void> => {
+  confirmPasswordReset = async (data: { uid: string; token: string; new_password?: string; password?: string }): Promise<void> => {
     await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
     await this.request("/api/auth/password/reset/confirm/", {
       method: "POST",
