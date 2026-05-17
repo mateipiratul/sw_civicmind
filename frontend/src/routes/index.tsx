@@ -7,25 +7,7 @@ import { BillCardSkeleton } from "@/components/bill-card-skeleton";
 import { Pagination } from "@/components/ui/pagination";
 import { Calendar, FileText, ChevronRight, RefreshCw } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-
-const CATEGORIES = [
-  { id: undefined, label: "Pentru Tine" },
-  { id: "Fiscal", label: "Fiscal" },
-  { id: "Sănătate", label: "Sănătate" },
-  { id: "Educație", label: "Educație" },
-  { id: "Muncă", label: "Muncă" },
-  { id: "Mediu", label: "Mediu" },
-  { id: "Justiție", label: "Justiție" },
-];
-
-const CAT_DOTS: Record<string, string> = {
-  Fiscal: "#f97316",
-  Sănătate: "#22c55e",
-  Educație: "#3b82f6",
-  Muncă: "#8b5cf6",
-  Mediu: "#10b981",
-  Justiție: "#ef4444",
-};
+import { CATEGORIES, CAT_DOTS } from "@/lib/constants";
 
 function FeedBillCard({ bill, userInterests = [] }: { bill: Bill, userInterests?: string[] }) {
   const ai = bill.ai_analysis;

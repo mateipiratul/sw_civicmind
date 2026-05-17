@@ -4,20 +4,10 @@ import { FilterDrawer } from "@/components/search/filter-drawer";
 import { SearchAllTab } from "@/components/search/search-all-tab";
 import { SearchLawsTab } from "@/components/search/search-laws-tab";
 import { SearchMpsTab } from "@/components/search/search-mps-tab";
+import { buildLawFilterChips, buildMpFilterChips, useFilteredLaws, useFilteredMps } from "@/lib/search-filters";
+import { EMPTY_FILTERS, EMPTY_MP_FILTERS } from "@/lib/constants";
 import type { GlobalSearchResponse } from "@/lib/api";
-import {
-  buildLawFilterChips,
-  buildMpFilterChips,
-  EMPTY_FILTERS,
-  EMPTY_MP_FILTERS,
-  useFilteredLaws,
-  useFilteredMps,
-  type LawFilterOptions,
-  type LawFilters,
-  type MpFilterOptions,
-  type MpFilters,
-  type SearchTab,
-} from "@/lib/search-filters";
+import type { LawFilterOptions, LawFilters, MpFilterOptions, MpFilters, SearchTab } from "@/lib/search-filters";
 
 const SEARCH_TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "all", label: "Toate" },

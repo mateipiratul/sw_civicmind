@@ -1,20 +1,8 @@
 import { useMemo } from "react";
 import type { Bill, SearchMP } from "@/lib/api";
 import { formatChamber } from "@/lib/utils";
+import { EMPTY_FILTERS, EMPTY_MP_FILTERS } from "@/lib/constants";
 
-export const EMPTY_FILTERS = {
-  status: "",
-  initiator: "",
-  category: "",
-  dateFrom: "",
-  dateTo: "",
-};
-
-export const EMPTY_MP_FILTERS = {
-  party: "",
-  county: "",
-  chamber: "",
-};
 
 export type SearchTab = "all" | "laws" | "mps";
 export type LawFilters = typeof EMPTY_FILTERS;
