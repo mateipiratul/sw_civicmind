@@ -34,13 +34,13 @@ def normalize_email(value: str) -> str:
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-class UserSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    username = serializers.CharField()
-    email = serializers.EmailField()
-    first_name = serializers.CharField(required=False, allow_blank=True)
-    last_name = serializers.CharField(required=False, allow_blank=True)
+class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
+        read_only_fields = ['id', 'role']
 
     def get_role(self, obj: User) -> str:
         if obj.is_superuser:
@@ -50,11 +50,13 @@ class UserSerializer(serializers.Serializer):
         return "user"
 
 
-class RegisterSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    username = serializers.CharField(max_length=150)
-    email = serializers.CharField(max_length=254)
+class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'password']
+        read_only_fields = ['id']
 
     def validate_username(self, value: str) -> str:
         normalized = normalize_username(value)
@@ -112,8 +114,8 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username: serializers.CharField = serializers.CharField(trim_whitespace=False)
-    password: serializers.CharField = serializers.CharField(write_only=True, trim_whitespace=False)
+    username = serializers.CharField(trim_whitespace=False)
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate(self, attrs: Dict[str, str]) -> User:
         username_input: str = attrs.get("username", "").strip()
