@@ -17,15 +17,11 @@ class ImpactScoreSerializer(serializers.ModelSerializer):
 
 
 class MPVoteSerializer(serializers.ModelSerializer):
-    """A single MP vote, enriched with the bill context for the Consistency Feed."""
-
-    # Bill info — traversed via vote_session → bill
     bill_idp = serializers.IntegerField(source='vote_session.bill.idp', read_only=True)
     bill_number = serializers.CharField(source='vote_session.bill.bill_number', read_only=True)
     bill_title = serializers.CharField(source='vote_session.bill.title', read_only=True)
     bill_status = serializers.CharField(source='vote_session.bill.status', read_only=True)
 
-    # AI analysis fields — gives the frontend the categories & short title
     impact_categories = serializers.ListField(
         child=serializers.CharField(),
         source='vote_session.bill.ai_analysis.impact_categories',
@@ -69,10 +65,6 @@ class ParliamentarianListSerializer(serializers.ModelSerializer):
 
 
 class ParliamentarianDetailSerializer(serializers.ModelSerializer):
-    """
-    Full MP profile including their voting history (Consistency Feed) and ImpactScore.
-    Recent votes are capped at 50 to keep the payload manageable.
-    """
     impact_score = ImpactScoreSerializer(read_only=True)
     recent_votes = serializers.SerializerMethodField()
 

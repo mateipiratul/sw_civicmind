@@ -1,7 +1,3 @@
-"""
-Management command to populate the county field for parliamentarians.
-Reads from the scraper JSON files and extracts county from electoral_district.
-"""
 import json
 import re
 from pathlib import Path

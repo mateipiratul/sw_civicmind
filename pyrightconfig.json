@@ -1,11 +1,18 @@
 {
-  "include": ["backend"],
+  "include": [
+    "backend"
+  ],
   "venvPath": "backend",
   "venv": ".venv",
   "executionEnvironments": [
     {
       "root": "backend",
-      "extraPaths": ["backend"]
+      "extraPaths": [
+        "backend"
+      ]
     }
-  ]
+  ],
+  "reportIncompatibleVariableOverride": false,
+  "reportGeneralTypeIssues": true,
+  "typeCheckingMode": "basic"
 }

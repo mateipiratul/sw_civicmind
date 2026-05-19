@@ -1,7 +1,3 @@
-"""
-Management command to populate the email field for parliamentarians.
-Reads from the scraper JSON files and extracts email addresses.
-"""
 import json
 from pathlib import Path
 from django.core.management.base import BaseCommand
