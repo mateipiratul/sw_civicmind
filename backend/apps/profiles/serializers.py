@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.db.utils import OperationalError, ProgrammingError
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 from rest_framework import serializers
 
 from .models import Profile
@@ -15,24 +15,19 @@ from .questionnaire import (
 )
 
 
-class ProfileSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
+class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
-    county = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    preferred_party = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    interests = serializers.ListField(child=serializers.CharField(), required=False)
-    persona_tags = serializers.ListField(child=serializers.CharField(), required=False)
-    work_domain = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    employment_status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    personal_interest_areas = serializers.ListField(child=serializers.CharField(), required=False)
-    age_range = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    housing_status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    mobility_modes = serializers.ListField(child=serializers.CharField(), required=False)
-    education_context = serializers.ListField(child=serializers.CharField(), required=False)
-    energy_focus = serializers.ListField(child=serializers.CharField(), required=False)
-    public_service_focus = serializers.ListField(child=serializers.CharField(), required=False)
-    questionnaire_completed = serializers.BooleanField(required=False)
+
+    class Meta:
+        model = Profile
+        fields = [
+            'id', 'username', 'email', 'county', 'preferred_party', 'interests',
+            'persona_tags', 'work_domain', 'employment_status', 'personal_interest_areas',
+            'age_range', 'housing_status', 'mobility_modes', 'education_context',
+            'energy_focus', 'public_service_focus', 'questionnaire_completed'
+        ]
+        read_only_fields = ['id', 'username', 'email']
 
     def validate(self, attrs: Dict[str, Union[str, List[str], bool, None]]) -> Dict[str, Union[str, List[str], bool, None]]:
         preferred_party = attrs.get("preferred_party")
@@ -54,28 +49,23 @@ class ProfileSerializer(serializers.Serializer):
             if invalid_values:
                 raise serializers.ValidationError({field_name: "Opțiune invalidă."})
 
-        interests = attrs.get("interests")
-        if interests is not None and not isinstance(interests, list):
-            raise serializers.ValidationError({"interests": "Opțiune invalidă."})
-
-        persona_tags = attrs.get("persona_tags")
-        if persona_tags is not None and not isinstance(persona_tags, list):
-            raise serializers.ValidationError({"persona_tags": "Opțiune invalidă."})
-
         return attrs
 
     def create(self, validated_data: Dict[str, Union[str, List[str], bool, None]]) -> Profile:
-        prepared_data = self._prepare_profile_data(validated_data)
-        return Profile.objects.create(**prepared_data)
+        # For manual creation if needed
+        profile_data = self._merge_with_existing(None, validated_data)
+        
+        if "interests" not in validated_data:
+            validated_data["interests"] = derive_profile_interests(profile_data)
+        if "persona_tags" not in validated_data:
+            validated_data["persona_tags"] = derive_persona_tags(profile_data)
+        if "questionnaire_completed" not in validated_data:
+            validated_data["questionnaire_completed"] = is_questionnaire_completed(profile_data)
+            
+        return super().create(validated_data)
 
     def update(self, instance: Profile, validated_data: Dict[str, Union[str, List[str], bool, None]]) -> Profile:
-        prepared_data = self._prepare_profile_data(validated_data, instance=instance)
-        for attr, value in prepared_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
-
-    def _prepare_profile_data(self, validated_data: Dict[str, Union[str, List[str], bool, None]], instance: Profile | None = None) -> Dict[str, Union[str, List[str], bool, None]]:
+        # Derive fields before saving
         profile_data = self._merge_with_existing(instance, validated_data)
 
         if "interests" not in validated_data:
@@ -87,7 +77,7 @@ class ProfileSerializer(serializers.Serializer):
         if "questionnaire_completed" not in validated_data:
             validated_data["questionnaire_completed"] = is_questionnaire_completed(profile_data)
 
-        return validated_data
+        return super().update(instance, validated_data)
 
     @staticmethod
     def _merge_with_existing(instance: Profile | None, validated_data: Dict[str, Union[str, List[str], bool, None]]) -> Dict[str, Union[str, List[str], bool, None]]:
