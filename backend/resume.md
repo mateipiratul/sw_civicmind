@@ -38,17 +38,15 @@ Finished & Fixed:
       * Standardized all filtering in viewsets using `django-filter` classes.
       * Removed manual `.filter()` calls from `ParliamentarianViewSet.my_representatives` in favor of injecting data into `ParliamentarianFilterSet`.
       * Extended `ParliamentarianFilterSet` to natively handle `bill_ids` and `bill_numbers` filtering.
+  9. Signal-based logic & Service hooks:
+      * Created `apps/parliamentarians/signals.py`.
+      * Extracted `ImpactScore` aggregation logic into a `post_save` and `post_delete` signal on the `MPVote` model. This keeps the core models clean and automates stat tracking.
 
 ---
 
 Further Refactoring Options
 
 Remaining high-impact to focus on:
-
-1. Signal-based logic or Service hooks
-Logic like "Update ImpactScore when a vote is recorded" could be moved to
-Django Signals or explicit Service hooks to keep the core models clean.
-
 
 ### 1. ViewSet & API Improvements
 - [x] **Auth Cleanup:** Standardize authentication views and remove manual token/session creation logic where `dj-rest-auth` or standard DRF can be used.
