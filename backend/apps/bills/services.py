@@ -15,6 +15,106 @@ VOTE_BUCKETS = {
     "absent": "absent", "absentat": "absent",
 }
 
+class FeedService:
+    @staticmethod
+    def get_personalized_bills(user_interests: list[str], persona_tags: list[str], queryset=None):
+        if queryset is None:
+            queryset = Bill.objects.all()
+
+        query = Q()
+        for interest in user_interests:
+            query |= Q(ai_analysis__rel_impact_categories__name__iexact=interest)
+        for persona in persona_tags:
+            query |= Q(ai_analysis__rel_affected_profiles__name__iexact=persona)
+
+        if query.children:
+            return queryset.annotate(
+                is_match=Case(
+                    When(query, then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField()
+                )
+            ).order_by('-is_match', '-registered_at').distinct()
+        
+        return queryset.order_by('-registered_at')
+
+    @staticmethod
+    def get_representatives(county: str = None, preferred_party: str = None, limit: int = 6):
+        # We need this to avoid circular imports if we move it to a different app,
+        # but since it's currently in bills/services.py we use standard imports.
+        from apps.parliamentarians.models import Parliamentarian, MPVote
+        from django.db.models import Prefetch
+
+        vote_queryset = (
+            MPVote.objects
+            .select_related(
+                'vote_session',
+                'vote_session__bill',
+                'vote_session__bill__ai_analysis',
+            )
+            .only(
+                'id', 'vote_session_id', 'parliamentarian_id', 'vote', 'party',
+                'vote_session__date', 'vote_session__type',
+                'vote_session__bill__idp', 'vote_session__bill__bill_number', 
+                'vote_session__bill__title', 'vote_session__bill__status',
+                'vote_session__bill__ai_analysis__title_short',
+                'vote_session__bill__ai_analysis__controversy_score',
+            )
+            .order_by('-vote_session__date')
+        )
+
+        queryset = (
+            Parliamentarian.objects
+            .filter(chamber__icontains='deput')
+            .select_related('impact_score')
+            .prefetch_related(
+                Prefetch('votes', queryset=vote_queryset, to_attr='prefetched_votes')
+            )
+            .order_by('mp_name')
+        )
+
+        if county:
+            queryset = queryset.filter(county__icontains=county)
+        if preferred_party:
+            queryset = queryset.filter(party__iexact=preferred_party)
+            
+        return queryset[:limit]
+
+class VoteAnalyticsService:
+    VOTE_MAP = {
+        'Pentru': 'for', 'for': 'for',
+        'Contra': 'against', 'against': 'against',
+        'Abtinere': 'abstain', 'Abținere': 'abstain', 'abstain': 'abstain',
+        'Absent': 'absent', 'Absentat': 'absent', 'absent': 'absent'
+    }
+
+    @staticmethod
+    def get_bill_vote_buckets(vote_session):
+        from apps.parliamentarians.models import MPVote
+        from .serializers import MPVoteInBillSerializer
+
+        mp_votes = (
+            MPVote.objects
+            .filter(vote_session=vote_session)
+            .select_related('parliamentarian')
+            .order_by('parliamentarian__mp_name')
+        )
+        
+        buckets = {'for': [], 'against': [], 'abstain': [], 'absent': []}
+        serialized = MPVoteInBillSerializer(mp_votes, many=True).data
+        
+        for row in serialized:
+            bucket_key = VoteAnalyticsService.VOTE_MAP.get(row['vote'], 'abstain')
+            buckets[bucket_key].append(row)
+            
+        return buckets
+
+    @staticmethod
+    def get_mp_vote_statistics(parliamentarian, limit: int = 50):
+        # Logic to calculate stats for a single MP if needed,
+        # but current serializers handle this via prefetched_votes.
+        pass
+
 class SearchService:
     @staticmethod
     def normalize_text(value: str) -> str:
@@ -124,12 +224,16 @@ class SearchService:
                 tq = Q(title__icontains=token) | Q(bill_number__icontains=token) | Q(initiator_name__icontains=token) | Q(ai_analysis__title_short__icontains=token) | Q(ocr_expunere__icontains=token) | Q(ocr_aviz_ces__icontains=token) | Q(ocr_aviz_cl__icontains=token)
                 nq = Q()
                 if norm: nq = Q(n_title__icontains=norm) | Q(n_bill_number__icontains=norm) | Q(n_initiator__icontains=norm) | Q(n_title_short__icontains=norm) | Q(n_ocr_expunere__icontains=norm) | Q(n_ocr_aviz_ces__icontains=norm) | Q(n_ocr_aviz_cl__icontains=norm)
-                jq = Q()
+                json_query = Q()
                 for item in variants:
-                    if item:
-                        jq |= Q(ai_analysis__impact_categories__contains=[item]) | Q(ai_analysis__affected_profiles__contains=[item]) | Q(ai_analysis__key_ideas__contains=[item])
-                pq = tq | nq | jq
-                token_query = pq if token_query is None else token_query & pq
+                    if not item: continue
+                    json_query |= Q(ai_analysis__rel_impact_categories__name__iexact=item)
+                    json_query |= Q(ai_analysis__rel_affected_profiles__name__iexact=item)
+                    # Key ideas are still text-based search, but now joined
+                    json_query |= Q(ai_analysis__rel_key_ideas__text__icontains=item)
+
+                per_token_query = text_query | normalized_query | json_query
+
             
             if token_query: bill_queryset = bill_queryset.filter(token_query)
             if exact_bill: bill_queryset = bill_queryset.exclude(idp=exact_bill.idp)

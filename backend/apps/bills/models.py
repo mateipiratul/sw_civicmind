@@ -36,6 +36,34 @@ class Bill(models.Model):
     def __str__(self):
         return f"{self.bill_number} - {self.title[:50]}..."
 
+class ImpactCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'impact_categories'
+        managed = True
+        verbose_name = "Impact Category"
+        verbose_name_plural = "Impact Categories"
+
+    def __str__(self):
+        return self.name
+
+class AffectedProfile(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'affected_profiles'
+        managed = True
+        verbose_name = "Affected Profile"
+        verbose_name_plural = "Affected Profiles"
+
+    def __str__(self):
+        return self.name
+
 class AIAnalysis(models.Model):
     bill = models.OneToOneField(
         Bill, 
@@ -47,12 +75,11 @@ class AIAnalysis(models.Model):
     processed_at = models.DateTimeField(blank=True, null=True)
     model = models.CharField(max_length=100, blank=True, null=True)
     title_short = models.CharField(max_length=255, blank=True, null=True)
-    key_ideas = models.JSONField(default=list)
-    impact_categories = models.JSONField(default=list)
-    affected_profiles = models.JSONField(default=list)
-    arguments = models.JSONField(default=dict)
-    pro_arguments = models.JSONField(default=list)
-    con_arguments = models.JSONField(default=list)
+    
+    # New Relational fields
+    rel_impact_categories = models.ManyToManyField(ImpactCategory, related_name='analyses', blank=True)
+    rel_affected_profiles = models.ManyToManyField(AffectedProfile, related_name='analyses', blank=True)
+    
     controversy_score = models.FloatField(blank=True, null=True)
     passed_by = models.CharField(max_length=100, blank=True, null=True)
     dominant_party = models.CharField(max_length=100, blank=True, null=True)
@@ -69,13 +96,47 @@ class AIAnalysis(models.Model):
     def __str__(self):
         return f"Analysis for {self.pk}"
 
+class KeyIdea(models.Model):
+    analysis = models.ForeignKey(AIAnalysis, on_delete=models.CASCADE, related_name='rel_key_ideas')
+    text = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'ai_key_ideas'
+        managed = True
+        ordering = ['order']
+
+    def __str__(self):
+        return self.text[:50]
+
+class BillArgument(models.Model):
+    ARGUMENT_TYPES = (
+        ('pro', 'Pro'),
+        ('con', 'Con'),
+        ('general', 'General'),
+    )
+    analysis = models.ForeignKey(AIAnalysis, on_delete=models.CASCADE, related_name='rel_arguments')
+    type = models.CharField(max_length=20, choices=ARGUMENT_TYPES)
+    text = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'ai_arguments'
+        managed = True
+        ordering = ['type', 'order']
+
+    def __str__(self):
+        return f"[{self.type}] {self.text[:50]}"
+
 class VoteSession(models.Model):
     idv = models.IntegerField(primary_key=True)
     bill = models.ForeignKey(
         Bill, 
         on_delete=models.CASCADE, 
         db_column='bill_idp',
-        related_name='vote_sessions'
+        related_name='vote_sessions',
+        null=True,
+        blank=True
     )
     type = models.CharField(max_length=100, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
@@ -86,7 +147,6 @@ class VoteSession(models.Model):
     against = models.IntegerField(default=0)
     abstain = models.IntegerField(default=0)
     absent = models.IntegerField(default=0)
-    by_party = models.JSONField(default=list)
 
     class Meta:
         db_table = 'vote_sessions'
@@ -97,10 +157,26 @@ class VoteSession(models.Model):
     def __str__(self):
         return f"Vote {self.idv} for {self.pk}"
 
+class PartyVoteResult(models.Model):
+    vote_session = models.ForeignKey(VoteSession, on_delete=models.CASCADE, related_name='rel_party_results')
+    party = models.CharField(max_length=100)
+    for_votes = models.IntegerField(default=0)
+    against = models.IntegerField(default=0)
+    abstain = models.IntegerField(default=0)
+    absent = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'party_vote_results'
+        managed = True
+        unique_together = ('vote_session', 'party')
+
+    def __str__(self):
+        return f"{self.party} on Vote {self.vote_session_id}"
+
 class BillEvent(models.Model):
     event_key = models.CharField(primary_key=True, max_length=255)
     event_type = models.CharField(max_length=100)
-    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, db_column='idp', related_name='events')
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, db_column='idp', related_name='events', null=True, blank=True)
     idv = models.IntegerField(blank=True, null=True)
     bill_number = models.CharField(max_length=50, blank=True, null=True)
     source = models.CharField(max_length=50, default='cdep')
@@ -117,7 +193,7 @@ class BillEvent(models.Model):
 
 class BillFlag(models.Model):
     event_key = models.OneToOneField(BillEvent, on_delete=models.CASCADE, primary_key=True, db_column='event_key', related_name='flag')
-    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, db_column='idp', related_name='flags')
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, db_column='idp', related_name='flags', null=True, blank=True)
     idv = models.IntegerField(blank=True, null=True)
     bill_number = models.CharField(max_length=50, blank=True, null=True)
     event_type = models.CharField(max_length=100)

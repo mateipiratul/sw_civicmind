@@ -25,13 +25,17 @@ class MPVote(models.Model):
         VoteSession, 
         on_delete=models.CASCADE, 
         db_column='idv',
-        related_name='mp_votes'
+        related_name='mp_votes',
+        null=True,
+        blank=True
     )
     parliamentarian = models.ForeignKey(
         Parliamentarian, 
         on_delete=models.CASCADE, 
         db_column='mp_slug',
-        related_name='votes'
+        related_name='votes',
+        null=True,
+        blank=True
     )
     party = models.CharField(max_length=100, blank=True, null=True)
     vote = models.CharField(max_length=50, blank=True, null=True)
