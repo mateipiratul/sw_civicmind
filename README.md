@@ -132,8 +132,8 @@ Important detail: the frontend should usually call Django through the Vite proxy
 * Pull requests required for merging.
 
 ### 🧪 Testing
-* Unit tests for the Spring Boot backend.
-* Agent evals (Crucial for ensuring Qwen 3.5 does not hallucinate legal data).
+* Unit and integration tests for the Django and FastAPI backends.
+* Agent evals (Crucial for ensuring LLMs do not hallucinate legal data).
 
 ### 🤖 AI Usage
 * Code generation and debugging.
@@ -142,27 +142,33 @@ Important detail: the frontend should usually call Django through the Vite proxy
 
 ---
 
-## 📋 Product Backlog & Roadmap (Future Vision)
+## 🛠️ Recent Backend Improvements (Refactoring)
 
-### 🟢 Current Sprint (MVP Data)
-- Configure daily Firecrawl script for `cdep.ro`.
-- Set up Supabase architecture.
-- Define LangGraph workflow for the Scout Agent.
-Here is the English translation of your technical tasks:
+The Django backend has recently undergone a major refactor to improve performance, maintainability, and data integrity:
 
-- XML/HTML parsing to extract the idp (Project ID).
-- Scraping on `evot2015.nominal?idv=` using Firecrawl with a JSON extraction schema.
-- Integration with the SOAP API at `legislatie.just.ro/apiws/FreeWebService.svc`.
+*   **Serializer Refactoring**: Converted all core entities (Bills, MPs, Votes, Profiles) to `ModelSerializer` with optimized `Prefetch` logic to eliminate N+1 database queries.
+*   **Pagination Standardization**: Implemented a unified pagination system across all list endpoints for consistent API responses.
+*   **Search Service Extraction**: Extracted 250+ lines of monolithic search logic into a dedicated `SearchService`. Improved search to support entity-only queries (e.g., searching for a party or county now returns relevant MPs even without bill matches).
+*   **Database Normalization**: Normalized the `ImpactScore` model and moved all models to `managed = True` status, allowing Django to handle schema migrations and enabling proper integration testing.
+*   **Performance Optimization**: Implemented field limiting (`only()`) on heavy prefetches to reduce payload sizes for complex endpoints like the MP Vote Map.
+
+---
+
+## 📋 Product Backlog & Roadmap
+
+### 🟢 Completed / Current Sprint
+- [x] Configure daily scraping scripts for `cdep.ro`.
+- [x] Set up Supabase architecture and Django managed models.
+- [x] Core API Refactoring (Serializers, Search, Pagination).
+- [ ] Define LangGraph workflow for the Scout Agent.
+- [ ] Integration with the SOAP API at `legislatie.just.ro/apiws/FreeWebService.svc`.
 
 ### 🟡 Short-Term Backlog
-- Create Figma design for Onboarding screens.
-- Implement Python backend endpoints.
-- Integrate push notifications.
-- Configuring Agent 1 (Scout) to process explanatory memorandum PDFs.
-- Implementing the logic to extract critiques from the official opinions of the Economic and Social Council.
-- Possible development of a calculation algorithm (Impact Score) based on the metadata extracted by Agent 2 (Auditor).
-- UI/UX for onboarding (Selecting County + Interests: Freelancer/PFA, IT, Education).
-- Integrating a notification system based on filtering impact categories.
+- [ ] **Authentication Cleanup**: Standardize auth views to exclusively use standard DRF/allauth flows.
+- [ ] **Service Layer Expansion**: Move feed personalization and vote analytics logic into dedicated service classes.
+- [ ] **Figma Design Integration**: Implement onboarding screens for county and interest selection.
+- [ ] **Agent 1 (Scout) Configuration**: Enable processing of explanatory memorandum PDFs for AI summaries.
+- [ ] **Impact Score Algorithm**: Refine the calculation logic based on auditor metadata.
 
 ### 🔵 Icebox (Future Epics)
 * **Social Sharing & Gamification:** Share a politician's "track record" on social media.

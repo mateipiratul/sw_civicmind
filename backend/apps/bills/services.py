@@ -145,21 +145,57 @@ class SearchService:
 
         # 4. Build MP Queryset
         mp_queryset = Parliamentarian.objects.select_related('impact_score')
-        if matched_law_codes:
-            mp_queryset = mp_queryset.filter(votes__vote_session__bill__bill_number__in=matched_law_codes).distinct()
-        else:
-            mp_queryset = mp_queryset.none()
         
-        mp_fq = Q()
-        for c in matched_counties: mp_fq |= Q(county__iexact=c)
-        for p in matched_parties: mp_fq |= Q(party__iexact=p)
-        mp_queryset = mp_queryset.filter(mp_fq).order_by('mp_name').distinct()
+        # If we have law tokens, we MUST match laws. 
+        # If we only have county/party tokens, we just match those MPs.
+        # If we have both, we match MPs from those parties/counties who voted on those laws.
+        
+        mp_filter = Q()
+        if matched_law_codes:
+            mp_filter &= Q(votes__vote_session__bill__bill_number__in=matched_law_codes)
+        elif law_tokens:
+            # We had law tokens but found no laws. In this case, we shouldn't return MPs 
+            # unless they are explicitly searched by party/county.
+            pass
+
+        entity_filter = Q()
+        for c in matched_counties: entity_filter |= Q(county__iexact=c)
+        for p in matched_parties: entity_filter |= Q(party__iexact=p)
+        
+        if entity_filter:
+            mp_filter &= entity_filter
+        elif not matched_law_codes:
+            # No laws matched AND no entities matched -> nothing to show
+            mp_queryset = mp_queryset.none()
+            mp_filter = None
+            
+        if mp_filter:
+            mp_queryset = mp_queryset.filter(mp_filter).order_by('mp_name').distinct()
+        
         mp_list = list(mp_queryset)
 
         # 5. Build Relation Map
         relation_map = {}
-        if matched_law_codes:
-            v_rows = MPVote.objects.filter(vote_session__bill__bill_number__in=matched_law_codes).values('parliamentarian__mp_slug', 'vote_session__bill__idp', 'vote_session__bill__bill_number', 'vote')
+        # We need a list of bill identifiers to build relations. 
+        # If no laws were matched by keyword, we might still want to show MP stats if they were found by party/county.
+        
+        target_bill_numbers = matched_law_codes
+        if not target_bill_numbers and mp_list and not law_tokens:
+            # If we searched for a party/county and found MPs, but didn't search for laws,
+            # we can optionally show their most recent votes as "relations" to the search query.
+            # However, the frontend expects relations to be tied to the query keywords.
+            pass
+
+        if target_bill_numbers:
+            v_rows = MPVote.objects.filter(
+                vote_session__bill__bill_number__in=target_bill_numbers,
+                parliamentarian__in=mp_list
+            ).values(
+                'parliamentarian__mp_slug', 
+                'vote_session__bill__idp', 
+                'vote_session__bill__bill_number', 
+                'vote'
+            )
             r_sets = {}
             for r in v_rows:
                 mp_s, b_id, b_n, v = r['parliamentarian__mp_slug'], r['vote_session__bill__idp'], r['vote_session__bill__bill_number'], r['vote']
@@ -172,6 +208,15 @@ class SearchService:
                     if bucket: rel[bucket].add(b_n)
             for s, r in r_sets.items():
                 relation_map[s] = {'keyword': query, 'billIds': sorted(r['billIds']), 'billNumbers': sorted(r['billNumbers']), 'relatedBills': len(r['billNumbers']), 'forVotes': len(r['for']), 'againstVotes': len(r['against']), 'abstainVotes': len(r['abstain']), 'absentVotes': len(r['absent'])}
+        elif mp_list and not law_tokens:
+            # If searched only by party/county, we still want to show the MPs. 
+            # We provide an empty relation object so they aren't filtered out by the view.
+            for mp in mp_list:
+                relation_map[mp.mp_slug] = {
+                    'keyword': query, 
+                    'billIds': [], 'billNumbers': [], 'relatedBills': 0, 
+                    'forVotes': 0, 'againstVotes': 0, 'abstainVotes': 0, 'absentVotes': 0
+                }
 
         return {
             'query': query,

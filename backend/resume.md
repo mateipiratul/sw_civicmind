@@ -1,21 +1,5 @@
 # Backend Improvement Roadmap
 
-## ⚠️ Discovered Issues
-  While the refactoring is mostly solid, I found a few bugs and limitations:
-
-   1. Broken Fallback in BillViewSet.trending: In backend/apps/bills/views.py (line 60), there is a local import: from
-      .views import DEFAULT_TRENDING_TOPICS. Since this constant is not defined in views.py, this action will crash if
-      the topics list is empty.
-   2. Global Search Logic: If a user searches for a term like "PSD" or "Cluj" (party/county names) without any keywords
-      that match a bill title or content, the search returns zero results. The current logic only finds MPs if they are
-      linked to a law matched by the search tokens.
-   3. Prefetch Efficiency: In ParliamentarianViewSet.retrieve, the queryset prefetches ALL votes for an MP. While
-      ParliamentarianDetailSerializer only displays the last 50, the database still fetches every vote record, which
-      could be slow for long-serving MPs.
-
-
-## 📋 Immediate TODO List (Current Sprint)
-
 ✦ 🛠️ Refactoring Overview
 
   I have completed the following major improvements to the backend:
@@ -32,10 +16,16 @@
        * Created backend/apps/bills/services.py and extracted the 250+ line GlobalSearchView logic into a clean
          SearchService.
        * Simplified the view to focus only on request/response handling.
+       * **Fixed:** Improved search logic to handle entity-only queries (e.g., searching for "PSD" now returns all MPs
+         regardless of bill matches).
    4. Data Model Cleanup:
        * Normalization: Removed redundant mp_name and party fields from ImpactScore.
        * Managed Models: Switched models from managed = False to managed = True and generated/applied migrations,
          allowing Django to handle the schema and enabling proper integration testing.
+   5. Stability & Optimization:
+       * **Fixed:** Resolved a crash in BillViewSet.trending caused by a missing constant and broken fallback import.
+       * **Optimized:** Improved prefetch efficiency for MPs using field limiting (only()) to reduce database payload
+         size.
 
   ---
 

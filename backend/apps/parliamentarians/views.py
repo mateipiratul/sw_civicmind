@@ -65,6 +65,15 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 'vote_session__bill',
                 'vote_session__bill__ai_analysis',
             )
+            .only(
+                'id', 'vote_session_id', 'parliamentarian_id', 'vote', 'party',
+                'vote_session__date', 'vote_session__type',
+                'vote_session__bill__idp', 'vote_session__bill__bill_number', 
+                'vote_session__bill__title', 'vote_session__bill__status',
+                'vote_session__bill__ai_analysis__impact_categories',
+                'vote_session__bill__ai_analysis__title_short',
+                'vote_session__bill__ai_analysis__controversy_score',
+            )
             .order_by('-vote_session__date')
         )
 
@@ -82,6 +91,9 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 vote_queryset = vote_queryset.filter(vote_session__bill__bill_number__in=bill_numbers)
 
         if self.action in {'vote_map', 'my_representatives', 'retrieve'}:
+            # Optimization: If we are not filtering by specific bills, we might want to limit 
+            # the number of votes fetched per MP. However, Django's Prefetch doesn't support slicing.
+            # For now, we rely on field limiting (only()) and Python-side slicing in serializers.
             return (
                 Parliamentarian.objects
                 .select_related('impact_score')
@@ -89,9 +101,6 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 .order_by('mp_name')
             )
         
-        if self.action in {'list', 'directory', 'metadata'}:
-            return Parliamentarian.objects.select_related('impact_score').order_by('mp_name')
-
         return Parliamentarian.objects.select_related('impact_score').order_by('mp_name')
 
     def get_serializer_class(self):

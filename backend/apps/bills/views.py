@@ -16,6 +16,8 @@ from apps.parliamentarians.serializers import ParliamentarianVoteMapSerializer, 
 from apps.profiles.models import Profile
 from apps.core.pagination import BillPagination
 
+DEFAULT_TRENDING_TOPICS = ["Sănătate", "Educație", "Mediu", "Justiție", "Fiscal", "Muncă"]
+
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Bill.objects.all().order_by('-registered_at')
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -55,10 +57,10 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
             if analysis and analysis.impact_categories:
                 for category in analysis.impact_categories:
                     if category: counter[category] += 1
+        
         topics = [{"label": label, "count": count} for label, count in counter.most_common(limit)]
         if not topics:
-            from .views import DEFAULT_TRENDING_TOPICS # Fallback
-            topics = [{"label": label, "count": 0} for label in ["Sănătate", "Educație", "Mediu", "Justiție", "Fiscal", "Muncă"][:limit]]
+            topics = [{"label": label, "count": 0} for label in DEFAULT_TRENDING_TOPICS[:limit]]
         return Response({"topics": topics})
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
