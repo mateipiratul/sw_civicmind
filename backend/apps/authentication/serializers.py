@@ -109,15 +109,17 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data["email"],
             password=validated_data["password"],
         )
-        Profile.objects.get_or_create(user=user)
         return user
+
+    def save(self, request):
+        return super().save()
 
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(trim_whitespace=False)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
-    def validate(self, attrs: Dict[str, str]) -> User:
+    def validate(self, attrs: Dict[str, str]) -> Dict[str, str]:
         username_input: str = attrs.get("username", "").strip()
         password: str = attrs.get("password", "")
 
@@ -133,5 +135,6 @@ class LoginSerializer(serializers.Serializer):
 
         user = authenticate(username=username_input, password=password)
         if isinstance(user, User) and user.is_active:
-            return user
+            attrs['user'] = user
+            return attrs
         raise serializers.ValidationError("Nume de utilizator / Email sau parolă incorecte")

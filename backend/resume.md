@@ -30,6 +30,10 @@ Finished & Fixed:
       * **Fixed:** Resolved a crash in BillViewSet.trending caused by a missing constant and broken fallback import.
       * **Optimized:** Improved prefetch efficiency for MPs using field limiting (only()) to reduce database payload
         size.
+  7. Authentication Flow Cleanup:
+      * Standardized authentication flow to use standard DRF/allauth via dj-rest-auth.
+      * Removed manual session cookie and token creation.
+      * Migrated Profile creation on user registration to use Django Signals.
 
 ---
 
@@ -37,21 +41,17 @@ Further Refactoring Options
 
 Remaining high-impact to focus on:
 
-1. Authentication Flow Cleanup
-The current authentication/views.py manually handles session cookies and token creation alongside dj-rest-auth. We can
-standardize this to exclusively use standard DRF/allauth flows, reducing custom code and improving security.
-
-2. Standardized Filtering
+1. Standardized Filtering
 While BillViewSet uses a FilterSet, some other endpoints still perform manual filtering in get_queryset. We can
 standardize all filtering using django-filter classes for better consistency.
 
-3. Signal-based logic or Service hooks
-Logic like "Create profile on user registration" or "Update ImpactScore when a vote is recorded" could be moved to
+2. Signal-based logic or Service hooks
+Logic like "Update ImpactScore when a vote is recorded" could be moved to
 Django Signals or explicit Service hooks to keep the core models clean.
 
 
 ### 1. ViewSet & API Improvements
-- [ ] **Auth Cleanup:** Standardize authentication views and remove manual token/session creation logic where `dj-rest-auth` or standard DRF can be used.
+- [x] **Auth Cleanup:** Standardize authentication views and remove manual token/session creation logic where `dj-rest-auth` or standard DRF can be used.
 
 ### 2. Testing & Validation
 - [ ] **Integration Tests:** Rewrite `FeedTests` and `ParliamentarianVoteMapTests` to verify actual DB state rather than using heavy `MagicMock` on ORM methods.

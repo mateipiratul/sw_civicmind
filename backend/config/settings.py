@@ -202,6 +202,13 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+REST_AUTH = {
+    'LOGIN_SERIALIZER': 'apps.authentication.serializers.LoginSerializer',
+    'REGISTER_SERIALIZER': 'apps.authentication.serializers.RegisterSerializer',
+    'USER_DETAILS_SERIALIZER': 'apps.authentication.serializers.UserSerializer',
+    'SESSION_LOGIN': True,
+}
+
 # allauth settings
 ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
