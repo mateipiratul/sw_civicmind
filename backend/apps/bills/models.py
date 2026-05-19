@@ -29,7 +29,7 @@ class Bill(models.Model):
 
     class Meta:
         db_table = 'bills'
-        managed = False
+        managed = True
         verbose_name = "Bill"
         verbose_name_plural = "Bills"
 
@@ -62,7 +62,7 @@ class AIAnalysis(models.Model):
 
     class Meta:
         db_table = 'ai_analyses'
-        managed = False
+        managed = True
         verbose_name = "AI Analysis"
         verbose_name_plural = "AI Analyses"
 
@@ -90,7 +90,7 @@ class VoteSession(models.Model):
 
     class Meta:
         db_table = 'vote_sessions'
-        managed = False
+        managed = True
         verbose_name = "Vote Session"
         verbose_name_plural = "Vote Sessions"
 
@@ -111,7 +111,7 @@ class BillEvent(models.Model):
 
     class Meta:
         db_table = 'bill_events'
-        managed = False
+        managed = True
         verbose_name = "Bill Event"
         verbose_name_plural = "Bill Events"
 
@@ -127,6 +127,6 @@ class BillFlag(models.Model):
 
     class Meta:
         db_table = 'bill_flags'
-        managed = False
+        managed = True
         verbose_name = "Bill Flag"
         verbose_name_plural = "Bill Flags"
