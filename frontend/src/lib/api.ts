@@ -218,6 +218,7 @@ export interface SearchMPRelation {
   billIds: number[];
   billNumbers: string[];
   relatedBills: number;
+  totalMatchedBills?: number;
   forVotes: number;
   againstVotes: number;
   abstainVotes: number;
