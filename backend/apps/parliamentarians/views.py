@@ -177,9 +177,17 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
         party = (request.query_params.get('party') or getattr(profile, 'preferred_party', '') or '').strip()
         vote_limit = self.get_serializer_context().get('vote_limit')
 
-        queryset = self._base_deputies_queryset().filter(county__icontains=county)
+        # Use ParliamentarianFilterSet to standardize filtering instead of manual filters
+        base_queryset = self.get_queryset().filter(chamber__icontains='deput').order_by('mp_name')
+        filter_data = {'county': county}
         if party:
-            queryset = queryset.filter(party__iexact=party)
+            filter_data['party'] = party
+            
+        filterset = ParliamentarianFilterSet(data=filter_data, queryset=base_queryset, request=request)
+        if filterset.is_valid():
+            queryset = filterset.qs
+        else:
+            return Response(filterset.errors, status=400)
 
         page = self.paginate_queryset(queryset)
         if page is not None:

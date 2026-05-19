@@ -34,6 +34,10 @@ Finished & Fixed:
       * Standardized authentication flow to use standard DRF/allauth via dj-rest-auth.
       * Removed manual session cookie and token creation.
       * Migrated Profile creation on user registration to use Django Signals.
+  8. Standardized Filtering:
+      * Standardized all filtering in viewsets using `django-filter` classes.
+      * Removed manual `.filter()` calls from `ParliamentarianViewSet.my_representatives` in favor of injecting data into `ParliamentarianFilterSet`.
+      * Extended `ParliamentarianFilterSet` to natively handle `bill_ids` and `bill_numbers` filtering.
 
 ---
 
@@ -41,17 +45,14 @@ Further Refactoring Options
 
 Remaining high-impact to focus on:
 
-1. Standardized Filtering
-While BillViewSet uses a FilterSet, some other endpoints still perform manual filtering in get_queryset. We can
-standardize all filtering using django-filter classes for better consistency.
-
-2. Signal-based logic or Service hooks
+1. Signal-based logic or Service hooks
 Logic like "Update ImpactScore when a vote is recorded" could be moved to
 Django Signals or explicit Service hooks to keep the core models clean.
 
 
 ### 1. ViewSet & API Improvements
 - [x] **Auth Cleanup:** Standardize authentication views and remove manual token/session creation logic where `dj-rest-auth` or standard DRF can be used.
+- [x] **Standardized Filtering:** Use `django-filter` classes consistently instead of manual filtering in `get_queryset`.
 
 ### 2. Testing & Validation
 - [ ] **Integration Tests:** Rewrite `FeedTests` and `ParliamentarianVoteMapTests` to verify actual DB state rather than using heavy `MagicMock` on ORM methods.
