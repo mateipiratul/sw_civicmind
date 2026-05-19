@@ -133,12 +133,26 @@ def _extract_entity_filters(tokens):
     parties = list(
         Parliamentarian.objects.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct()
     )
+    # Fetch all names to identify potential name tokens
+    names = list(
+        Parliamentarian.objects.exclude(mp_name__isnull=True).exclude(mp_name='').values_list('mp_name', flat=True).distinct()
+    )
 
     county_lookup = _build_lookup(counties)
     party_lookup = _build_lookup(parties)
+    
+    # Build a set of all normalized name parts (first name, last name, etc.)
+    name_parts_set = set()
+    for name in names:
+        parts = _tokenize_query(name)
+        for p in parts:
+            norm_p = _normalize_for_search(p)
+            if norm_p:
+                name_parts_set.add(norm_p)
 
     matched_counties = []
     matched_parties = []
+    matched_names = []
     remaining_tokens = []
 
     for token in tokens:
@@ -149,9 +163,12 @@ def _extract_entity_filters(tokens):
         if normalized in party_lookup:
             matched_parties.append(party_lookup[normalized])
             continue
+        if normalized in name_parts_set:
+            matched_names.append(token)
+            continue
         remaining_tokens.append(token)
 
-    return matched_counties, matched_parties, remaining_tokens
+    return matched_counties, matched_parties, matched_names, remaining_tokens
 
 def _apply_or_filters(base: Q, filters, field_name: str) -> Q:
     if not filters:
@@ -483,14 +500,17 @@ class GlobalSearchView(APIView):
                     break
 
         tokens = _tokenize_query(query)
-        matched_counties, matched_parties, law_tokens = _extract_entity_filters(tokens)
+        matched_counties, matched_parties, matched_names, law_tokens = _extract_entity_filters(tokens)
 
         matched_law_ids = []
         matched_law_codes = []
         bill_list = []
         total_laws = 0
 
-        if law_tokens:
+        # If we have name tokens but no law tokens, use names as law keywords to find laws they initiated/involved in
+        effective_law_tokens = law_tokens if law_tokens else matched_names
+
+        if effective_law_tokens:
             bill_queryset = (
                 Bill.objects
                 .select_related('ai_analysis')
@@ -505,8 +525,8 @@ class GlobalSearchView(APIView):
                 )
             )
 
-            token_query = None
-            for token in law_tokens:
+            token_query = Q()  # Initialize as empty OR base
+            for token in effective_law_tokens:
                 normalized_token = _normalize_for_search(token)
                 variants = _value_variants(token)
                 if normalized_token and normalized_token not in variants:
@@ -543,9 +563,9 @@ class GlobalSearchView(APIView):
                     json_query |= Q(ai_analysis__key_ideas__contains=[item])
 
                 per_token_query = text_query | normalized_query | json_query
-                token_query = per_token_query if token_query is None else token_query & per_token_query
+                token_query |= per_token_query  # Use OR logic for multiple law keywords
 
-            if token_query is not None:
+            if token_query:
                 bill_queryset = bill_queryset.filter(token_query)
 
             if connection.vendor == 'postgresql' and SearchVector and SearchQuery and SearchRank:
@@ -558,7 +578,7 @@ class GlobalSearchView(APIView):
                     + SearchVector('ocr_aviz_ces', weight='C')
                     + SearchVector('ocr_aviz_cl', weight='C')
                 )
-                normalized_tokens = [_normalize_for_search(item) for item in law_tokens if item]
+                normalized_tokens = [_normalize_for_search(item) for item in effective_law_tokens if item]
                 query_text = " ".join(normalized_tokens) if normalized_tokens else query
                 search_query = SearchQuery(query_text, search_type='websearch')
                 bill_queryset = bill_queryset.annotate(rank=SearchRank(vector, search_query))
@@ -583,12 +603,21 @@ class GlobalSearchView(APIView):
         matched_law_codes = list(dict.fromkeys(matched_law_codes))
 
         mp_queryset = Parliamentarian.objects.select_related('impact_score')
+        
+        # If specific names matched, filter MP queryset by those names first
+        if matched_names:
+            name_query = Q()
+            for name_token in matched_names:
+                name_query |= Q(mp_name__icontains=name_token)
+            mp_queryset = mp_queryset.filter(name_query)
+
         if matched_law_codes:
             relation_query = Q(
                 votes__vote_session__bill__bill_number__in=matched_law_codes,
             )
             mp_queryset = mp_queryset.filter(relation_query).distinct()
-        else:
+        elif not matched_names:
+            # If no matched laws and no matched names, return nothing
             mp_queryset = mp_queryset.none()
 
         mp_filter_query = Q()
@@ -641,11 +670,16 @@ class GlobalSearchView(APIView):
             for mp_slug, relation in relation_sets.items():
                 bill_ids = sorted(relation['billIds'])
                 bill_numbers = sorted(relation['billNumbers'])
+                # Only count bills where the MP actually voted (for, against, or abstain)
+                active_bill_numbers = relation['for'] | relation['against'] | relation['abstain']
+                active_count = len(active_bill_numbers)
+
                 relation_map[mp_slug] = {
                     'keyword': query,
                     'billIds': bill_ids,
                     'billNumbers': bill_numbers,
-                    'relatedBills': len(bill_numbers),
+                    'relatedBills': active_count,  # Now represents active involvement
+                    'totalMatchedBills': len(bill_numbers),  # Total bills matching keyword
                     'forVotes': len(relation['for']),
                     'againstVotes': len(relation['against']),
                     'abstainVotes': len(relation['abstain']),
@@ -660,11 +694,13 @@ class GlobalSearchView(APIView):
                 'billIds': [],
                 'billNumbers': [],
                 'relatedBills': 0,
+                'totalMatchedBills': 0,
                 'forVotes': 0,
                 'againstVotes': 0,
                 'abstainVotes': 0,
                 'absentVotes': 0,
             })
+            # Filter out MPs that haven't voted on any returned law (active involvement)
             if relation['relatedBills'] < 1:
                 continue
             row['relation'] = relation
@@ -674,7 +710,7 @@ class GlobalSearchView(APIView):
             scoped_mp_data,
             key=lambda row: (
                 -row['relation']['relatedBills'],
-                -(row['relation']['forVotes'] + row['relation']['againstVotes'] + row['relation']['abstainVotes'] + row['relation']['absentVotes']),
+                -row['relation']['totalMatchedBills'],
                 row['mp_name'] or '',
             ),
         )
