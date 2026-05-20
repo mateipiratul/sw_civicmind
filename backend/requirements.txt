@@ -9,6 +9,8 @@ PyJWT
 requests
 gunicorn
 whitenoise
+mistralai
+pgvector
 
 # Type stubs (dev)
 django-stubs

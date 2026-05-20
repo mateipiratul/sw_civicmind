@@ -2,13 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.bills.views import AdminStatsView, GlobalSearchView
+from apps.bills.views import AdminStatsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.authentication.urls')),
     path('api/admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
-    path('api/search/', GlobalSearchView.as_view(), name='global-search'),
+    path('api/search/', include('apps.search.urls')),
     path('api/bills/', include('apps.bills.urls')),
     path('api/mps/', include('apps.parliamentarians.urls')),
     path('api/profiles/', include('apps.profiles.urls')),

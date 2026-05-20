@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.postgres',
     
     # Third party apps
     'rest_framework',
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     'apps.authentication',
     'apps.parliamentarians',
     'apps.bills',
+    'apps.search',
 ]
 
 MIDDLEWARE = [

@@ -46,25 +46,26 @@ class AIAnalysisSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_impact_categories(self, obj):
-        return list(obj.rel_impact_categories.values_list('name', flat=True))
+        return [cat.name for cat in obj.rel_impact_categories.all()]
 
     def get_affected_profiles(self, obj):
-        return list(obj.rel_affected_profiles.values_list('name', flat=True))
+        return [prof.name for prof in obj.rel_affected_profiles.all()]
 
     def get_key_ideas(self, obj):
-        return list(obj.rel_key_ideas.values_list('text', flat=True))
+        return [idea.text for idea in obj.rel_key_ideas.all()]
 
     def get_arguments(self, obj):
         args = {}
-        for arg in obj.rel_arguments.filter(type='general'):
-            args[f"arg_{arg.order}"] = arg.text
+        for arg in obj.rel_arguments.all():
+            if arg.type == 'general':
+                args[f"arg_{arg.order}"] = arg.text
         return args
 
     def get_pro_arguments(self, obj):
-        return list(obj.rel_arguments.filter(type='pro').values_list('text', flat=True))
+        return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'pro']
 
     def get_con_arguments(self, obj):
-        return list(obj.rel_arguments.filter(type='con').values_list('text', flat=True))
+        return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'con']
 
 class PartyVoteResultSerializer(serializers.ModelSerializer):
     # Use 'for' as the output key by defining it with a different variable name
