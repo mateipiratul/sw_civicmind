@@ -65,12 +65,14 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 'vote_session__bill',
                 'vote_session__bill__ai_analysis',
             )
+            .prefetch_related(
+                'vote_session__bill__ai_analysis__rel_impact_categories'
+            )
             .only(
                 'id', 'vote_session_id', 'parliamentarian_id', 'vote', 'party',
                 'vote_session__date', 'vote_session__type',
                 'vote_session__bill__idp', 'vote_session__bill__bill_number', 
                 'vote_session__bill__title', 'vote_session__bill__status',
-                'vote_session__bill__ai_analysis__impact_categories',
                 'vote_session__bill__ai_analysis__title_short',
                 'vote_session__bill__ai_analysis__controversy_score',
             )

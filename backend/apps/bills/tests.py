@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from datetime import date, timedelta
 
 from apps.profiles.models import Profile
-from .models import Bill, AIAnalysis
+from .models import Bill, AIAnalysis, ImpactCategory, AffectedProfile
 from apps.parliamentarians.models import Parliamentarian, MPVote
 from .filters import BillFilterSet
 from .views import BillViewSet
@@ -22,6 +22,10 @@ class FeedTests(APITestCase):
             idp=2, bill_number="PL-x 2/2026", title="Test Bill 2", 
             registered_at=date.today() - timedelta(days=10)
         )
+        
+        # Create categories and profiles
+        self.cat_it = ImpactCategory.objects.create(name="it", slug="it")
+        self.prof_student = AffectedProfile.objects.create(name="student", slug="student")
 
     def test_feed_returns_recent_bills(self):
         url = reverse("bill-feed")
@@ -47,12 +51,12 @@ class FeedTests(APITestCase):
         self.client.force_authenticate(user)
 
         # Create AI Analysis for bill1 to match interests
-        AIAnalysis.objects.create(
+        analysis = AIAnalysis.objects.create(
             bill=self.bill1,
-            impact_categories=["it"],
-            affected_profiles=["student"],
             title_short="AI Short Title"
         )
+        analysis.rel_impact_categories.add(self.cat_it)
+        analysis.rel_affected_profiles.add(self.prof_student)
 
         # Create a parliamentarian in Cluj with USR party
         mp = Parliamentarian.objects.create(
@@ -75,13 +79,17 @@ class FeedTests(APITestCase):
 
 
 class BillFilterSetTests(APITestCase):
+    def setUp(self):
+        self.cat_it = ImpactCategory.objects.get_or_create(name="it", slug="it")[0]
+
     def test_category_variants_normalize_case_and_spacing(self):
         variants = BillFilterSet._category_variants("  it  sector ")
         self.assertEqual(variants, ["it sector", "IT SECTOR", "It Sector"])
 
     def test_filter_category_queries_ai_analysis_impact_categories(self):
         bill = Bill.objects.create(idp=100, bill_number="B100", title="IT Bill")
-        AIAnalysis.objects.create(bill=bill, impact_categories=["it"])
+        analysis = AIAnalysis.objects.create(bill=bill)
+        analysis.rel_impact_categories.add(self.cat_it)
         
         Bill.objects.create(idp=101, bill_number="B101", title="Health Bill")
 

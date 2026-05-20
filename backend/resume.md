@@ -41,12 +41,20 @@ Finished & Fixed:
   9. Signal-based logic & Service hooks:
       * Created `apps/parliamentarians/signals.py`.
       * Extracted `ImpactScore` aggregation logic into a `post_save` and `post_delete` signal on the `MPVote` model. This keeps the core models clean and automates stat tracking.
+  10. Bug Fixes & Refinement (Relational Transition):
+      * **Fixed:** Resolved 500 Internal Server Error in `ParliamentarianViewSet` caused by attempting to use `.only()` and `source` on a ManyToMany field (`impact_categories`) that was refactored to `rel_impact_categories`.
+      * **Updated:** Refactored `MPVoteSerializer` to use `SerializerMethodField` for `impact_categories`, ensuring safe traversal of the AI Analysis relationship.
+      * **Refined:** Updated `BillFilterSet` to natively query the new `rel_impact_categories` model, maintaining full filtering functionality after the JSONField removal.
+      * **Validation:** Updated `FeedTests` and `BillFilterSetTests` to reflect the new relational structures.
 
 ---
 
 Further Refactoring Options
 
 Remaining high-impact to focus on:
+
+### 0. URGENT: Frontend Alignment
+- [x] **API Client Refactor:** The `frontend/src/lib/api.ts` is currently out of sync with the backend refactors (relational models, standardized pagination, and auth flows). Need to update interfaces and client methods to match the new DRF outputs. (Refactored to support relational AI analysis, party vote results, and unified pagination).
 
 ### 1. ViewSet & API Improvements
 - [x] **Auth Cleanup:** Standardize authentication views and remove manual token/session creation logic where `dj-rest-auth` or standard DRF can be used.

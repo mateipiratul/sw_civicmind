@@ -3,6 +3,7 @@ from typing import List, Optional
 from django.db.models.query import QuerySet
 from rest_framework import serializers
 from .models import Parliamentarian, MPVote, ImpactScore
+from apps.bills.models import AIAnalysis
 
 
 class ImpactScoreSerializer(serializers.ModelSerializer):
@@ -22,12 +23,7 @@ class MPVoteSerializer(serializers.ModelSerializer):
     bill_title = serializers.CharField(source='vote_session.bill.title', read_only=True)
     bill_status = serializers.CharField(source='vote_session.bill.status', read_only=True)
 
-    impact_categories = serializers.ListField(
-        child=serializers.CharField(),
-        source='vote_session.bill.ai_analysis.impact_categories',
-        read_only=True,
-        default=[],
-    )
+    impact_categories = serializers.SerializerMethodField()
     title_short = serializers.CharField(
         source='vote_session.bill.ai_analysis.title_short',
         read_only=True,
@@ -51,6 +47,16 @@ class MPVoteSerializer(serializers.ModelSerializer):
             'controversy_score', 'vote_date', 'vote_type'
         ]
         read_only_fields = fields
+
+    def get_impact_categories(self, obj):
+        try:
+            # Check if ai_analysis exists safely
+            analysis = getattr(obj.vote_session.bill, 'ai_analysis', None)
+            if analysis:
+                return list(analysis.rel_impact_categories.values_list('name', flat=True))
+        except AttributeError:
+            pass
+        return []
 
 
 class ParliamentarianListSerializer(serializers.ModelSerializer):

@@ -21,7 +21,7 @@ class BillFilterSet(filters.FilterSet):
             return queryset
 
         conditions = [
-            Q(ai_analysis__impact_categories__contains=[item])
+            Q(ai_analysis__rel_impact_categories__name__iexact=item)
             for item in normalized_values
         ]
         query = conditions[0]
