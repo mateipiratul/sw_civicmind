@@ -1,4 +1,5 @@
-import { PaginatedResponse } from './common';
+import type { PaginatedResponse } from './common';
+import type { Bill } from './bills';
 
 export interface ImpactScore {
   score: number;
@@ -97,8 +98,6 @@ export interface SearchMPRelation {
 export interface SearchMP extends Parliamentarian {
   relation?: SearchMPRelation;
 }
-
-import { Bill } from './bills';
 
 export interface GlobalSearchFilters {
   laws: {

@@ -1,5 +1,5 @@
 import { BaseApiClient } from '../base';
-import { User, AuthKeyResponse } from '../types/auth';
+import type { User, AuthKeyResponse } from '../types/auth';
 
 export class AuthModule extends BaseApiClient {
   register = async (username: string, email: string, password: string): Promise<User> => {

@@ -1,5 +1,5 @@
 import { BaseApiClient, ApiError } from '../base';
-import { RagChatOptions, RagChatResponse, RagStreamEvent } from '../types/rag';
+import type { RagChatOptions, RagChatResponse, RagStreamEvent } from '../types/rag';
 
 export class AIModule extends BaseApiClient {
   /**

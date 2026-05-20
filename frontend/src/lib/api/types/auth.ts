@@ -1,4 +1,4 @@
-import { PaginatedResponse } from './common';
+import type { PaginatedResponse } from './common';
 
 export interface User {
   id: number;

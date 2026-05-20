@@ -1,3 +1,5 @@
+import type { PaginatedResponse } from './common';
+
 export interface AIAnalysis {
   bill_idp: number;
   processed_at: string | null;
@@ -71,5 +73,3 @@ export interface VoteSession {
 export interface PaginatedBills extends PaginatedResponse {
   bills: Bill[];
 }
-
-import { PaginatedResponse } from './common';

@@ -1,7 +1,7 @@
 import { BaseApiClient } from '../base';
-import { User, PaginatedUsers } from '../types/auth';
-import { AdminStats } from '../types/common';
-import { PaginatedBills } from '../types/bills';
+import type { User, PaginatedUsers } from '../types/auth';
+import type { AdminStats } from '../types/common';
+import type { PaginatedBills } from '../types/bills';
 
 export class AdminModule extends BaseApiClient {
   getAdminStats = async (): Promise<AdminStats> => {

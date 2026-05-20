@@ -1,7 +1,7 @@
 import { BaseApiClient } from '../base';
-import { Bill, PaginatedBills } from '../types/bills';
-import { BillVotesResponse, GlobalSearchResponse } from '../types/mps';
-import { TrendingTopic } from '../types/common';
+import type { Bill, PaginatedBills } from '../types/bills';
+import type { BillVotesResponse, GlobalSearchResponse } from '../types/mps';
+import type { TrendingTopic } from '../types/common';
 
 export class BillsModule extends BaseApiClient {
   listBills = async (category?: string, page = 1, limit = 20): Promise<PaginatedBills> => {

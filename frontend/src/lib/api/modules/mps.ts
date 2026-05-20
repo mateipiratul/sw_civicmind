@@ -1,5 +1,5 @@
 import { BaseApiClient } from '../base';
-import { 
+import type { 
   Parliamentarian, 
   PaginatedMPList, 
   ParliamentarianDetail, 
