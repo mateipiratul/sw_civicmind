@@ -36,7 +36,7 @@ function ProfileSkeleton() {
 interface ProfileFormProps {
   user: User;
   updateUser: (data: Partial<User>) => void;
-  logout: () => Promise<void>;
+  logout: () => void | Promise<void>;
   metadata?: { impact_categories: string[], counties: string[] };
 }
 

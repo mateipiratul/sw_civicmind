@@ -9,16 +9,20 @@ const AI_BASE_URL =
     ? configuredAiBaseUrl.replace(/\/$/, "")
     : API_BASE_URL;
 
-// Types matching backend/apps/bills/models.py
+// --- Interfaces ---
+
+/**
+ * AI Analysis data for a bill, matching backend/apps/bills/serializers.py (AIAnalysisSerializer)
+ */
 export interface AIAnalysis {
   bill_idp: number;
   processed_at: string | null;
   model: string | null;
   title_short: string | null;
-  key_ideas: string[];
   impact_categories: string[];
   affected_profiles: string[];
-  arguments: Record<string, unknown>;
+  key_ideas: string[];
+  arguments: Record<string, string>;
   pro_arguments: string[];
   con_arguments: string[];
   controversy_score: number | null;
@@ -29,6 +33,9 @@ export interface AIAnalysis {
   confidence: number | null;
 }
 
+/**
+ * Core Bill model data, matching backend/apps/bills/models.py
+ */
 export interface Bill {
   idp: number;
   bill_number: string;
@@ -51,10 +58,29 @@ export interface Bill {
   doc_aviz_cl_url: string | null;
   doc_adoptata_url: string | null;
   
+  // OCR Content (optional, usually only in detail)
+  ocr_expunere?: string | null;
+  ocr_aviz_ces?: string | null;
+  ocr_aviz_cl?: string | null;
+
   // AI Analysis (Enriched)
   ai_analysis?: AIAnalysis | null;
 }
 
+/**
+ * Voting breakdown by party for a session
+ */
+export interface PartyVoteResult {
+  party: string;
+  for: number;
+  against: number;
+  abstain: number;
+  absent: number;
+}
+
+/**
+ * Vote session data, matching backend/apps/bills/serializers.py (VoteSessionSerializer)
+ */
 export interface VoteSession {
   idv: number;
   bill_idp: number;
@@ -67,16 +93,223 @@ export interface VoteSession {
   against: number;
   abstain: number;
   absent: number;
-  by_party: Record<string, unknown>[];
+  by_party: PartyVoteResult[];
 }
 
-export interface PaginatedBills {
+/**
+ * Common pagination structure from backend StandardPagination
+ */
+export interface PaginatedResponse {
   page: number;
   limit: number;
   total: number;
   totalPages: number;
+}
+
+export interface PaginatedBills extends PaginatedResponse {
   bills: Bill[];
 }
+
+/**
+ * Combined User + Profile information, matching backend/apps/authentication and apps/profiles
+ */
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: "guest" | "user" | "admin" | "staff";
+  
+  // Profile fields (from ProfileSerializer)
+  county?: string | null;
+  preferred_party?: string | null;
+  interests?: string[];
+  persona_tags?: string[];
+  work_domain?: string | null;
+  employment_status?: string | null;
+  personal_interest_areas?: string[];
+  age_range?: string | null;
+  housing_status?: string | null;
+  mobility_modes?: string[];
+  education_context?: string[];
+  energy_focus?: string[];
+  public_service_focus?: string[];
+  questionnaire_completed?: boolean;
+  
+  status: "active" | "suspended" | "banned" | "inactive";
+  createdAt: string;
+  token?: string;
+}
+
+/**
+ * Impact score and summary for a parliamentarian
+ */
+export interface ImpactScore {
+  score: number;
+  total_votes: number;
+  for_count: number;
+  against_count: number;
+  abstain_count: number;
+  absent_count: number;
+  categories_voted: string[];
+  narrative: string;
+  calculated_at: string;
+}
+
+/**
+ * Parliamentarian data, matching backend/apps/parliamentarians/models.py
+ */
+export interface Parliamentarian {
+  mp_slug: string;
+  mp_name: string;
+  party: string;
+  county: string;
+  chamber: string;
+  email?: string;
+  impact_score?: ImpactScore | null;
+}
+
+export interface PaginatedMPList extends PaginatedResponse {
+  parliamentarians: Parliamentarian[];
+  filters?: { county?: string; party?: string | null; chamber?: string };
+}
+
+/**
+ * A single MP's vote on a specific bill
+ */
+export interface BillVoteMP {
+  mp_slug: string;
+  mp_name: string;
+  party: string;
+  vote: string;
+}
+
+/**
+ * Detailed vote response for a bill, matching BillViewSet.votes action
+ */
+export interface BillVotesResponse {
+  bill_idp: number;
+  bill_number: string;
+  vote_session: {
+    date: string | null;
+    type: string | null;
+    description: string | null;
+    summary: { 
+      present: number; 
+      for: number; 
+      against: number; 
+      abstain: number; 
+      absent: number 
+    };
+  };
+  votes: { 
+    for: BillVoteMP[]; 
+    against: BillVoteMP[]; 
+    abstain: BillVoteMP[]; 
+    absent: BillVoteMP[] 
+  };
+}
+
+/**
+ * Minimal vote record for a parliamentarian's history
+ */
+export interface MPVote {
+  vote: string;
+  party: string;
+  vote_date: string | null;
+  vote_type: string | null;
+  bill_idp: number;
+  bill_number: string;
+  bill_title: string;
+  bill_status: string | null;
+  title_short: string | null;
+  impact_categories: string[];
+  controversy_score: number | null;
+}
+
+/**
+ * Detailed parliamentarian profile with voting history
+ */
+export interface ParliamentarianDetail extends Parliamentarian {
+  recent_votes: MPVote[];
+}
+
+/**
+ * Filter and distribution metadata for the MP directory
+ */
+export interface MPMetadata {
+  counties: string[];
+  parties: string[];
+  chambers: Record<string, number>;
+  hasCountyData: boolean;
+}
+
+export interface TrendingTopic {
+  label: string;
+  count: number;
+}
+
+/**
+ * Data relating an MP to a specific search keyword/bill set
+ */
+export interface SearchMPRelation {
+  keyword: string;
+  billIds: number[];
+  billNumbers: string[];
+  relatedBills: number;
+  totalMatchedBills?: number;
+  forVotes: number;
+  againstVotes: number;
+  abstainVotes: number;
+  absentVotes: number;
+}
+
+export interface SearchMP extends Parliamentarian {
+  relation?: SearchMPRelation;
+}
+
+/**
+ * Global search result structure, matching GlobalSearchView
+ */
+export interface GlobalSearchFilters {
+  laws: {
+    statuses: string[];
+    initiators: string[];
+    categories: string[];
+  };
+  mps: {
+    parties: string[];
+    counties: string[];
+    chambers: string[];
+  };
+}
+
+export interface GlobalSearchResponse {
+  query: string;
+  exactMatch: Bill | null;
+  laws: Bill[];
+  mps: SearchMP[];
+  filters: GlobalSearchFilters;
+  counts: {
+    laws: number;
+    mps: number;
+  };
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalBills: number;
+  activeBills: number;
+  analyzedBills: number;
+}
+
+export interface PaginatedUsers extends PaginatedResponse {
+  users: User[];
+}
+
+// --- RAG Types ---
 
 export interface RagSource {
   chunk_id: string;
@@ -115,173 +348,11 @@ export interface RagChatOptions {
   threshold?: number;
 }
 
-// User Profile (Managed by Django)
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  role: "guest" | "user" | "admin";
-  county?: string;
-  interests?: string[];
-  status: "active" | "suspended" | "banned" | "inactive";
-  createdAt: string;
-  token?: string;
-}
+// --- API Client Implementation ---
 
-interface AuthResponse {
-  user: User;
-  token: string;
-}
-
-export interface ImpactScore {
-  score: number;
-  total_votes: number;
-  for_count: number;
-  against_count: number;
-  abstain_count: number;
-  absent_count: number;
-  categories_voted: string[];
-  narrative: string;
-  calculated_at: string;
-}
-
-export interface Parliamentarian {
-  mp_slug: string;
-  mp_name: string;
-  party: string;
-  county: string;
-  chamber: string;
-  email?: string;
-  impact_score?: ImpactScore | null;
-}
-
-export interface PaginatedMPs {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Parliamentarian[];
-}
-
-export interface BillVoteMP {
-  mp_slug: string;
-  mp_name: string;
-  party: string;
-  vote: string;
-}
-
-export interface BillVotesResponse {
-  bill_idp: number;
-  bill_number: string;
-  vote_session: {
-    date: string | null;
-    type: string | null;
-    description: string | null;
-    summary: { present: number; for: number; against: number; abstain: number; absent: number };
-  };
-  votes: { for: BillVoteMP[]; against: BillVoteMP[]; abstain: BillVoteMP[]; absent: BillVoteMP[] };
-}
-
-export interface MPVote {
-  vote: string;
-  party: string;
-  vote_date: string | null;
-  vote_type: string | null;
-  bill_idp: number;
-  bill_number: string;
-  bill_title: string;
-  bill_status: string | null;
-  title_short: string | null;
-  impact_categories: string[];
-  controversy_score: number | null;
-}
-
-export interface ParliamentarianDetail extends Parliamentarian {
-  recent_votes: MPVote[];
-}
-
-export interface MPMetadata {
-  counties: string[];
-  parties: string[];
-  chambers: Record<string, number>;
-  hasCountyData: boolean;
-}
-
-export interface TrendingTopic {
-  label: string;
-  count: number;
-}
-
-export interface SearchMPRelation {
-  keyword: string;
-  billIds: number[];
-  billNumbers: string[];
-  relatedBills: number;
-  totalMatchedBills?: number;
-  forVotes: number;
-  againstVotes: number;
-  abstainVotes: number;
-  absentVotes: number;
-}
-
-export interface SearchMP extends Parliamentarian {
-  relation?: SearchMPRelation;
-}
-
-export interface GlobalSearchFilters {
-  laws: {
-    statuses: string[];
-    initiators: string[];
-    categories: string[];
-  };
-  mps: {
-    parties: string[];
-    counties: string[];
-    chambers: string[];
-  };
-}
-
-export interface GlobalSearchCounts {
-  laws: number;
-  mps: number;
-}
-
-export interface GlobalSearchResponse {
-  query: string;
-  exactMatch: Bill | null;
-  laws: Bill[];
-  mps: SearchMP[];
-  filters: GlobalSearchFilters;
-  counts: GlobalSearchCounts;
-}
-
-export interface PaginatedMPList {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  parliamentarians: Parliamentarian[];
-  filters?: { county?: string; party?: string | null; chamber?: string };
-}
-
-export interface AdminStats {
-  totalUsers: number;
-  activeUsers: number;
-  totalBills: number;
-  activeBills: number;
-  analyzedBills: number;
-}
-
-export interface PaginatedUsers {
-  users: User[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Custom Error class to carry status code
+/**
+ * Custom Error class to carry HTTP status and structured messages
+ */
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -291,7 +362,10 @@ export class ApiError extends Error {
   }
 }
 
-// API Client
+interface AuthKeyResponse {
+  key: string;
+}
+
 class ApiClient {
   private baseUrl: string;
   private aiBaseUrl: string;
@@ -313,8 +387,11 @@ class ApiClient {
     return match ? decodeURIComponent(match[2]) : null;
   };
 
+  /**
+   * Generic request handler with CSRF and Auth injection
+   */
   private requestTo = async <T>(baseUrl: string, endpoint: string, options: RequestInit = {}): Promise<T> => {
-    const url = `${baseUrl}${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
     const csrfToken = this.getCsrfToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -334,27 +411,25 @@ class ApiClient {
     }
 
     const contentType = response.headers.get("content-type") || "";
-    let data: unknown;
+    let data: any;
     if (contentType.includes("application/json")) {
       data = await response.json();
     } else {
       const text = await response.text();
-      // Try to parse as JSON anyway (some servers omit content-type)
       try {
         data = JSON.parse(text);
       } catch {
-        // Backend returned HTML/text - surface a readable error
         if (!response.ok) {
-          throw new ApiError(`Server error (${response.status}). Backend may be restarting.`, response.status);
+          throw new ApiError(`Server error (${response.status}).`, response.status);
         }
         return {} as T;
       }
     }
 
     if (!response.ok) {
-      // Handle Django REST Framework validation errors (object with field names as keys)
+      // Handle Django REST Framework validation errors (field-specific)
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        const errorObj = data as Record<string, unknown>;
+        const errorObj = data as Record<string, any>;
         if (!errorObj.detail && !errorObj.error) {
           const errors: string[] = [];
           for (const [field, messages] of Object.entries(errorObj)) {
@@ -371,14 +446,7 @@ class ApiClient {
         }
       }
       
-      // Handle custom errors array format
-      if (data && typeof data === 'object' && 'errors' in data && Array.isArray((data as Record<string, unknown>).errors)) {
-        const errorData = data as { errors: { field: string; message: string }[] };
-        const errorMessage = errorData.errors.map((e) => `${e.field}: ${e.message}`).join(", ");
-        throw new ApiError(errorMessage, response.status);
-      }
-      
-      const errorObj = data as Record<string, unknown> | null;
+      const errorObj = data as Record<string, any> | null;
       const detailMsg = errorObj?.detail || errorObj?.error || `API Error: ${response.status}`;
       throw new ApiError(String(detailMsg), response.status);
     }
@@ -390,45 +458,50 @@ class ApiClient {
     return this.requestTo<T>(this.baseUrl, endpoint, options);
   };
 
-  private normalizeAuthUser = (response: AuthResponse): User => ({
-    ...response.user,
-    token: response.token,
-  });
+  // --- Auth & Identity ---
 
-  // Auth
+  /**
+   * Registers a new user and automatically logs them in (fetches full profile)
+   */
   register = async (username: string, email: string, password: string): Promise<User> => {
-    // Ensure CSRF cookie is set before POSTing (required for session auth)
-    await this.requestTo<AuthResponse>(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
-    const response = await this.request<AuthResponse>("/api/auth/register/", {
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    const response = await this.request<AuthKeyResponse>("/api/auth/register/", {
       method: "POST",
       body: JSON.stringify({ username, email, password }),
     });
-    return this.normalizeAuthUser(response);
+    localStorage.setItem("auth_token", response.key);
+    return this.getProfile();
   };
+
+  /**
+   * Authenticates user and fetches full profile data
+   */
   login = async (username: string, password: string): Promise<User> => {
-    // Ensure CSRF cookie is set before POSTing (required for session auth)
-    await this.requestTo<AuthResponse>(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
-    const response = await this.request<AuthResponse>("/api/auth/login/", {
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    const response = await this.request<AuthKeyResponse>("/api/auth/login/", {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
-    return this.normalizeAuthUser(response);
+    localStorage.setItem("auth_token", response.key);
+    return this.getProfile();
   };
 
   googleLogin = async (accessToken: string): Promise<User> => {
-    const response = await this.request<AuthResponse>("/api/auth/google/", {
+    const response = await this.request<AuthKeyResponse>("/api/auth/google/", {
       method: "POST",
       body: JSON.stringify({ access_token: accessToken }),
     });
-    return this.normalizeAuthUser(response);
+    localStorage.setItem("auth_token", response.key);
+    return this.getProfile();
   };
 
   googleLoginWithCode = async (code: string): Promise<User> => {
-    const response = await this.request<AuthResponse>("/api/auth/google/", {
+    const response = await this.request<AuthKeyResponse>("/api/auth/google/", {
       method: "POST",
       body: JSON.stringify({ code }),
     });
-    return this.normalizeAuthUser(response);
+    localStorage.setItem("auth_token", response.key);
+    return this.getProfile();
   };
 
   requestPasswordReset = async (email: string): Promise<void> => {
@@ -447,7 +520,34 @@ class ApiClient {
     });
   };
 
-  // Bills
+  logout = async (): Promise<void> => {
+    localStorage.removeItem("auth_token");
+  };
+
+  // --- Profile & Personalization ---
+
+  getProfile = async (): Promise<User> => {
+    return this.request("/api/profiles/me/");
+  };
+
+  updateProfile = async (data: Partial<User>): Promise<User> => {
+    return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
+  };
+
+  /**
+   * Fetches metadata for the interest/persona questionnaire
+   */
+  getQuestionnaireMetadata = async (): Promise<any> => {
+    return this.request("/api/profiles/questionnaire/");
+  };
+
+  deleteAccount = async (password: string): Promise<void> => {
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    await this.request("/api/profiles/me/", { method: "DELETE", body: JSON.stringify({ password }) });
+  };
+
+  // --- Bills ---
+
   listBills = async (category?: string, page = 1, limit = 20): Promise<PaginatedBills> => {
     const q = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (category) q.append("category", category);
@@ -458,35 +558,30 @@ class ApiClient {
     return this.request(`/api/bills/${id}/`);
   };
 
+  getBillVotes = async (id: number): Promise<BillVotesResponse> => {
+    return this.request(`/api/bills/${id}/votes/`);
+  };
+
   getMetadata = async (): Promise<{ impact_categories: string[], affected_profiles: string[], counties: string[] }> => {
-    const cached = sessionStorage.getItem("civicmind_metadata");
-    if (cached) {
-      this.request<{ impact_categories: string[], affected_profiles: string[], counties: string[] }>("/api/bills/metadata/")
-        .then(data => sessionStorage.setItem("civicmind_metadata", JSON.stringify(data)))
-        .catch(() => {});
-      return JSON.parse(cached);
-    }
-    const data = await this.request<{ impact_categories: string[], affected_profiles: string[], counties: string[] }>("/api/bills/metadata/");
-    sessionStorage.setItem("civicmind_metadata", JSON.stringify(data));
-    return data;
+    return this.request("/api/bills/metadata/");
   };
 
   getTrendingTopics = async (): Promise<{ topics: TrendingTopic[] }> => {
     return this.request("/api/bills/trending/");
   };
 
-  searchGlobal = async (query: string): Promise<GlobalSearchResponse> => {
-    const q = new URLSearchParams({ q: query });
-    return this.request(`/api/search/?${q}`);
+  getPersonalizedFeed = async (page = 1, limit = 20): Promise<PaginatedBills> => {
+    return this.request(`/api/bills/personalized/?page=${page}&limit=${limit}`);
   };
 
-  // Parliamentarians
-  listMPs = async (params: { search?: string; county?: string; party?: string; page?: number; limit?: number } = {}): Promise<PaginatedMPList> => {
+  // --- Parliamentarians ---
+
+  listMPs = async (params: { search?: string; county?: string | null; party?: string; page?: number; limit?: number } = {}): Promise<PaginatedMPList> => {
     const q = new URLSearchParams();
     if (params.search) q.append("search", params.search);
     if (params.county) q.append("county", params.county);
     if (params.party) q.append("party", params.party);
-    if (params.page && params.page > 1) q.append("page", String(params.page));
+    if (params.page) q.append("page", String(params.page));
     if (params.limit) q.append("limit", String(params.limit));
     return this.request(`/api/mps/?${q}`);
   };
@@ -510,49 +605,31 @@ class ApiClient {
   getMyRepresentatives = async (county: string, params: { party?: string; page?: number; limit?: number } = {}): Promise<PaginatedMPList> => {
     const q = new URLSearchParams({ county });
     if (params.party) q.append("party", params.party);
-    if (params.page && params.page > 1) q.append("page", String(params.page));
+    if (params.page) q.append("page", String(params.page));
     if (params.limit) q.append("limit", String(params.limit));
     return this.request(`/api/mps/my-representatives/?${q}`);
   };
 
-  getBillVotes = async (id: number): Promise<BillVotesResponse> => {
-    return this.request(`/api/bills/${id}/votes/`);
+  // --- Global Search ---
+
+  /**
+   * Executes a cross-entity search (Laws + MPs)
+   */
+  searchGlobal = async (query: string): Promise<GlobalSearchResponse> => {
+    const q = new URLSearchParams({ q: query });
+    return this.request(`/api/search/?${q}`);
   };
 
-  getPersonalizedFeed = async (page = 1, limit = 10): Promise<PaginatedBills> => {
-    return this.request(`/api/bills/personalized/?page=${page}&limit=${limit}`);
-  };
+  // --- AI / RAG Agents ---
 
-  // User
-  getProfile = async (): Promise<User> => { return this.request("/api/profiles/me/"); };
-  updateProfile = async (data: Partial<User>): Promise<User> => {
-    return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
-  };
-  
+  /**
+   * Uses AI to analyze natural language onboarding text and derive county/interests
+   */
   analyzeOnboardingProfile = async (text: string, available_counties: string[], available_categories: string[]): Promise<{county: string | null, interests: string[]}> => {
     return this.requestTo(this.aiBaseUrl, "/profiles/analyze-onboarding", {
       method: "POST",
       body: JSON.stringify({ text, available_counties, available_categories })
     });
-  };
-  
-  deleteAccount = async (password: string): Promise<void> => {
-    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
-    await this.request("/api/profiles/me/", { method: "DELETE", body: JSON.stringify({ password }) });
-  };
-  
-  logout = async (): Promise<void> => { localStorage.removeItem("auth_token"); };
-
-  // Admin
-  getAdminStats = async (): Promise<AdminStats> => { return this.request("/api/admin/stats/"); };
-  getAdminUsers = async (page = 1, limit = 20): Promise<PaginatedUsers> => {
-    return this.request(`/api/admin/users?page=${page}&limit=${limit}`);
-  };
-  updateUserStatus = async (userId: number, status: User["status"]): Promise<User> => {
-    return this.request(`/api/admin/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
-  };
-  getAdminBills = async (page = 1, limit = 20): Promise<PaginatedBills> => {
-    return this.request(`/api/admin/bills?page=${page}&limit=${limit}`);
   };
 
   ragChat = async (question: string, options: RagChatOptions = {}): Promise<RagChatResponse> => {
@@ -569,6 +646,9 @@ class ApiClient {
     });
   };
 
+  /**
+   * Streamed RAG Chat with event handlers
+   */
   streamRagChat = async (
     question: string,
     options: RagChatOptions = {},
@@ -597,9 +677,7 @@ class ApiClient {
       try {
         const data = await response.json();
         detail = data.detail || data.error || detail;
-      } catch {
-        // Ignore parse failures and keep the generic message.
-      }
+      } catch { }
       throw new ApiError(detail, response.status);
     }
 
@@ -623,43 +701,47 @@ class ApiClient {
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
-        const event = JSON.parse(trimmed) as RagStreamEvent;
-        handlers.onEvent?.(event);
-        if (event.type === "error") {
-          throw new ApiError(event.error, 503);
-        }
-        if (event.type === "done") {
-          finalResponse = {
-            answer: event.answer,
-            sources: event.sources,
-            resolved_source: event.resolved_source,
-            agent_mode: event.agent_mode,
-          };
+        try {
+          const event = JSON.parse(trimmed) as RagStreamEvent;
+          handlers.onEvent?.(event);
+          if (event.type === "error") throw new ApiError(event.error, 503);
+          if (event.type === "done") {
+            finalResponse = {
+              answer: event.answer,
+              sources: event.sources,
+              resolved_source: event.resolved_source,
+              agent_mode: event.agent_mode,
+            };
+          }
+        } catch (e) {
+          console.error("Failed to parse stream event", trimmed, e);
         }
       }
     }
-
-    if (buffer.trim()) {
-      const event = JSON.parse(buffer.trim()) as RagStreamEvent;
-      handlers.onEvent?.(event);
-      if (event.type === "done") {
-        finalResponse = {
-          answer: event.answer,
-          sources: event.sources,
-          resolved_source: event.resolved_source,
-          agent_mode: event.agent_mode,
-        };
-      }
-      if (event.type === "error") {
-        throw new ApiError(event.error, 503);
-      }
-    }
-
+    
     if (!finalResponse) {
-      return this.ragChat(question, options);
+        return this.ragChat(question, options);
     }
 
     return finalResponse;
+  };
+
+  // --- Admin ---
+
+  getAdminStats = async (): Promise<AdminStats> => {
+    return this.request("/api/admin/stats/");
+  };
+
+  getAdminUsers = async (page = 1, limit = 20): Promise<PaginatedUsers> => {
+    return this.request(`/api/admin/users?page=${page}&limit=${limit}`);
+  };
+
+  updateUserStatus = async (userId: number, status: User["status"]): Promise<User> => {
+    return this.request(`/api/admin/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+  };
+
+  getAdminBills = async (page = 1, limit = 20): Promise<PaginatedBills> => {
+    return this.request(`/api/admin/bills?page=${page}&limit=${limit}`);
   };
 }
 

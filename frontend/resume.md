@@ -38,3 +38,26 @@ The following major code smells have been **successfully eliminated**:
 *   **Monolithic Routes**: `index.tsx`, `search.tsx`, and `mps/index.tsx` are now clean entry points.
 *   **Manual Data Fetching**: Replaced `useEffect` + `fetch` with TanStack Query in all admin and main feed views.
 *   **Syncing Props to State**: Refactored the Profile page to initialize form state directly from props in a sub-component.
+
+---
+
+## 🛠️ Refactoring Plan: API Client Modularization (`src/lib/api/`)
+
+The current `api.ts` is a 550+ line monolith containing types, configuration, and all domain logic. We will split it into a scalable structure:
+
+### Phase 1: Core & Types
+- [ ] **`api/config.ts`**: Extract base URLs and environment configuration.
+- [ ] **`api/base.ts`**: Extract `ApiError` and the core `ApiClient` base class with `requestTo`, CSRF, and Auth logic.
+- [ ] **`api/types/`**: Split the 20+ interfaces into domain-specific files:
+    - `bills.ts`, `mps.ts`, `auth.ts`, `rag.ts`, `common.ts`.
+
+### Phase 2: Domain Modules
+- [ ] **`api/modules/auth.ts`**: Auth-related methods (Login, Register, Google Auth).
+- [ ] **`api/modules/bills.ts`**: Bill listing, detail, votes, and feed logic.
+- [ ] **`api/modules/mps.ts`**: MP directory, detail, and representative logic.
+- [ ] **`api/modules/ai.ts`**: RAG chat and onboarding analysis.
+- [ ] **`api/modules/admin.ts`**: Statistics and administrative management.
+
+### Phase 3: Integration
+- [ ] **`api/index.ts`**: Re-export a unified `api` singleton that composes these modules, ensuring zero breaking changes for the rest of the app.
+- [ ] **Type Tightening**: Replace remaining `any` usage in `requestTo` and error handlers with proper generics and exhaustive error types.
