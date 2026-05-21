@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Bill Event',
                 'verbose_name_plural': 'Bill Events',
                 'db_table': 'bill_events',
-                'managed': False,
+                'managed': True,
             },
         ),
         migrations.CreateModel(
@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Bill Flag',
                 'verbose_name_plural': 'Bill Flags',
                 'db_table': 'bill_flags',
-                'managed': False,
+                'managed': True,
             },
         ),
     ]
