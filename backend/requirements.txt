@@ -11,6 +11,8 @@ gunicorn
 whitenoise
 mistralai
 pgvector
+cryptography
+PyJWT
 
 # Type stubs (dev)
 django-stubs
