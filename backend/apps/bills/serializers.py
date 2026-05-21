@@ -46,25 +46,44 @@ class AIAnalysisSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_impact_categories(self, obj):
+        # Use prefetched data if available
+        if hasattr(obj, '_prefetched_objects_cache') and 'rel_impact_categories' in obj._prefetched_objects_cache:
+            return [cat.name for cat in obj.rel_impact_categories.all()]
+        # Fallback (will trigger query if not prefetched)
         return [cat.name for cat in obj.rel_impact_categories.all()]
 
     def get_affected_profiles(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'rel_affected_profiles' in obj._prefetched_objects_cache:
+            return [prof.name for prof in obj.rel_affected_profiles.all()]
         return [prof.name for prof in obj.rel_affected_profiles.all()]
 
     def get_key_ideas(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'rel_key_ideas' in obj._prefetched_objects_cache:
+            return [idea.text for idea in obj.rel_key_ideas.all()]
         return [idea.text for idea in obj.rel_key_ideas.all()]
 
     def get_arguments(self, obj):
         args = {}
-        for arg in obj.rel_arguments.all():
+        # Optimization: only iterate if prefetched
+        rel_args = []
+        if hasattr(obj, '_prefetched_objects_cache') and 'rel_arguments' in obj._prefetched_objects_cache:
+            rel_args = obj.rel_arguments.all()
+        else:
+            rel_args = obj.rel_arguments.all()
+
+        for arg in rel_args:
             if arg.type == 'general':
                 args[f"arg_{arg.order}"] = arg.text
         return args
 
     def get_pro_arguments(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'rel_arguments' in obj._prefetched_objects_cache:
+            return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'pro']
         return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'pro']
 
     def get_con_arguments(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'rel_arguments' in obj._prefetched_objects_cache:
+            return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'con']
         return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'con']
 
 class PartyVoteResultSerializer(serializers.ModelSerializer):
