@@ -189,8 +189,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Cache settings
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'civicmind-cache',
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 

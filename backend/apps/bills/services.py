@@ -3,6 +3,24 @@ from .models import Bill, ImpactCategory, AffectedProfile
 from apps.parliamentarians.models import Parliamentarian, MPVote
 from apps.search.services import VOTE_BUCKETS
 
+class BillService:
+    @staticmethod
+    def get_enriched_bills_queryset(bill_ids: list[int] | None = None):
+        """
+        Returns a queryset of bills with all AI-related data prefetched.
+        If bill_ids is provided, filters the queryset to those IDs.
+        """
+        queryset = Bill.objects.select_related('ai_analysis').prefetch_related(
+            'ai_analysis__rel_impact_categories',
+            'ai_analysis__rel_affected_profiles',
+            'ai_analysis__rel_key_ideas',
+            'ai_analysis__rel_arguments',
+        )
+        if bill_ids is not None:
+            # Maintain order if needed, but usually caller handles ordering
+            queryset = queryset.filter(pk__in=bill_ids)
+        return queryset
+
 class FeedService:
     @staticmethod
     def get_personalized_bills(user_interests: list[str], persona_tags: list[str], queryset=None):

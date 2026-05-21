@@ -49,16 +49,9 @@ class MPVoteSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_impact_categories(self, obj):
-        try:
-            # Check if ai_analysis exists safely
-            analysis = getattr(obj.vote_session.bill, 'ai_analysis', None)
-            if analysis:
-                # Use prefetched data if available
-                if hasattr(analysis, 'rel_impact_categories'):
-                    return [cat.name for cat in analysis.rel_impact_categories.all()]
-                return list(analysis.rel_impact_categories.values_list('name', flat=True))
-        except AttributeError:
-            pass
+        analysis = getattr(obj.vote_session.bill, 'ai_analysis', None)
+        if analysis:
+            return [cat.name for cat in analysis.rel_impact_categories.all()]
         return []
 
 

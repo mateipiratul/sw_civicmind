@@ -11,6 +11,7 @@ gunicorn
 whitenoise
 mistralai
 pgvector
+upstash-redis
 
 # Type stubs (dev)
 django-stubs
