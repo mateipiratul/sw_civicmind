@@ -6,7 +6,6 @@ import { BillCardSkeleton } from "@/components/bill-card-skeleton";
 import { Pagination } from "@/components/ui/pagination";
 import { RefreshCw } from "lucide-react";
 import { FeedBillCard } from "./feed-bill-card";
-import { CategoryNav } from "./category-nav";
 import { RightSidebar } from "./right-sidebar";
 
 export function DashboardPage() {
@@ -50,22 +49,16 @@ export function DashboardPage() {
   const error = billsQuery.error instanceof Error ? billsQuery.error.message : null;
 
   return (
-    <div style={{ display: "flex", minHeight: "calc(100vh - 52px)" }}>
-      {/* Left sidebar */}
-      <CategoryNav 
-        activeCategory={activeCategory} 
-        onCategoryChange={handleCategoryChange} 
-      />
-
+    <div style={{ display: "flex", minHeight: "calc(100vh - 60px)" }}>
       {/* Main content */}
       <main style={{ flex: 1, padding: "24px 28px", minWidth: 0 }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 600, color: "#111", marginBottom: 3 }}>
+              <h1 style={{ fontSize: 24, fontWeight: 600, color: "#111", marginBottom: 4, letterSpacing: "-0.02em" }}>
                 {activeCategory ? activeCategory : isAuthenticated ? "Feed Personalizat" : "Legislativ Actual"}
               </h1>
-              <p className="muted" style={{ fontSize: 13 }}>
+              <p className="muted" style={{ fontSize: 13.5, color: "#666" }}>
                 {isAuthenticated && !activeCategory
                   ? "Legi relevante pentru interesele și județul tău."
                   : "Ultimele actualizări legislative."}
@@ -74,14 +67,14 @@ export function DashboardPage() {
             <button
               onClick={() => billsQuery.refetch()}
               disabled={isLoading}
-              style={{ background: "none", border: "none", cursor: isLoading ? "default" : "pointer", color: "#aaa", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
+              style={{ background: "none", border: "none", cursor: isLoading ? "default" : "pointer", color: "#aaa", display: "flex", alignItems: "center", padding: 6, borderRadius: 8, marginTop: 4 }}
             >
-              <RefreshCw size={14} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
+              <RefreshCw size={16} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
             </button>
           </div>
 
           {error && (
-            <div className="error-box" style={{ marginBottom: 16, fontSize: 13, color: "#b91c1c" }}>
+            <div className="error-box" style={{ marginBottom: 20 }}>
               {error}
             </div>
           )}

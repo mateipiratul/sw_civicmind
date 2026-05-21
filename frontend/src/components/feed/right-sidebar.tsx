@@ -13,8 +13,8 @@ interface RightSidebarProps {
 export function RightSidebar({ isAuthenticated, user, localMPs, trendingBills }: RightSidebarProps) {
   return (
     <aside style={{ 
-      width: 220, flexShrink: 0, position: "sticky", top: 52, alignSelf: "flex-start", 
-      height: "calc(100vh - 52px)", overflowY: "auto", borderLeft: "1px solid #e8e8e8", 
+      width: 220, flexShrink: 0, position: "sticky", top: 60, alignSelf: "flex-start", 
+      height: "calc(100vh - 60px)", overflowY: "auto", borderLeft: "1px solid #e8e8e8", 
       background: "rgba(255,255,255,0.75)", padding: "20px 16px", display: "flex", flexDirection: "column" 
     }}>
       {localMPs.length > 0 ? (

@@ -56,41 +56,41 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
         <span style={{ marginLeft: "auto", fontSize: 11, color: "#aaa" }}>{bill.bill_number}</span>
       </div>
 
-      <div style={{ fontSize: 14.5, fontWeight: 600, color: "#111", lineHeight: 1.45 }}>{title}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: "#111", lineHeight: 1.45 }}>{title}</div>
 
       {ai?.key_ideas && ai.key_ideas.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
             AI Rezumat
           </div>
           {ai.key_ideas.slice(0, 2).map((idea, i) => (
-            <div key={i} style={{ display: "flex", gap: 6, fontSize: 12.5, color: "#555", lineHeight: 1.5 }}>
-              <span style={{ color: "#bbb", flexShrink: 0 }}>•</span>
+            <div key={i} style={{ display: "flex", gap: 6, fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>
+              <span style={{ color: "#ccc", flexShrink: 0 }}>•</span>
               <span>{idea}</span>
             </div>
           ))}
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
         {bill.registered_at && (
-          <span style={{ fontSize: 11.5, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
-            <Calendar size={12} />
+          <span style={{ fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
+            <Calendar size={13} />
             {formatDate(bill.registered_at)}
           </span>
         )}
         {bill.law_type && (
-          <span style={{ fontSize: 11.5, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
-            <FileText size={12} />
+          <span style={{ fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
+            <FileText size={13} />
             {bill.law_type}
           </span>
         )}
         <Link
           to="/bills/$id"
           params={{ id: String(bill.idp) }}
-          style={{ marginLeft: "auto", fontSize: 12.5, fontWeight: 500, color: "#111", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+          style={{ marginLeft: "auto", fontSize: 13.5, fontWeight: 600, color: "#111", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
         >
-          Citește detalii <ChevronRight size={13} />
+          Detalii <ChevronRight size={14} />
         </Link>
       </div>
     </div>

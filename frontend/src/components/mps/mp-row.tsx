@@ -25,29 +25,29 @@ export function MPRow({ mp }: MPRowProps) {
       {/* Header — always visible */}
       <div
         onClick={() => setExpanded(v => !v)}
-        style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: expanded ? 14 : 0, cursor: "pointer", userSelect: "none" }}
+        style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: expanded ? 14 : 0, cursor: "pointer", userSelect: "none" }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
             <span style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>{mp.mp_name}</span>
             {mp.party?.trim() && (
-              <span className="span-partycounty">
+              <span className="span-partycounty" style={{ fontSize: 13 }}>
                 {mp.party}
               </span>
             )}
             {mp.county?.trim() && (
-              <span className="span-partycounty">
+              <span className="span-partycounty" style={{ fontSize: 13 }}>
                 {mp.county}
               </span>
             )}
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {mp.chamber && (
-              <span style={{ fontSize: 13, color: "#ccc" }}>
+              <span style={{ fontSize: 13, color: "#999" }}>
                 {mp.chamber === "deputies" ? "Deputat" : mp.chamber === "senate" ? "Senator" : mp.chamber}
               </span>
             )}
-            {t > 0 && <span className="muted" style={{ fontSize: 12.5 }}>{t} voturi</span>}
+            {t > 0 && <span className="muted" style={{ fontSize: 13 }}>{t} voturi</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -64,7 +64,7 @@ export function MPRow({ mp }: MPRowProps) {
 
       {expanded && <div>
         {s && t > 0 && (
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 16, marginTop: 4 }}>
             <div style={{ display: "flex", height: 6, borderRadius: 99, overflow: "hidden", gap: 1, marginBottom: 8 }}>
               <div style={{ width: `${pct(s.for_count)}%`, background: "#16a34a" }} />
               <div style={{ width: `${pct(s.against_count)}%`, background: "#dc2626" }} />
@@ -88,14 +88,14 @@ export function MPRow({ mp }: MPRowProps) {
         )}
 
         {s?.narrative && (
-          <p style={{ fontSize: 14.5, color: "#555", lineHeight: 1.65, margin: "0 0 14px" }}>{s.narrative}</p>
+          <p style={{ fontSize: 15, color: "#555", lineHeight: 1.6, margin: "0 0 16px" }}>{s.narrative}</p>
         )}
 
         <Link
           to="/mps/$slug"
           params={{ slug: mp.mp_slug }}
           onClick={e => e.stopPropagation()}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, color: "#111", textDecoration: "none", fontWeight: 600 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#111", textDecoration: "none", fontWeight: 600 }}
         >
           Profil complet <ExternalLink size={13} />
         </Link>
