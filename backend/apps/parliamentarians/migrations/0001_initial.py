@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Parliamentarian',
                 'verbose_name_plural': 'Parliamentarians',
                 'db_table': 'parliamentarians',
-                'managed': False,
+                'managed': True,
             },
         ),
         migrations.CreateModel(
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'MP Vote',
                 'verbose_name_plural': 'MP Votes',
                 'db_table': 'mp_votes',
-                'managed': False,
+                'managed': True,
             },
         ),
         migrations.CreateModel(
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Impact Score',
                 'verbose_name_plural': 'Impact Scores',
                 'db_table': 'impact_scores',
-                'managed': False,
+                'managed': True,
             },
         ),
     ]
