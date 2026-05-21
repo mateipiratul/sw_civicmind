@@ -1,145 +1,93 @@
-import math
-from django.db.models import Prefetch, Q, Case, When, Value, IntegerField
-from rest_framework import viewsets, permissions, filters
+from collections import Counter
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
-from .models import Bill, AIAnalysis, VoteSession
+
+from .models import Bill, AIAnalysis
 from .filters import BillFilterSet
-from apps.parliamentarians.models import MPVote
-from .serializers import BillListSerializer, BillDetailSerializer, MPVoteInBillSerializer
+from .serializers import BillListSerializer, BillDetailSerializer
+from .services import FeedService, VoteAnalyticsService
+from apps.parliamentarians.models import Parliamentarian
 from apps.parliamentarians.serializers import ParliamentarianVoteMapSerializer
-from apps.parliamentarians.models import Parliamentarian, MPVote as ParliamentarianVote
 from apps.profiles.models import Profile
+from apps.core.pagination import BillPagination
+
+DEFAULT_TRENDING_TOPICS = ["Sănătate", "Educație", "Mediu", "Justiție", "Fiscal", "Muncă"]
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
+
     queryset = Bill.objects.all().order_by('-registered_at')
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend]
     filterset_class = BillFilterSet
-    search_fields = ['title', 'bill_number', 'initiator_name']
+    pagination_class = BillPagination
 
     def get_serializer_class(self):
-        if getattr(self, 'action', None) in ('list', 'feed', 'personalized'):
+        if self.action in ('list', 'feed', 'personalized'):
             return BillListSerializer
         return BillDetailSerializer
 
-    def get_queryset(self):
-        return Bill.objects.all().order_by('-registered_at')
-
-    @staticmethod
-    def _parse_page(request):
+    def _get_request_limit(self, default=20, maximum=100):
         try:
-            return max(1, int(request.query_params.get('page', 1)))
-        except (ValueError, TypeError):
-            return 1
-
-    @staticmethod
-    def _parse_limit(request, default=20, maximum=100):
-        try:
-            return max(1, min(maximum, int(request.query_params.get('limit', default))))
+            return max(1, min(maximum, int(self.request.query_params.get('limit', default))))
         except (ValueError, TypeError):
             return default
 
-    def list(self, request, *args, **kwargs):
-        """Return paginated bills in the shape the frontend expects."""
-        page = self._parse_page(request)
-        limit = self._parse_limit(request)
-
-        queryset = self.filter_queryset(self.get_queryset())
-        total = queryset.count()
-        offset = (page - 1) * limit
-        bills = queryset[offset:offset + limit]
-        serializer = BillListSerializer(bills, many=True)
-        return Response({
-            'page': page,
-            'limit': limit,
-            'total': total,
-            'totalPages': math.ceil(total / limit) if total else 1,
-            'bills': serializer.data,
-        })
-
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def metadata(self, request):
-        # Standard lists as baseline
         categories = ["sanatate", "educatie", "fiscal", "justitie", "mediu", "munca", "administratie", "it", "pensii", "agricultura", "social"]
         profiles = ["student", "angajat", "pensionar", "pfa", "it", "parinte", "agricultor", "antreprenor", "pacient"]
-        
-        # Get unique counties from parliamentarians
-        # Lazy import to avoid circular dependency (parliamentarians -> bills -> parliamentarians)
-        from apps.parliamentarians.models import Parliamentarian
-        counties = list(Parliamentarian.objects.values_list('county', flat=True).distinct())
-        counties = [c for c in counties if c]
-        counties.sort()
-
+        counties = sorted([c for c in Parliamentarian.objects.values_list('county', flat=True).distinct() if c])
         return Response({
             "impact_categories": categories,
             "affected_profiles": profiles,
             "counties": counties
         })
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny], url_path='trending')
+    def trending(self, request):
+        limit = self._get_request_limit(default=6, maximum=12)
+        recent_bills = Bill.objects.select_related('ai_analysis').order_by('-registered_at')[:200]
+        counter = Counter()
+        for bill in recent_bills:
+            analysis = getattr(bill, 'ai_analysis', None)
+            if analysis and analysis.rel_impact_categories.exists():
+                for category in analysis.rel_impact_categories.values_list('name', flat=True):
+                    if category: counter[category] += 1
+        
+        topics = [{"label": label, "count": count} for label, count in counter.most_common(limit)]
+        if not topics:
+            topics = [{"label": label, "count": 0} for label in DEFAULT_TRENDING_TOPICS[:limit]]
+        return Response({"topics": topics})
+
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def feed(self, request):
         from datetime import timedelta
         from django.utils import timezone
-        
         past_week = timezone.now().date() - timedelta(days=7)
-        queryset = self.filter_queryset(self.get_queryset()).filter(registered_at__gte=past_week).order_by('-registered_at')
-        
+        queryset = self.filter_queryset(self.get_queryset()).filter(registered_at__gte=past_week)
         if not queryset.exists():
-            queryset = self.filter_queryset(self.get_queryset()).order_by('-registered_at')[:10]
+            queryset = self.filter_queryset(self.get_queryset())
         
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-            
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='votes')
     def votes(self, request, pk=None):
-        """
-        GET /api/bills/{idp}/votes/
-        Returns the MP vote breakdown for this bill's most recent VoteSession.
-        Groups votes into For / Against / Abstain / Absent buckets and includes
-        the session-level summary counts.
-        """
         bill = self.get_object()
-
-        # Grab the most recent vote session for this bill
-        vote_session = (
-            bill.vote_sessions
-            .order_by('-date')
-            .first()
-        )
+        vote_session = bill.vote_sessions.order_by('-date').first()
         if not vote_session:
-            return Response({'detail': 'No vote sessions found for this bill.'}, status=404)
-
-        # Fetch all MP votes for that session, with MP info pre-loaded
-        mp_votes = (
-            MPVote.objects
-            .filter(vote_session=vote_session)
-            .select_related('parliamentarian')
-            .order_by('parliamentarian__mp_name')
-        )
-
-        # Group into buckets
-        buckets: dict = {'for': [], 'against': [], 'abstain': [], 'absent': []}
-        vote_map = {
-            'Pentru': 'for',
-            'Contra': 'against',
-            'Abtinere': 'abstain',
-            'Absent': 'absent',
-            'Absentat': 'absent',
-        }
-        serialized = MPVoteInBillSerializer(mp_votes, many=True).data
-        for row in serialized:
-            bucket_key = vote_map.get(row['vote'], 'abstain')
-            buckets[bucket_key].append(row)
-
+            return Response({'detail': 'No vote sessions found for this bill.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        buckets = VoteAnalyticsService.get_bill_vote_buckets(vote_session)
+        
         return Response({
             'bill_idp': bill.idp,
             'bill_number': bill.bill_number,
@@ -161,111 +109,66 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)
-        page = self._parse_page(request)
-        limit = self._parse_limit(request)
-
         user_interests = list(getattr(profile, 'interests', []) or [])
         persona_tags = list(getattr(profile, 'persona_tags', []) or [])
         preferred_party = (getattr(profile, 'preferred_party', None) or '').strip() or None
         county = (getattr(profile, 'county', None) or '').strip() or None
 
-        query = Q()
-        for interest in user_interests:
-            query |= Q(ai_analysis__impact_categories__contains=[interest])
-        for persona in persona_tags:
-            query |= Q(ai_analysis__affected_profiles__contains=[persona])
-
         queryset = self.filter_queryset(self.get_queryset())
-        if query.children:
-            queryset = queryset.annotate(
-                is_match=Case(
-                    When(query, then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                )
-            ).order_by('-is_match', '-registered_at').distinct()
-        else:
-            queryset = queryset.order_by('-registered_at')
-
-        total = queryset.count()
-        offset = (page - 1) * limit
-        bills = queryset[offset:offset + limit]
-        serializer = BillListSerializer(bills, many=True)
-
-        vote_limit = 5
-        representatives_queryset = self._get_representatives_queryset(county=county, preferred_party=preferred_party)
-        representatives_serializer = ParliamentarianVoteMapSerializer(
-            representatives_queryset[:6],
-            many=True,
-            context={**self.get_serializer_context(), 'vote_limit': vote_limit},
+        queryset = FeedService.get_personalized_bills(
+            user_interests=user_interests, 
+            persona_tags=persona_tags,
+            queryset=queryset
         )
 
-        return Response({
-            'page': page,
-            'limit': limit,
-            'total': total,
-            'totalPages': math.ceil(total / limit) if total else 1,
-            'bills': serializer.data,
-            'profile': {
-                'county': county,
-                'preferredParty': preferred_party,
-                'interests': user_interests,
-                'personaTags': persona_tags,
-                'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
-            },
-            'appliedFilters': {
-                'impactCategories': user_interests,
-                'affectedProfiles': persona_tags,
-                'county': county,
-                'party': preferred_party,
-            },
-            'myRepresentatives': {
-                'total': representatives_queryset.count(),
-                'voteLimit': vote_limit,
-                'parliamentarians': representatives_serializer.data,
-            },
-        })
-
-    @staticmethod
-    def _get_representatives_queryset(*, county, preferred_party):
-        vote_queryset = (
-            ParliamentarianVote.objects
-            .select_related(
-                'vote_session',
-                'vote_session__bill',
-                'vote_session__bill__ai_analysis',
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            
+            vote_limit = 5
+            reps_queryset = FeedService.get_representatives(
+                county=county, 
+                preferred_party=preferred_party,
+                limit=6
             )
-            .order_by('-vote_session__date')
-        )
-        queryset = (
-            Parliamentarian.objects
-            .filter(chamber__icontains='deput')
-            .select_related('impact_score')
-            .prefetch_related(
-                Prefetch('votes', queryset=vote_queryset, to_attr='prefetched_votes')
+            reps_serializer = ParliamentarianVoteMapSerializer(
+                reps_queryset, many=True,
+                context={**self.get_serializer_context(), 'vote_limit': vote_limit}
             )
-            .order_by('mp_name')
-        )
-        if county:
-            queryset = queryset.filter(county__icontains=county)
-        if preferred_party:
-            queryset = queryset.filter(party__iexact=preferred_party)
-        return queryset
+            
+            response.data.update({
+                'profile': {
+                    'county': county,
+                    'preferredParty': preferred_party,
+                    'interests': user_interests,
+                    'personaTags': persona_tags,
+                    'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
+                },
+                'appliedFilters': {
+                    'impactCategories': user_interests,
+                    'affectedProfiles': persona_tags,
+                    'county': county,
+                    'party': preferred_party,
+                },
+                'myRepresentatives': {
+                    'total': reps_queryset.count() if hasattr(reps_queryset, 'count') else len(reps_queryset),
+                    'voteLimit': vote_limit,
+                    'parliamentarians': reps_serializer.data,
+                },
+            })
+            return response
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'bills': serializer.data})
 
 class AdminStatsView(APIView):
     permission_classes = [permissions.IsAdminUser]
-
     def get(self, request):
-        total_users = User.objects.count()
-        active_users = User.objects.filter(is_active=True).count()
-        total_bills = Bill.objects.count()
-        active_bills = Bill.objects.filter(status='in_procedura_legislativa').count()
-        analyzed_bills = AIAnalysis.objects.count()
-
         return Response({
-            'totalUsers': total_users,
-            'activeUsers': active_users,
-            'totalBills': total_bills,
-            'activeBills': active_bills,
-            'analyzedBills': analyzed_bills
+            'totalUsers': User.objects.count(),
+            'activeUsers': User.objects.filter(is_active=True).count(),
+            'totalBills': Bill.objects.count(),
+            'activeBills': Bill.objects.filter(status='in_procedura_legislativa').count(),
+            'analyzedBills': AIAnalysis.objects.count()
         })

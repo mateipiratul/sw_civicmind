@@ -13,7 +13,7 @@ class Parliamentarian(models.Model):
 
     class Meta:
         db_table = 'parliamentarians'
-        managed = False
+        managed = True
         verbose_name = "Parliamentarian"
         verbose_name_plural = "Parliamentarians"
 
@@ -25,20 +25,24 @@ class MPVote(models.Model):
         VoteSession, 
         on_delete=models.CASCADE, 
         db_column='idv',
-        related_name='mp_votes'
+        related_name='mp_votes',
+        null=True,
+        blank=True
     )
     parliamentarian = models.ForeignKey(
         Parliamentarian, 
         on_delete=models.CASCADE, 
         db_column='mp_slug',
-        related_name='votes'
+        related_name='votes',
+        null=True,
+        blank=True
     )
     party = models.CharField(max_length=100, blank=True, null=True)
     vote = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         db_table = 'mp_votes'
-        managed = False
+        managed = True
         unique_together = (('vote_session', 'parliamentarian'),)
         verbose_name = "MP Vote"
         verbose_name_plural = "MP Votes"
@@ -57,14 +61,12 @@ class ImpactScore(models.Model):
     against_count = models.IntegerField(default=0)
     abstain_count = models.IntegerField(default=0)
     absent_count = models.IntegerField(default=0)
-    mp_name = models.TextField(blank=True, null=True)
-    party = models.CharField(max_length=100, blank=True, null=True)
     categories_voted = models.JSONField(default=list)
     narrative = models.TextField(blank=True, null=True)
     calculated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = 'impact_scores'
-        managed = False
+        managed = True
         verbose_name = "Impact Score"
         verbose_name_plural = "Impact Scores"

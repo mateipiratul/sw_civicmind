@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
-import { Bell, Search } from "lucide-react";
+import { useAuth } from "@/lib/use-auth";
+import { Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
+import { GlobalSearch } from "@/components/layout/global-search";
 
 export function Header() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -49,6 +50,8 @@ export function Header() {
         ))}
       </nav>
 
+      <GlobalSearch />
+
       {/* Right side */}
       <div className="header-actions">
         {isAuthenticated && user && (
@@ -56,9 +59,6 @@ export function Header() {
             <Bell size={15} />
           </button>
         )}
-        <button className="icon-button">
-          <Search size={15} />
-        </button>
 
         {isAuthenticated && user ? (
           <DropdownMenu>

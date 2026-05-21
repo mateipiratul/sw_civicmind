@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { Bill } from "@/lib/api";
 import { Calendar, FileText, ChevronRight, Scale } from "lucide-react";
 
@@ -54,7 +54,7 @@ export function BillCard({ bill }: BillCardProps) {
         <div className="space-y-1.5 text-xs text-gray-500">
           <div className="flex items-center gap-2">
             <Calendar className="size-3.5 text-gray-400" />
-            <span>{bill.registered_at ? new Date(bill.registered_at).toLocaleDateString("ro-RO") : "—"}</span>
+            <span>{formatDate(bill.registered_at)}</span>
           </div>
           <div className="flex items-center gap-2">
             <FileText className="size-3.5 text-gray-400" />

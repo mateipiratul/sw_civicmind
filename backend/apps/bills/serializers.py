@@ -1,78 +1,124 @@
 from __future__ import annotations
 from rest_framework import serializers
+from .models import (
+    Bill, AIAnalysis, VoteSession, ImpactCategory, AffectedProfile, 
+    KeyIdea, BillArgument, PartyVoteResult
+)
+from apps.parliamentarians.models import MPVote
 
-class MPVoteInBillSerializer(serializers.Serializer):
-    """A single MP vote record within a bill's vote breakdown."""
-    mp_slug = serializers.CharField(source='parliamentarian.mp_slug')
-    mp_name = serializers.CharField(source='parliamentarian.mp_name')
-    party = serializers.CharField()
-    vote = serializers.CharField()
+class MPVoteInBillSerializer(serializers.ModelSerializer):
+    mp_slug = serializers.CharField(source='parliamentarian.mp_slug', read_only=True)
+    mp_name = serializers.CharField(source='parliamentarian.mp_name', read_only=True)
 
-class AIAnalysisSerializer(serializers.Serializer):
+    class Meta:
+        model = MPVote
+        fields = ['mp_slug', 'mp_name', 'party', 'vote']
+
+class ImpactCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImpactCategory
+        fields = ['name', 'slug', 'description']
+
+class AffectedProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AffectedProfile
+        fields = ['name', 'slug', 'description']
+
+class AIAnalysisSerializer(serializers.ModelSerializer):
     bill_idp = serializers.IntegerField(source='bill.idp', read_only=True)
-    processed_at = serializers.DateTimeField(read_only=True)
-    model = serializers.CharField(read_only=True)
-    title_short = serializers.CharField(read_only=True)
-    key_ideas = serializers.ListField(child=serializers.CharField(), read_only=True)
-    impact_categories = serializers.ListField(child=serializers.CharField(), read_only=True)
-    affected_profiles = serializers.ListField(child=serializers.CharField(), read_only=True)
-    arguments = serializers.DictField(read_only=True)
-    pro_arguments = serializers.ListField(child=serializers.CharField(), read_only=True)
-    con_arguments = serializers.ListField(child=serializers.CharField(), read_only=True)
-    controversy_score = serializers.FloatField(read_only=True)
-    passed_by = serializers.CharField(read_only=True)
-    dominant_party = serializers.CharField(read_only=True)
-    vote_date = serializers.DateField(read_only=True)
-    ocr_quality = serializers.CharField(read_only=True)
-    confidence = serializers.FloatField(read_only=True)
+    
+    # Relational replacements for JSON fields
+    impact_categories = serializers.SerializerMethodField()
+    affected_profiles = serializers.SerializerMethodField()
+    key_ideas = serializers.SerializerMethodField()
+    arguments = serializers.SerializerMethodField()
+    pro_arguments = serializers.SerializerMethodField()
+    con_arguments = serializers.SerializerMethodField()
 
-class VoteSessionSerializer(serializers.Serializer):
-    idv = serializers.IntegerField(read_only=True)
+    class Meta:
+        model = AIAnalysis
+        fields = [
+            'bill_idp', 'processed_at', 'model', 'title_short', 'impact_categories', 
+            'affected_profiles', 'key_ideas', 'arguments', 'pro_arguments', 
+            'con_arguments', 'controversy_score', 'passed_by', 'dominant_party', 
+            'vote_date', 'ocr_quality', 'confidence'
+        ]
+        read_only_fields = fields
+
+    def get_impact_categories(self, obj):
+        return [cat.name for cat in obj.rel_impact_categories.all()]
+
+    def get_affected_profiles(self, obj):
+        return [prof.name for prof in obj.rel_affected_profiles.all()]
+
+    def get_key_ideas(self, obj):
+        return [idea.text for idea in obj.rel_key_ideas.all()]
+
+    def get_arguments(self, obj):
+        args = {}
+        for arg in obj.rel_arguments.all():
+            if arg.type == 'general':
+                args[f"arg_{arg.order}"] = arg.text
+        return args
+
+    def get_pro_arguments(self, obj):
+        return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'pro']
+
+    def get_con_arguments(self, obj):
+        return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'con']
+
+class PartyVoteResultSerializer(serializers.ModelSerializer):
+    # Use 'for' as the output key by defining it with a different variable name
+    for_count = serializers.IntegerField(source='for_votes')
+    
+    class Meta:
+        model = PartyVoteResult
+        fields = ['party', 'for_count', 'against', 'abstain', 'absent']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Rename 'for_count' to 'for' in the output JSON
+        ret['for'] = ret.pop('for_count')
+        return ret
+
+class VoteSessionSerializer(serializers.ModelSerializer):
     bill_idp = serializers.IntegerField(source='bill.idp', read_only=True)
-    type = serializers.CharField(read_only=True)
-    date = serializers.DateField(read_only=True)
-    time = serializers.CharField(read_only=True)
-    description = serializers.CharField(read_only=True)
-    present = serializers.IntegerField(read_only=True)
-    for_votes = serializers.IntegerField(read_only=True)
-    against = serializers.IntegerField(read_only=True)
-    abstain = serializers.IntegerField(read_only=True)
-    absent = serializers.IntegerField(read_only=True)
-    by_party = serializers.ListField(child=serializers.DictField(), read_only=True)
+    by_party = serializers.SerializerMethodField()
 
-class BillListSerializer(serializers.Serializer):
-    idp = serializers.IntegerField(read_only=True)
-    bill_number = serializers.CharField(read_only=True)
-    title = serializers.CharField(read_only=True)
-    initiator_name = serializers.CharField(read_only=True)
-    status = serializers.CharField(read_only=True)
-    registered_at = serializers.DateField(read_only=True)
+    class Meta:
+        model = VoteSession
+        fields = [
+            'idv', 'bill_idp', 'type', 'date', 'time', 'description',
+            'present', 'for_votes', 'against', 'abstain', 'absent', 'by_party'
+        ]
+        read_only_fields = fields
+
+    def get_by_party(self, obj):
+        return PartyVoteResultSerializer(obj.rel_party_results.all(), many=True).data
+
+class BillListSerializer(serializers.ModelSerializer):
     ai_analysis = AIAnalysisSerializer(read_only=True)
 
-class BillDetailSerializer(serializers.Serializer):
-    idp = serializers.IntegerField(read_only=True)
-    bill_number = serializers.CharField(read_only=True)
-    title = serializers.CharField(read_only=True)
-    initiator_name = serializers.CharField(read_only=True)
-    initiator_type = serializers.CharField(read_only=True)
-    status = serializers.CharField(read_only=True)
-    procedure = serializers.CharField(read_only=True)
-    law_type = serializers.CharField(read_only=True)
-    decision_chamber = serializers.CharField(read_only=True)
-    registered_at = serializers.DateField(read_only=True)
-    adopted_at = serializers.DateField(read_only=True)
-    source_url = serializers.URLField(read_only=True)
-    scraped_at = serializers.DateTimeField(read_only=True)
-    
-    doc_expunere_url = serializers.URLField(read_only=True)
-    doc_forma_url = serializers.URLField(read_only=True)
-    doc_aviz_ces_url = serializers.URLField(read_only=True)
-    doc_aviz_cl_url = serializers.URLField(read_only=True)
-    doc_adoptata_url = serializers.URLField(read_only=True)
-    
-    ocr_expunere = serializers.CharField(read_only=True)
-    ocr_aviz_ces = serializers.CharField(read_only=True)
-    ocr_aviz_cl = serializers.CharField(read_only=True)
-    
+    class Meta:
+        model = Bill
+        fields = [
+            'idp', 'bill_number', 'title', 'initiator_name', 'status',
+            'registered_at', 'ai_analysis'
+        ]
+        read_only_fields = fields
+
+class BillDetailSerializer(serializers.ModelSerializer):
     ai_analysis = AIAnalysisSerializer(read_only=True)
     vote_sessions = VoteSessionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Bill
+        fields = [
+            'idp', 'bill_number', 'title', 'initiator_name', 'initiator_type',
+            'status', 'procedure', 'law_type', 'decision_chamber', 'registered_at',
+            'adopted_at', 'source_url', 'scraped_at', 'doc_expunere_url',
+            'doc_forma_url', 'doc_aviz_ces_url', 'doc_aviz_cl_url',
+            'doc_adoptata_url', 'ocr_expunere', 'ocr_aviz_ces', 'ocr_aviz_cl',
+            'ai_analysis', 'vote_sessions'
+        ]
+        read_only_fields = fields

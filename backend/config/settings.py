@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.postgres',
     
     # Third party apps
     'rest_framework',
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     'apps.authentication',
     'apps.parliamentarians',
     'apps.bills',
+    'apps.search',
 ]
 
 MIDDLEWARE = [
@@ -201,6 +203,13 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
+
+REST_AUTH = {
+    'LOGIN_SERIALIZER': 'apps.authentication.serializers.LoginSerializer',
+    'REGISTER_SERIALIZER': 'apps.authentication.serializers.RegisterSerializer',
+    'USER_DETAILS_SERIALIZER': 'apps.authentication.serializers.UserSerializer',
+    'SESSION_LOGIN': True,
+}
 
 # allauth settings
 ACCOUNT_LOGIN_METHODS = {'username', 'email'}
