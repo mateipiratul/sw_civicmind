@@ -15,6 +15,8 @@ class BillService:
             'ai_analysis__rel_affected_profiles',
             'ai_analysis__rel_key_ideas',
             'ai_analysis__rel_arguments',
+            'vote_sessions',
+            'vote_sessions__rel_party_results',
         )
         if bill_ids is not None:
             # Maintain order if needed, but usually caller handles ordering
@@ -25,7 +27,7 @@ class FeedService:
     @staticmethod
     def get_personalized_bills(user_interests: list[str], persona_tags: list[str], queryset=None):
         if queryset is None:
-            queryset = Bill.objects.all()
+            queryset = BillService.get_enriched_bills_queryset()
 
         if not user_interests and not persona_tags:
             return queryset.order_by('-registered_at')

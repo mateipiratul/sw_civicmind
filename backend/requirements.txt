@@ -13,6 +13,7 @@ mistralai
 pgvector
 cryptography
 PyJWT
+redis
 upstash-redis
 
 # Type stubs (dev)
