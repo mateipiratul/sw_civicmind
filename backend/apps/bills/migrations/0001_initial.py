@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Bill',
                 'verbose_name_plural': 'Bills',
                 'db_table': 'bills',
-                'managed': False,
+                'managed': True,
             },
         ),
         migrations.CreateModel(
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Vote Session',
                 'verbose_name_plural': 'Vote Sessions',
                 'db_table': 'vote_sessions',
-                'managed': False,
+                'managed': True,
             },
         ),
         migrations.CreateModel(
@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'AI Analysis',
                 'verbose_name_plural': 'AI Analyses',
                 'db_table': 'ai_analyses',
-                'managed': False,
+                'managed': True,
             },
         ),
     ]

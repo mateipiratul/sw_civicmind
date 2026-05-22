@@ -2,7 +2,8 @@ import re
 import unicodedata
 import os
 import time
-from django.core.cache import cache
+import hashlib
+from apps.core.services import CacheService
 from django.db import connection
 from django.db.models import Q, Value, TextField, F, IntegerField, Case, When
 from django.db.models.functions import Lower, Replace
@@ -36,8 +37,10 @@ class SearchService:
     def get_query_embedding(query: str) -> list[float] | None:
         if len(query) < 4: return None
         
-        cache_key = f"embed_{hash(query)}"
-        cached = cache.get(cache_key)
+        # Use stable MD5 hash for cache key
+        query_hash = hashlib.md5(query.encode('utf-8')).hexdigest()
+        cache_key = f"embed_{query_hash}"
+        cached = CacheService.get(cache_key)
         if cached:
             return cached
 
@@ -49,7 +52,7 @@ class SearchService:
             # Mistral client might not have a direct timeout param in embeddings.create
             response = client.embeddings.create(model="mistral-embed", inputs=[query])
             embedding = response.data[0].embedding
-            cache.set(cache_key, embedding, 3600) 
+            CacheService.set(cache_key, embedding, 3600) 
             return embedding
         except Exception as e:
             print(f"Embedding error: {e}")
@@ -58,7 +61,7 @@ class SearchService:
     @staticmethod
     def get_cached_entities():
         cache_key = "search_entities_v2"
-        cached = cache.get(cache_key)
+        cached = CacheService.get(cache_key)
         if cached:
             return cached
         
@@ -72,7 +75,7 @@ class SearchService:
             'parties': parties,
             'names': names
         }
-        cache.set(cache_key, entities, 86400) 
+        CacheService.set(cache_key, entities, 86400) 
         return entities
 
     @staticmethod

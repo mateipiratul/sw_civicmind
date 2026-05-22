@@ -9,13 +9,15 @@ from django.contrib.auth.models import User
 from .models import Bill, AIAnalysis
 from .filters import BillFilterSet
 from .serializers import BillListSerializer, BillDetailSerializer
-from .services import FeedService, VoteAnalyticsService
+from .services import FeedService, VoteAnalyticsService, BillService
 from apps.parliamentarians.models import Parliamentarian
 from apps.parliamentarians.serializers import ParliamentarianVoteMapSerializer
 from apps.profiles.models import Profile
 from apps.core.pagination import BillPagination
 
 DEFAULT_TRENDING_TOPICS = ["Sănătate", "Educație", "Mediu", "Justiție", "Fiscal", "Muncă"]
+
+from django.db.models import Count, Case, When, IntegerField
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
@@ -30,112 +32,34 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
             return BillListSerializer
         return BillDetailSerializer
 
-    def _get_request_limit(self, default=20, maximum=100):
-        try:
-            return max(1, min(maximum, int(self.request.query_params.get('limit', default))))
-        except (ValueError, TypeError):
-            return default
-
-    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
-    def metadata(self, request):
-        categories = ["sanatate", "educatie", "fiscal", "justitie", "mediu", "munca", "administratie", "it", "pensii", "agricultura", "social"]
-        profiles = ["student", "angajat", "pensionar", "pfa", "it", "parinte", "agricultor", "antreprenor", "pacient"]
-        counties = sorted([c for c in Parliamentarian.objects.values_list('county', flat=True).distinct() if c])
-        return Response({
-            "impact_categories": categories,
-            "affected_profiles": profiles,
-            "counties": counties
-        })
-
-    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny], url_path='trending')
-    def trending(self, request):
-        limit = self._get_request_limit(default=6, maximum=12)
-        recent_bills = Bill.objects.select_related('ai_analysis').order_by('-registered_at')[:200]
-        counter = Counter()
-        for bill in recent_bills:
-            analysis = getattr(bill, 'ai_analysis', None)
-            if analysis and analysis.rel_impact_categories.exists():
-                for category in analysis.rel_impact_categories.values_list('name', flat=True):
-                    if category: counter[category] += 1
-        
-        topics = [{"label": label, "count": count} for label, count in counter.most_common(limit)]
-        if not topics:
-            topics = [{"label": label, "count": 0} for label in DEFAULT_TRENDING_TOPICS[:limit]]
-        return Response({"topics": topics})
-
-    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
-    def feed(self, request):
-        from datetime import timedelta
-        from django.utils import timezone
-        past_week = timezone.now().date() - timedelta(days=7)
-        queryset = self.filter_queryset(self.get_queryset()).filter(registered_at__gte=past_week)
-        if not queryset.exists():
-            queryset = self.filter_queryset(self.get_queryset())
-        
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='votes')
-    def votes(self, request, pk=None):
-        bill = self.get_object()
-        vote_session = bill.vote_sessions.order_by('-date').first()
-        if not vote_session:
-            return Response({'detail': 'No vote sessions found for this bill.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        buckets = VoteAnalyticsService.get_bill_vote_buckets(vote_session)
-        
-        return Response({
-            'bill_idp': bill.idp,
-            'bill_number': bill.bill_number,
-            'vote_session': {
-                'date': vote_session.date,
-                'type': vote_session.type,
-                'description': vote_session.description,
-                'summary': {
-                    'present': vote_session.present,
-                    'for': vote_session.for_votes,
-                    'against': vote_session.against,
-                    'abstain': vote_session.abstain,
-                    'absent': vote_session.absent,
-                },
-            },
-            'votes': buckets,
-        })
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action in ('list', 'personalized', 'retrieve'):
+            return BillService.get_enriched_bills_queryset().order_by('-registered_at')
+        return queryset
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)
         user_interests = list(getattr(profile, 'interests', []) or [])
         persona_tags = list(getattr(profile, 'persona_tags', []) or [])
-        preferred_party = (getattr(profile, 'preferred_party', None) or '').strip() or None
         county = (getattr(profile, 'county', None) or '').strip() or None
+        preferred_party = (getattr(profile, 'preferred_party', None) or '').strip() or None
 
-        queryset = self.filter_queryset(self.get_queryset())
+        # 1. Get filtered base queryset
+        base_queryset = self.filter_queryset(self.get_queryset())
+        
+        # 2. Apply personalization logic
         queryset = FeedService.get_personalized_bills(
             user_interests=user_interests, 
             persona_tags=persona_tags,
-            queryset=queryset
+            queryset=base_queryset
         )
 
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
-            
-            vote_limit = 5
-            reps_queryset = FeedService.get_representatives(
-                county=county, 
-                preferred_party=preferred_party,
-                limit=6
-            )
-            reps_serializer = ParliamentarianVoteMapSerializer(
-                reps_queryset, many=True,
-                context={**self.get_serializer_context(), 'vote_limit': vote_limit}
-            )
             
             response.data.update({
                 'profile': {
@@ -151,16 +75,27 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
                     'county': county,
                     'party': preferred_party,
                 },
-                'myRepresentatives': {
-                    'total': reps_queryset.count() if hasattr(reps_queryset, 'count') else len(reps_queryset),
-                    'voteLimit': vote_limit,
-                    'parliamentarians': reps_serializer.data,
-                },
             })
             return response
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({'bills': serializer.data})
+        # Non-paginated fallback
+        serializer = self.get_serializer(queryset[:100], many=True)
+        return Response({
+            'page': 1,
+            'limit': len(serializer.data),
+            'total': len(serializer.data),
+            'totalPages': 1,
+            'bills': serializer.data,
+            'profile': {
+                'county': county, 'preferredParty': preferred_party,
+                'interests': user_interests, 'personaTags': persona_tags,
+                'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
+            },
+            'appliedFilters': {
+                'impactCategories': user_interests, 'affectedProfiles': persona_tags,
+                'county': county, 'party': preferred_party,
+            },
+        })
 
 class AdminStatsView(APIView):
     permission_classes = [permissions.IsAdminUser]

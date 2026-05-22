@@ -14,6 +14,7 @@ from .serializers import (
     ParliamentarianVoteMapSerializer,
 )
 from apps.core.pagination import ParliamentarianPagination
+from apps.core.services import CacheService
 
 ROMANIAN_COUNTIES = [
     'Alba', 'Arad', 'Argeș', 'Bacău', 'Bihor', 'Bistrița-Năsăud', 'Botoșani', 'Brăila',
@@ -23,7 +24,6 @@ ROMANIAN_COUNTIES = [
     'Prahova', 'Sălaj', 'Satu Mare', 'Sibiu', 'Suceava', 'Teleorman', 'Timiș', 'Tulcea',
     'Vâlcea', 'Vaslui', 'Vrancea',
 ]
-
 
 class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -93,9 +93,6 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 vote_queryset = vote_queryset.filter(vote_session__bill__bill_number__in=bill_numbers)
 
         if self.action in {'vote_map', 'my_representatives', 'retrieve'}:
-            # Optimization: If we are not filtering by specific bills, we might want to limit 
-            # the number of votes fetched per MP. However, Django's Prefetch doesn't support slicing.
-            # For now, we rely on field limiting (only()) and Python-side slicing in serializers.
             return (
                 Parliamentarian.objects
                 .select_related('impact_score')
@@ -127,26 +124,30 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='metadata')
     def metadata(self, request):
-        parliamentarians = Parliamentarian.objects.all()
-        counties = sorted(
-            county
-            for county in parliamentarians.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct()
-        )
-        parties = sorted(
-            party
-            for party in parliamentarians.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct()
-        )
-        chamber_counts = Counter(
-            chamber or 'unknown'
-            for chamber in parliamentarians.values_list('chamber', flat=True)
-        )
+        cache_key = "parliamentarian_metadata_v1"
+        cached = CacheService.get(cache_key)
+        if cached:
+            return Response(cached)
 
-        return Response({
+        parliamentarians = Parliamentarian.objects.all()
+        counties = sorted([
+            c for c in parliamentarians.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct() if c
+        ])
+        parties = sorted([
+            p for p in parliamentarians.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct() if p
+        ])
+        chamber_counts = dict(Counter(
+            parliamentarians.values_list('chamber', flat=True)
+        ))
+
+        data = {
             'counties': counties or ROMANIAN_COUNTIES,
             'parties': parties,
-            'chambers': dict(chamber_counts),
+            'chambers': chamber_counts,
             'hasCountyData': bool(counties),
-        })
+        }
+        CacheService.set(cache_key, data, 86400) # Cache for 24h
+        return Response(data)
 
     @action(detail=False, methods=['get'], url_path='vote-map')
     def vote_map(self, request):
@@ -179,7 +180,6 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
         party = (request.query_params.get('party') or getattr(profile, 'preferred_party', '') or '').strip()
         vote_limit = self.get_serializer_context().get('vote_limit')
 
-        # Use ParliamentarianFilterSet to standardize filtering instead of manual filters
         base_queryset = self.get_queryset().filter(chamber__icontains='deput').order_by('mp_name')
         filter_data = {'county': county}
         if party:
