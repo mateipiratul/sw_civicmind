@@ -15,15 +15,7 @@ from .serializers import (
 )
 from apps.core.pagination import ParliamentarianPagination
 from apps.core.services import CacheService
-
-ROMANIAN_COUNTIES = [
-    'Alba', 'Arad', 'Argeș', 'Bacău', 'Bihor', 'Bistrița-Năsăud', 'Botoșani', 'Brăila',
-    'Brașov', 'București', 'Buzău', 'Călărași', 'Caraș-Severin', 'Cluj', 'Constanța',
-    'Covasna', 'Dâmbovița', 'Dolj', 'Galați', 'Giurgiu', 'Gorj', 'Harghita', 'Hunedoara',
-    'Ialomița', 'Iași', 'Ilfov', 'Maramureș', 'Mehedinți', 'Mureș', 'Neamț', 'Olt',
-    'Prahova', 'Sălaj', 'Satu Mare', 'Sibiu', 'Suceava', 'Teleorman', 'Timiș', 'Tulcea',
-    'Vâlcea', 'Vaslui', 'Vrancea',
-]
+from apps.core.constants import ROMANIAN_COUNTIES
 
 class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

@@ -74,20 +74,8 @@ class ProfileQuestionnaireSerializer(serializers.Serializer):
         return "Partidul votat / preferat"
 
     def get_party_options(self, obj: Profile) -> List[Dict[str, str]]:
-        from apps.parliamentarians.models import Parliamentarian
-
-        try:
-            parties = (
-                Parliamentarian.objects
-                .filter(chamber__icontains="deput")
-                .exclude(party__isnull=True)
-                .exclude(party="")
-                .values_list("party", flat=True)
-                .distinct()
-            )
-            return [{"value": party, "label": party} for party in sorted(parties)]
-        except (OperationalError, ProgrammingError):
-            return []
+        from apps.parliamentarians.services import ParliamentarianService
+        return ParliamentarianService.get_party_options()
 
     def get_work_domains(self, obj: Profile) -> List[Dict[str, str]]:
         return PROFILE_QUESTIONNAIRE["work_domains"]

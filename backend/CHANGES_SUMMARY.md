@@ -19,10 +19,10 @@ This document summarizes the core systems and architectural patterns currently a
   - MD5 hashing is used for cache key generation to ensure multi-process consistency.
 - **Cache Reliability**: Implemented Django signals to automatically invalidate parliamentarian-related caches when data changes, eliminating the risk of stale data in search results or filters.
 
-## 7. Performance & Scalability
-- **Database Indexing**: Implemented `db_index=True` on all frequently filtered and ordered fields (bill numbers, status, counties, parties, dates). This ensures O(log n) query performance as the legislative dataset grows.
-- **Cursor Pagination**: Transitioned the high-volume personalized feed to `CursorPagination`. This eliminates the expensive `COUNT(*)` overhead of traditional pagination, enabling smooth infinite scrolling at scale.
-- **SQL Optimization**: Refactored personalization subqueries to use `__in` operators instead of dynamic `OR` chains, reducing SQL parsing overhead.
+## 8. Maintainability & Code Quality
+- **Centralized Constants**: Created `apps/core/constants.py` to house domain-specific data (e.g., Romanian counties, trending topics), removing "magic" hardcoded values from views.
+- **Service Layer Abstraction**: Introduced `ParliamentarianService` to handle complex logic like party option extraction, keeping serializers lean and focused on representation.
+- **Aggressive Metadata Caching**: Form options for the user questionnaire are now cached for 24 hours, drastically reducing database load for frequently accessed form metadata.
 
 
 ## 4. Automation & Personalization

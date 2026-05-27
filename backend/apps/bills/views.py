@@ -13,9 +13,8 @@ from .services import FeedService, VoteAnalyticsService, BillService
 from apps.parliamentarians.models import Parliamentarian
 from apps.parliamentarians.serializers import ParliamentarianVoteMapSerializer
 from apps.profiles.models import Profile
-from apps.core.pagination import BillPagination
-
-DEFAULT_TRENDING_TOPICS = ["Sănătate", "Educație", "Mediu", "Justiție", "Fiscal", "Muncă"]
+from apps.core.pagination import BillPagination, PersonalizedFeedPagination
+from apps.core.constants import DEFAULT_TRENDING_TOPICS
 
 from django.db.models import Count, Case, When, IntegerField
 
