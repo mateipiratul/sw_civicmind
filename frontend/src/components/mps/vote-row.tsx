@@ -4,15 +4,15 @@ import type { MPVote } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
 const VOTE_COLORS: Record<string, string> = {
-  for: "#16a34a",
-  against: "#dc2626",
-  abstain: "#888",
-  absent: "#bbb",
-  Pentru: "#16a34a",
-  Contra: "#dc2626",
-  Abtinere: "#888",
-  "Abținere": "#888",
-  Absent: "#bbb",
+  for: "var(--color-success)",
+  against: "var(--color-destructive)",
+  abstain: "var(--color-muted-foreground)",
+  absent: "var(--color-input)",
+  Pentru: "var(--color-success)",
+  Contra: "var(--color-destructive)",
+  Abtinere: "var(--color-muted-foreground)",
+  "Abținere": "var(--color-muted-foreground)",
+  Absent: "var(--color-input)",
 };
 
 const VOTE_LABELS: Record<string, string> = {

@@ -1,90 +1,30 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MessageSquareText, Send, X, FileText } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
-import { api, type Bill, type RagSource } from "@/lib/api";
-
-type BillChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
+import type { Bill } from "@/lib/api";
+import { useRagStream } from "@/lib/hooks/use-rag-stream";
 
 interface BillChatProps {
   bill: Bill;
 }
 
-const createId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
 export function BillChat({ bill }: BillChatProps) {
   const [qaOpen, setQaOpen] = useState(false);
   const [qaQuestion, setQaQuestion] = useState("");
-  const [qaMessages, setQaMessages] = useState<BillChatMessage[]>([]);
-  const [qaLoading, setQaLoading] = useState(false);
-  const [qaSources, setQaSources] = useState<RagSource[]>([]);
+  const { messages, isLoading, sources, sendMessage } = useRagStream([]);
   const qaBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (qaOpen) {
       qaBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [qaMessages, qaSources, qaLoading, qaOpen]);
+  }, [messages, sources, isLoading, qaOpen]);
 
-  const handleQaSubmit = async (e: React.FormEvent) => {
+  const handleQaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const q = qaQuestion.trim();
-    if (!q || qaLoading) return;
-    const userMessage: BillChatMessage = { id: createId(), role: "user", content: q };
-    const assistantId = createId();
-    let assistantStarted = false;
-
+    if (!qaQuestion.trim() || isLoading) return;
+    sendMessage(qaQuestion, { bill_idp: bill.idp });
     setQaQuestion("");
-    setQaMessages(prev => [...prev, userMessage]);
-    setQaSources([]);
-    setQaLoading(true);
-    try {
-      await api.streamRagChat(q, { bill_idp: bill.idp }, {
-        onEvent: (event) => {
-          if (event.type === "token") {
-            if (!assistantStarted) {
-              assistantStarted = true;
-              setQaMessages(prev => [...prev, { id: assistantId, role: "assistant", content: event.delta }]);
-            } else {
-              setQaMessages(prev =>
-                prev.map(message =>
-                  message.id === assistantId
-                    ? { ...message, content: message.content + event.delta }
-                    : message,
-                ),
-              );
-            }
-          }
-          if (event.type === "sources") setQaSources(event.items);
-          if (event.type === "done") {
-            setQaSources(event.sources);
-            if (!assistantStarted) {
-              assistantStarted = true;
-              setQaMessages(prev => [...prev, { id: assistantId, role: "assistant", content: event.answer }]);
-            } else if (event.answer) {
-              setQaMessages(prev =>
-                prev.map(message =>
-                  message.id === assistantId ? { ...message, content: event.answer } : message,
-                ),
-              );
-            }
-          }
-        },
-      });
-    } catch {
-      setQaMessages(prev => [
-        ...prev,
-        { id: assistantId, role: "assistant", content: "A aparut o eroare. Incearca din nou." },
-      ]);
-    } finally {
-      setQaLoading(false);
-    }
   };
 
   return (
@@ -124,12 +64,12 @@ export function BillChat({ bill }: BillChatProps) {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
-            {qaMessages.length === 0 && (
+            {messages.length === 0 && (
               <div className="rounded-xl border border-dashed border-gray-200 p-5 text-sm text-gray-500 leading-relaxed bg-gray-50/50">
                 Salut! Sunt asistentul tău legislativ. Întreabă-mă cum te afectează acest proiect, ce prevederi specifice conține sau ce documente oficiale stau la baza analizei.
               </div>
             )}
-            {qaMessages.map(message => (
+            {messages.map(message => (
               <div
                 key={message.id}
                 className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
@@ -154,15 +94,15 @@ export function BillChat({ bill }: BillChatProps) {
                 </div>
               </div>
             ))}
-            {qaLoading && qaMessages[qaMessages.length - 1]?.role !== "assistant" && (
+            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex gap-3 items-center text-gray-400 text-sm italic">
                 <div className="w-7 h-7 rounded-full bg-gray-900 text-white flex items-center justify-center text-[10px] font-bold">AI</div>
                 Se generează răspunsul...
               </div>
             )}
-            {qaSources.length > 0 && (
+            {sources.length > 0 && (
               <div className="flex flex-wrap gap-2 pl-10">
-                {qaSources.slice(0, 3).map((src, i) => (
+                {sources.slice(0, 3).map((src, i) => (
                   <div
                     key={`${src.document_id}-${i}`}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-[11px] text-gray-600 max-w-[160px] truncate group"
@@ -185,12 +125,12 @@ export function BillChat({ bill }: BillChatProps) {
               value={qaQuestion}
               onChange={e => setQaQuestion(e.target.value)}
               placeholder="Întreabă despre acest proiect..."
-              disabled={qaLoading}
+              disabled={isLoading}
               className="flex-1 min-w-0 px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-900 transition-all text-gray-900 placeholder:text-gray-400"
             />
             <button
               type="submit"
-              disabled={qaLoading || !qaQuestion.trim()}
+              disabled={isLoading || !qaQuestion.trim()}
               className="w-10 h-10 rounded-xl border-none bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 transition-all flex items-center justify-center shrink-0 shadow-sm"
               aria-label="Trimite intrebarea"
             >

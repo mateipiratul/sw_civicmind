@@ -48,10 +48,10 @@ export function BillVotes({ votes }: BillVotesProps) {
   const total = s.present || (s.for + s.against + s.abstain + s.absent);
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
   const bars = [
-    { label: "Pentru", count: s.for, color: "bg-green-600" },
-    { label: "Contra", count: s.against, color: "bg-red-600" },
-    { label: "Abținere", count: s.abstain, color: "bg-gray-500" },
-    { label: "Absent", count: s.absent, color: "bg-gray-300" },
+    { label: "Pentru", count: s.for, color: "var(--color-success)" },
+    { label: "Contra", count: s.against, color: "var(--color-destructive)" },
+    { label: "Abținere", count: s.abstain, color: "var(--color-muted-foreground)" },
+    { label: "Absent", count: s.absent, color: "var(--color-input)" },
   ];
 
   return (
@@ -78,8 +78,8 @@ export function BillVotes({ votes }: BillVotesProps) {
             </div>
             <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
               <div
-                className={`h-full ${color} rounded-full`}
-                style={{ width: `${pct(count)}%` }}
+                className="h-full rounded-full"
+                style={{ width: `${pct(count)}%`, backgroundColor: color }}
               />
             </div>
           </div>
@@ -146,6 +146,10 @@ export function BillVotes({ votes }: BillVotesProps) {
           </div>
         </div>
       )}
+    </section>
+  );
+}
+     )}
     </section>
   );
 }

@@ -48,8 +48,8 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
         })}
         <span style={{
           fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
-          background: isAdopted ? "#dcfce7" : "#f0f0f0",
-          color: isAdopted ? "#16a34a" : "#666",
+          background: isAdopted ? "var(--color-success)" : "#f0f0f0",
+          color: isAdopted ? "var(--color-primary-foreground)" : "#666",
         }}>
           {bill.status || "În analiză"}
         </span>

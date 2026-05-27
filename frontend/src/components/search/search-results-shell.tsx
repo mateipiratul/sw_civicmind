@@ -22,12 +22,27 @@ type SearchResultsShellProps = {
   loading: boolean;
   error: string | null;
   onTabChange: (tab: SearchTab) => void;
+  lawFilters: LawFilters;
+  mpFilters: MpFilters;
+  onLawFilterChange: (filters: LawFilters) => void;
+  onMpFilterChange: (filters: MpFilters) => void;
+  onResetFilters: (tab: SearchTab) => void;
 };
 
-export function SearchResultsShell({ q, activeTab, data, loading, error, onTabChange }: SearchResultsShellProps) {
+export function SearchResultsShell({ 
+  q, 
+  activeTab, 
+  data, 
+  loading, 
+  error, 
+  onTabChange,
+  lawFilters,
+  mpFilters,
+  onLawFilterChange,
+  onMpFilterChange,
+  onResetFilters
+}: SearchResultsShellProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [lawFilters, setLawFilters] = useState(EMPTY_FILTERS);
-  const [mpFilters, setMpFilters] = useState(EMPTY_MP_FILTERS);
 
   const laws = data?.laws ?? [];
   const mps = data?.mps ?? [];
@@ -52,31 +67,28 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
     onTabChange(nextTab);
   };
 
-  const handleLawFilterChange = (key: keyof LawFilters, value: string) => {
-    setLawFilters((current) => ({ ...current, [key]: value }));
+  const handleLawChange = (key: keyof LawFilters, value: string) => {
+    onLawFilterChange({ ...lawFilters, [key]: value });
   };
 
-  const handleMpFilterChange = (key: keyof MpFilters, value: string) => {
-    setMpFilters((current) => ({ ...current, [key]: value }));
+  const handleMpChange = (key: keyof MpFilters, value: string) => {
+    onMpFilterChange({ ...mpFilters, [key]: value });
   };
 
   const handleLawChipClear = (key: string) => {
-    handleLawFilterChange(key as keyof LawFilters, "");
+    handleLawChange(key as keyof LawFilters, "");
   };
 
   const handleMpChipClear = (key: string) => {
-    handleMpFilterChange(key as keyof MpFilters, "");
+    handleMpChange(key as keyof MpFilters, "");
   };
 
-  const handleResetFilters = () => {
-    if (activeTab === "laws") setLawFilters(EMPTY_FILTERS);
-    if (activeTab === "mps") setMpFilters(EMPTY_MP_FILTERS);
+  const handleResetCurrentTabFilters = () => {
+    onResetFilters(activeTab);
   };
 
   const openFilters = () => setFiltersOpen(true);
   const closeFilters = () => setFiltersOpen(false);
-  const resetLawFilters = () => setLawFilters(EMPTY_FILTERS);
-  const resetMpFilters = () => setMpFilters(EMPTY_MP_FILTERS);
 
   return (
     <>
@@ -138,7 +150,7 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
           lawChips={lawChips}
           filteredLaws={filteredLaws}
           onClearChip={handleLawChipClear}
-          onResetFilters={resetLawFilters}
+          onResetFilters={handleResetCurrentTabFilters}
         />
       )}
 
@@ -148,7 +160,7 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
           filteredMps={filteredMps}
           query={q}
           onClearChip={handleMpChipClear}
-          onResetFilters={resetMpFilters}
+          onResetFilters={handleResetCurrentTabFilters}
         />
       )}
 
@@ -160,9 +172,9 @@ export function SearchResultsShell({ q, activeTab, data, loading, error, onTabCh
         lawOptions={lawOptions}
         mpOptions={mpOptions}
         onClose={closeFilters}
-        onReset={handleResetFilters}
-        onLawChange={handleLawFilterChange}
-        onMpChange={handleMpFilterChange}
+        onReset={handleResetCurrentTabFilters}
+        onLawChange={handleLawChange}
+        onMpChange={handleMpChange}
       />
     </>
   );
