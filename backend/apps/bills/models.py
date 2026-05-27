@@ -2,15 +2,15 @@ from django.db import models
 
 class Bill(models.Model):
     idp = models.IntegerField(primary_key=True)
-    bill_number = models.CharField(max_length=50, blank=False, null=False)
+    bill_number = models.CharField(max_length=50, blank=False, null=False, db_index=True)
     title = models.TextField(blank=True, null=False)
     initiator_name = models.TextField(blank=True, null=True)
     initiator_type = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     procedure = models.CharField(max_length=100, blank=True, null=True)
     law_type = models.CharField(max_length=100, blank=True, null=True)
     decision_chamber = models.CharField(max_length=100, blank=True, null=True)
-    registered_at = models.DateField(blank=True, null=True)
+    registered_at = models.DateField(blank=True, null=True, db_index=True)
     adopted_at = models.DateField(blank=True, null=True)
     source_url = models.URLField(max_length=500, blank=True, null=True)
     scraped_at = models.DateTimeField(auto_now_add=True)
@@ -82,8 +82,8 @@ class AIAnalysis(models.Model):
     
     controversy_score = models.FloatField(blank=True, null=True)
     passed_by = models.CharField(max_length=100, blank=True, null=True)
-    dominant_party = models.CharField(max_length=100, blank=True, null=True)
-    vote_date = models.DateField(blank=True, null=True)
+    dominant_party = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    vote_date = models.DateField(blank=True, null=True, db_index=True)
     ocr_quality = models.CharField(max_length=50, blank=True, null=True)
     confidence = models.FloatField(blank=True, null=True)
 
@@ -181,7 +181,7 @@ class BillEvent(models.Model):
     bill_number = models.CharField(max_length=50, blank=True, null=True)
     source = models.CharField(max_length=50, default='cdep')
     chamber = models.CharField(max_length=50, default='deputies')
-    vote_date = models.DateField(blank=True, null=True)
+    vote_date = models.DateField(blank=True, null=True, db_index=True)
     summary = models.JSONField(default=dict)
     detected_at = models.DateTimeField()
 
@@ -206,3 +206,4 @@ class BillFlag(models.Model):
         managed = True
         verbose_name = "Bill Flag"
         verbose_name_plural = "Bill Flags"
+ "Bill Flags"

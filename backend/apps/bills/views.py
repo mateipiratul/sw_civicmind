@@ -40,6 +40,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
+        self.pagination_class = PersonalizedFeedPagination
         profile, _ = Profile.objects.get_or_create(user=request.user)
         user_interests = list(getattr(profile, 'interests', []) or [])
         persona_tags = list(getattr(profile, 'persona_tags', []) or [])

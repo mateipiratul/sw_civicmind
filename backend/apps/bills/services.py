@@ -33,17 +33,14 @@ class FeedService:
             return queryset.order_by('-registered_at')
 
         # Use Exists subqueries to avoid joins and distinct()
-        # This is significantly faster for ManyToMany relationships
-        interest_q = Q()
-        for interest in user_interests:
-            interest_q |= Q(analyses__bill=OuterRef('pk'), name__iexact=interest)
+        # Using __in is more efficient than a loop of OR conditions for large interest sets.
+        has_interest = Exists(
+            ImpactCategory.objects.filter(analyses__bill=OuterRef('pk'), name__in=user_interests)
+        ) if user_interests else Value(False)
         
-        persona_q = Q()
-        for persona in persona_tags:
-            persona_q |= Q(analyses__bill=OuterRef('pk'), name__iexact=persona)
-
-        has_interest = Exists(ImpactCategory.objects.filter(interest_q)) if user_interests else Value(False)
-        has_persona = Exists(AffectedProfile.objects.filter(persona_q)) if persona_tags else Value(False)
+        has_persona = Exists(
+            AffectedProfile.objects.filter(analyses__bill=OuterRef('pk'), name__in=persona_tags)
+        ) if persona_tags else Value(False)
 
         return queryset.annotate(
             is_match=Case(

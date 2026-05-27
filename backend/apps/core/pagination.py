@@ -1,4 +1,4 @@
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.response import Response
 
 class StandardPagination(PageNumberPagination):
@@ -23,3 +23,12 @@ class BillPagination(StandardPagination):
 class ParliamentarianPagination(StandardPagination):
     page_size = 25
     results_key = 'parliamentarians'
+
+class StandardCursorPagination(CursorPagination):
+    page_size = 20
+    page_size_query_param = 'limit'
+    max_page_size = 100
+    ordering = '-registered_at' # Default ordering
+
+class PersonalizedFeedPagination(StandardCursorPagination):
+    ordering = ('-is_match', '-registered_at')

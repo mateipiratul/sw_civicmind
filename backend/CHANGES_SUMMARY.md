@@ -19,10 +19,10 @@ This document summarizes the core systems and architectural patterns currently a
   - MD5 hashing is used for cache key generation to ensure multi-process consistency.
 - **Cache Reliability**: Implemented Django signals to automatically invalidate parliamentarian-related caches when data changes, eliminating the risk of stale data in search results or filters.
 
-## 6. Security & Infrastructure
-- **Security Hardening**: Updated `settings.py` to use safe defaults for `DEBUG` and `CORS_ALLOW_ALL_ORIGINS`, ensuring they default to `False` in the absence of explicit environment variables.
-- **Dependency Optimization**: Cleaned up `requirements.txt` to remove duplicate entries and ensure standard Redis protocol support.
-- **Containerization Readiness**: Finalized Docker orchestration with automated migration and static file collection scripts.
+## 7. Performance & Scalability
+- **Database Indexing**: Implemented `db_index=True` on all frequently filtered and ordered fields (bill numbers, status, counties, parties, dates). This ensures O(log n) query performance as the legislative dataset grows.
+- **Cursor Pagination**: Transitioned the high-volume personalized feed to `CursorPagination`. This eliminates the expensive `COUNT(*)` overhead of traditional pagination, enabling smooth infinite scrolling at scale.
+- **SQL Optimization**: Refactored personalization subqueries to use `__in` operators instead of dynamic `OR` chains, reducing SQL parsing overhead.
 
 
 ## 4. Automation & Personalization
