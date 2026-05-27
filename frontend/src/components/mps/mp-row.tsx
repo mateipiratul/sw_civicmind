@@ -66,17 +66,17 @@ export function MPRow({ mp }: MPRowProps) {
         {s && t > 0 && (
           <div style={{ marginBottom: 16, marginTop: 4 }}>
             <div style={{ display: "flex", height: 6, borderRadius: 99, overflow: "hidden", gap: 1, marginBottom: 8 }}>
-              <div style={{ width: `${pct(s.for_count)}%`, background: "#16a34a" }} />
-              <div style={{ width: `${pct(s.against_count)}%`, background: "#dc2626" }} />
-              <div style={{ width: `${pct(s.abstain_count)}%`, background: "#888" }} />
-              <div style={{ width: `${pct(s.absent_count)}%`, background: "#ddd" }} />
+              <div style={{ width: `${pct(s.for_count)}%`, background: "var(--color-success)" }} />
+              <div style={{ width: `${pct(s.against_count)}%`, background: "var(--color-destructive)" }} />
+              <div style={{ width: `${pct(s.abstain_count)}%`, background: "var(--color-muted-foreground)" }} />
+              <div style={{ width: `${pct(s.absent_count)}%`, background: "var(--color-input)" }} />
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
-                { label: "Pentru", n: s.for_count, color: "#16a34a" },
-                { label: "Contra", n: s.against_count, color: "#dc2626" },
-                { label: "Abținere", n: s.abstain_count, color: "#888" },
-                { label: "Absent", n: s.absent_count, color: "#bbb" },
+                { label: "Pentru", n: s.for_count, color: "var(--color-success)" },
+                { label: "Contra", n: s.against_count, color: "var(--color-destructive)" },
+                { label: "Abținere", n: s.abstain_count, color: "var(--color-muted-foreground)" },
+                { label: "Absent", n: s.absent_count, color: "var(--color-input)" },
               ].map(({ label, n, color }) => (
                 <span key={label} style={{ fontSize: 13 }}>
                   <span style={{ color, fontWeight: 600 }}>{pct(n)}%</span>

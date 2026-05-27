@@ -55,7 +55,7 @@ export class BaseApiClient {
     }
 
     const contentType = response.headers.get("content-type") || "";
-    let data: any;
+    let data: unknown;
     if (contentType.includes("application/json")) {
       data = await response.json();
     } else {
@@ -72,14 +72,14 @@ export class BaseApiClient {
 
     if (!response.ok) {
       // Handle Django REST Framework validation errors (field-specific)
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        const errorObj = data as Record<string, any>;
+      if (data && typeof data === 'object' && data !== null && !Array.isArray(data)) {
+        const errorObj = data as Record<string, unknown>;
         if (!errorObj.detail && !errorObj.error) {
           const errors: string[] = [];
           for (const [field, messages] of Object.entries(errorObj)) {
             const fieldPrefix = field === "non_field_errors" || field === "detail" ? "" : `${field}: `;
             if (Array.isArray(messages)) {
-              errors.push(...messages.map(m => `${fieldPrefix}${m}`));
+              errors.push(...messages.map(m => `${fieldPrefix}${String(m)}`));
             } else if (typeof messages === 'string') {
               errors.push(`${fieldPrefix}${messages}`);
             }
@@ -90,7 +90,7 @@ export class BaseApiClient {
         }
       }
       
-      const errorObj = data as Record<string, any> | null;
+      const errorObj = data as Record<string, unknown> | null;
       const detailMsg = errorObj?.detail || errorObj?.error || `API Error: ${response.status}`;
       throw new ApiError(String(detailMsg), response.status);
     }

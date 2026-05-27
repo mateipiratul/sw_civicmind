@@ -68,7 +68,7 @@ export class AuthModule extends BaseApiClient {
     return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
   };
 
-  getQuestionnaireMetadata = async (): Promise<any> => {
+  getQuestionnaireMetadata = async (): Promise<{ impact_categories: string[], counties: string[] }> => {
     return this.request("/api/profiles/questionnaire/");
   };
 
