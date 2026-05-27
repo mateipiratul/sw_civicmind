@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.db.models import Count, Q
 from .models import MPVote, ImpactScore, Parliamentarian
 from django.utils import timezone
+from apps.core.services import CacheService
 
 @receiver([post_save, post_delete], sender=MPVote)
 def update_impact_score_on_vote(sender, instance, **kwargs):
@@ -44,3 +45,11 @@ def update_impact_score_on_vote(sender, instance, **kwargs):
             'calculated_at': timezone.now()
         }
     )
+
+@receiver([post_save, post_delete], sender=Parliamentarian)
+def invalidate_parliamentarian_caches(sender, instance, **kwargs):
+    """
+    Invalidates cached metadata and search entities when a parliamentarian is modified.
+    """
+    CacheService.delete("parliamentarian_metadata_v1")
+    CacheService.delete("search_entities_v2")

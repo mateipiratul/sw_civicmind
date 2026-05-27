@@ -126,7 +126,7 @@ DATABASES = {
 # For production, set CORS_ALLOW_ALL_ORIGINS=False and provide a
 # comma-separated list in CORS_ALLOWED_ORIGINS. For local development
 # the defaults allow the Vite dev server.
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'False'
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174').split(',')
 # Allow cookies to be included in cross-origin requests when True.
 CORS_ALLOW_CREDENTIALS = os.getenv('CORS_ALLOW_CREDENTIALS', 'True') == 'True'

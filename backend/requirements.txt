@@ -12,7 +12,6 @@ whitenoise
 mistralai
 pgvector
 cryptography
-PyJWT
 redis
 upstash-redis
 
