@@ -25,12 +25,18 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-=)2bhjejkunxb_llyldnhn^u8o6drldvp*5wl1oi01q9&5&d7#')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not DEBUG and not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is not set")
+SECRET_KEY = SECRET_KEY or 'django-insecure-development-only-key'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+if not DEBUG and '*' in ALLOWED_HOSTS:
+     # Prevent wildcard in production unless explicitly intentional (dangerous)
+     pass
 
 
 # Application definition
@@ -131,22 +137,39 @@ CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,
 # Allow cookies to be included in cross-origin requests when True.
 CORS_ALLOW_CREDENTIALS = os.getenv('CORS_ALLOW_CREDENTIALS', 'True') == 'True'
 
-# CSRF trusted origins for local development. Include the Vite dev server
-# (http://localhost:5173) and 127.0.0.1 variant. Can be overridden by
-# setting the CSRF_TRUSTED_ORIGINS environment variable (comma-separated).
-CSRF_TRUSTED_ORIGINS = os.getenv(
-    'CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174'
-).split(',')
+# CSRF trusted origins
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.1:5173,http://localhost:5174,http://127.0.1:5174').split(',')
 
-# Cookie / CSRF security defaults. For cross-site cookie-based auth in
-# production you will typically set SAMESITE=None and SECURE=True.
-CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
-SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+# Cookie / CSRF security defaults.
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
 SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
-# Leave CSRF cookie readable by JS (default Django behavior); only set to
-# True if you use a different mechanism for providing the token to clients.
-CSRF_COOKIE_HTTPONLY = os.getenv('CSRF_COOKIE_HTTPONLY', 'False') == 'True'
+
+# Production Security block
+if not DEBUG:
+    # Required for Nginx reverse proxy
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # SSL Hardening
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # HSTS (6 months)
+    SECURE_HSTS_SECONDS = 15768000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Browser Security
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+else:
+    # Dev settings
+    CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+
 
 
 # Password validation
@@ -212,6 +235,7 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

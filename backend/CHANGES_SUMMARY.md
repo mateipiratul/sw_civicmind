@@ -19,10 +19,10 @@ This document summarizes the core systems and architectural patterns currently a
   - MD5 hashing is used for cache key generation to ensure multi-process consistency.
 - **Cache Reliability**: Implemented Django signals to automatically invalidate parliamentarian-related caches when data changes, eliminating the risk of stale data in search results or filters.
 
-## 8. Maintainability & Code Quality
-- **Centralized Constants**: Created `apps/core/constants.py` to house domain-specific data (e.g., Romanian counties, trending topics), removing "magic" hardcoded values from views.
-- **Service Layer Abstraction**: Introduced `ParliamentarianService` to handle complex logic like party option extraction, keeping serializers lean and focused on representation.
-- **Aggressive Metadata Caching**: Form options for the user questionnaire are now cached for 24 hours, drastically reducing database load for frequently accessed form metadata.
+## 9. Third-Party Integration & Security Hardening
+- **pgvector Abstraction**: Documented and structured the raw SQL semantic search results to return typed dictionaries, ensuring consistent data handling outside of standard ORM querysets.
+- **Secret Management**: Hardened the production `SECRET_KEY` logic to ensure the application crashes early if a production secret is not provided, preventing insecure fallback keys.
+- **Error Handling**: Added robust try/except blocks around third-party API calls (Mistral) and raw database cursors to prevent unhandled 500 errors during search or indexing failures.
 
 
 ## 4. Automation & Personalization

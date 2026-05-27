@@ -79,19 +79,34 @@ class SearchService:
         return entities
 
     @staticmethod
-    def semantic_bill_search(embedding: list[float], threshold=0.72, limit=20):
+    def semantic_bill_search(embedding: list[float], threshold: float = 0.72, limit: int = 20) -> list[dict]:
+        """
+        Executes a semantic similarity search using the custom PostgreSQL function.
+        Returns a list of dictionaries with 'bill_idp' and 'similarity'.
+        
+        NOTE: Raw SQL is used here because 'match_legislation_chunks' is a 
+        Set Returning Function (SRF), which Django's ORM does not support 
+        natively in the FROM clause.
+        """
         if not embedding:
             return []
         
-        query = """
+        sql = """
             SELECT DISTINCT bill_idp, similarity
             FROM match_legislation_chunks(%s, %s, %s)
             WHERE bill_idp IS NOT NULL
             ORDER BY similarity DESC
         """
-        with connection.cursor() as cursor:
-            cursor.execute(query, [embedding, threshold, limit])
-            return cursor.fetchall()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, [embedding, threshold, limit])
+                return [
+                    {"bill_idp": row[0], "similarity": row[1]} 
+                    for row in cursor.fetchall()
+                ]
+        except Exception as e:
+            print(f"Database error during semantic search: {e}")
+            return []
 
     @staticmethod
     def normalize_text(value: str) -> str:
