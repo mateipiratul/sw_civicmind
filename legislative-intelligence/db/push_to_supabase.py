@@ -20,19 +20,19 @@ if str(ROOT_DIR) not in sys.path:
 from supabase import create_client, Client
 from env_setup import load_project_env
 
-load_project_env()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 PROCESSED_DIR = Path("data/processed")
 
 def get_client() -> Client:
-    if not SUPABASE_URL or not SUPABASE_KEY:
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_KEY")
+    if not url or not key:
         raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    return create_client(url, key)
+...
+def main():
+    load_project_env()
+    parser = argparse.ArgumentParser()
 
-def slugify(text: str) -> str:
-    if not text:
         return "unknown"
     text = text.lower()
     text = re.sub(r'[^\w\s-]', '', text)

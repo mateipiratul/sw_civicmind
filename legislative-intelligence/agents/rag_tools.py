@@ -12,6 +12,7 @@ import os
 import re
 import time
 import unicodedata
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -20,7 +21,7 @@ from supabase import Client, create_client
 
 from env_setup import load_project_env
 
-load_project_env()
+logger = logging.getLogger(__name__)
 
 EMBED_MODEL = "mistral-embed"
 RAW_DIR = Path("data/raw")
@@ -63,10 +64,16 @@ def embed_query(query: str) -> list[float]:
                 or "rate limit" in message
             )
             if not is_retryable:
+                logging.error(f"Non-retryable Mistral error: {exc}", exc_info=True)
                 raise
+            logging.warning(f"Retryable Mistral error (delay={delay}s): {exc}")
             last_exc = exc
-    assert last_exc is not None
-    raise last_exc
+    
+    if last_exc:
+        logging.error(f"Mistral embedding failed after retries: {last_exc}", exc_info=True)
+        raise last_exc
+    
+    raise RuntimeError("Unknown error in embed_query")
 
 
 def _load_bill(idp: int) -> Optional[dict]:
@@ -383,8 +390,9 @@ def _log_rag_query(
                 "model": model,
             }
         ).execute()
-    except Exception:
+    except Exception as e:
         # Query logging must not break retrieval.
+        logger.warning(f"RAG query logging failed: {e}")
         return
 
 

@@ -33,9 +33,46 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action in ('list', 'personalized', 'retrieve'):
+        if self.action in ('list', 'personalized', 'retrieve', 'votes'):
             return BillService.get_enriched_bills_queryset().order_by('-registered_at')
         return queryset
+
+    @action(detail=True, methods=['get'])
+    def votes(self, request, pk=None):
+        bill = self.get_object()
+        # Get the latest final vote session
+        vote_session = bill.vote_sessions.filter(type='final').order_by('-date').first()
+        if not vote_session:
+            # Fallback to any latest session if no final one
+            vote_session = bill.vote_sessions.order_by('-date').first()
+
+        if not vote_session:
+            return Response({
+                "bill_idp": bill.idp,
+                "bill_number": bill.bill_number,
+                "vote_session": None,
+                "votes": {"for": [], "against": [], "abstain": [], "absent": []}
+            })
+
+        buckets = VoteAnalyticsService.get_bill_vote_buckets(vote_session)
+        
+        return Response({
+            "bill_idp": bill.idp,
+            "bill_number": bill.bill_number,
+            "vote_session": {
+                "date": vote_session.date,
+                "type": vote_session.type,
+                "description": vote_session.description,
+                "summary": {
+                    "present": vote_session.present,
+                    "for": vote_session.for_votes,
+                    "against": vote_session.against,
+                    "abstain": vote_session.abstain,
+                    "absent": vote_session.absent,
+                }
+            },
+            "votes": buckets
+        })
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
@@ -49,18 +86,47 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         # 1. Get filtered base queryset
         base_queryset = self.filter_queryset(self.get_queryset())
         
-        # 2. Apply personalization logic
+        # 2. Apply personalization logic (annotated & ordered)
         queryset = FeedService.get_personalized_bills(
-            user_interests=user_interests, 
+            user_interests=user_interests,
             persona_tags=persona_tags,
-            queryset=base_queryset
+            queryset=base_queryset,
         )
 
-        page = self.paginate_queryset(queryset)
+        # 3. Build prioritized page first, then a deduped general feed.
+        # Determine requested page size (fallback to pagination default)
+        try:
+            req_limit = int(request.query_params.get('limit')) if request.query_params.get('limit') else None
+        except (TypeError, ValueError):
+            req_limit = None
+
+        default_limit = getattr(self.pagination_class, 'page_size', 20)
+        page_limit = req_limit or default_limit
+
+        # If user has no preferences, show a larger general feed
+        general_limit = page_limit * 2 if not user_interests and not persona_tags else page_limit
+
+        # Instantiate paginator and set ordering dynamically so CursorPagination
+        # respects `is_match` when present on the queryset.
+        paginator = self.get_paginator()
+        try:
+            annotations = getattr(getattr(queryset, 'query', None), 'annotations', {}) or {}
+            if 'is_match' in annotations:
+                paginator.ordering = ('-is_match', '-registered_at')
+            else:
+                paginator.ordering = '-registered_at'
+        except Exception:
+            paginator.ordering = '-registered_at'
+
+        self.paginator = paginator
+        page = paginator.paginate_queryset(queryset, request, view=self)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
-            
+            # Also include a separate general feed (most recent bills), deduped
+            prioritized_ids = [getattr(obj, 'id', None) or getattr(obj, 'pk', None) for obj in page]
+            general_qs = base_queryset.exclude(pk__in=[i for i in prioritized_ids if i is not None]).order_by('-registered_at')[:general_limit]
+            general_serializer = self.get_serializer(general_qs, many=True)
             response.data.update({
                 'profile': {
                     'county': county,
@@ -75,17 +141,22 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
                     'county': county,
                     'party': preferred_party,
                 },
+                'generalFeed': general_serializer.data,
             })
             return response
 
         # Non-paginated fallback
         serializer = self.get_serializer(queryset[:100], many=True)
+        prioritized_ids = [getattr(obj, 'id', None) or getattr(obj, 'pk', None) for obj in queryset[:100]]
+        general_qs = base_queryset.exclude(pk__in=[i for i in prioritized_ids if i is not None]).order_by('-registered_at')[:general_limit]
+        general_serializer = self.get_serializer(general_qs, many=True)
         return Response({
             'page': 1,
             'limit': len(serializer.data),
             'total': len(serializer.data),
             'totalPages': 1,
             'bills': serializer.data,
+            'generalFeed': general_serializer.data,
             'profile': {
                 'county': county, 'preferredParty': preferred_party,
                 'interests': user_interests, 'personaTags': persona_tags,

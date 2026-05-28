@@ -28,7 +28,6 @@ from scraper.legislatie_just import LegislativeAct, LegislatieJustClient
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-load_project_env()
 
 RAW_DIR = Path("data/raw")
 EMBED_MODEL = "mistral-embed"

@@ -8,22 +8,22 @@ Graph:
 """
 import json
 import os
+import logging
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
 
 from agents.state import AuditorState
 from agents.prompts import AUDITOR_NARRATIVE_SYSTEM, AUDITOR_NARRATIVE_USER
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _MODEL = "mistral-small-latest"
-_MAX_NARRATIVE_BATCH = 20   # MPs per LLM call batch (narratives generated 1-by-1)
+_MAX_NARRATIVE_BATCH = 20   # MPs per LLM call batch
 _NARRATIVE_RETRIES = 1
 _NARRATIVE_RETRY_DELAY = 2
 
@@ -56,9 +56,6 @@ def _generate_narrative(client: Mistral, prompt: str) -> str:
 
 
 # ── Score formula ─────────────────────────────────────────────────────────────
-# participation (showed up)  → 60% weight
-# decisiveness (for/against) → 40% weight
-# Result: 0–100
 
 def _compute_score(votes: list[dict]) -> dict:
     total = len(votes)
@@ -112,7 +109,7 @@ def load_votes(state: AuditorState) -> dict:
                     "categories": categories,
                 })
 
-    print(f"  Loaded {len(all_votes)} MP-vote records from {data_dir}")
+    logger.info(f"Loaded {len(all_votes)} MP-vote records from {data_dir}")
     return {"all_votes": all_votes, "error": None}
 
 
@@ -120,7 +117,6 @@ def calculate_scores(state: AuditorState) -> dict:
     if state.get("error"):
         return {}
 
-    # Group votes by mp_slug
     by_mp: dict[str, list[dict]] = {}
     mp_meta: dict[str, dict] = {}
 
@@ -149,7 +145,7 @@ def calculate_scores(state: AuditorState) -> dict:
             "calculated_at":    datetime.now(timezone.utc).isoformat(),
         }
 
-    print(f"  Calculated scores for {len(scores)} MPs")
+    logger.info(f"Calculated scores for {len(scores)} MPs")
     return {"scores": scores}
 
 
@@ -162,8 +158,8 @@ def generate_narratives(state: AuditorState) -> dict:
     narratives: dict[str, str] = {}
 
     # Only generate narratives for MPs with enough data (min 3 votes)
-    eligible = {s: d for s, d in scores.items() if d["total"] >= 3}
-    print(f"  Generating narratives for {len(eligible)} MPs...")
+    eligible = {k: v for k, v in scores.items() if v["total"] >= 3}
+    logger.info(f"Generating narratives for {len(eligible)} MPs...")
 
     for slug, data in eligible.items():
         try:
@@ -181,14 +177,14 @@ def generate_narratives(state: AuditorState) -> dict:
             narratives[slug] = _generate_narrative(client, prompt)
         except Exception as exc:
             narratives[slug] = ""
-            print(f"    [WARN] narrative failed for {slug}: {exc}")
+            logger.warning(f"narrative failed for {slug}: {exc}")
 
     return {"narratives": narratives}
 
 
 def save(state: AuditorState) -> dict:
     if state.get("error"):
-        print(f"  [AUDITOR ERROR] {state['error']}")
+        logger.error(f"[AUDITOR ERROR] {state['error']}")
         return {}
 
     out_dir = Path(state["data_dir"]).parent / "processed"
@@ -214,12 +210,11 @@ def save(state: AuditorState) -> dict:
             "calculated_at":    data["calculated_at"],
         })
 
-    # Sort by score descending
     output.sort(key=lambda x: x["score"], reverse=True)
 
     out_path = out_dir / "impact_scores.json"
     out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"  [AUDITOR OK] {len(output)} MP scores saved to {out_path}")
+    logger.info(f"[AUDITOR OK] {len(output)} MP scores saved to {out_path}")
     return {}
 
 

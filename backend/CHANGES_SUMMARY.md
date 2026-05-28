@@ -18,11 +18,12 @@ This document summarizes the core systems and architectural patterns currently a
   - Parliamentarian metadata & entity lists (24-hour TTL) to prevent redundant `DISTINCT` aggregations.
   - MD5 hashing is used for cache key generation to ensure multi-process consistency.
 - **Cache Reliability**: Implemented Django signals to automatically invalidate parliamentarian-related caches when data changes, eliminating the risk of stale data in search results or filters.
+- **Search Logic Decomposition**: Refactored the monolithic `SearchService.execute_global_search` into focused, private methods for query decomposition, semantic retrieval, and relation mapping. This adheres to the Single Responsibility Principle and simplifies testing and maintenance.
 
-## 9. Third-Party Integration & Security Hardening
-- **pgvector Abstraction**: Documented and structured the raw SQL semantic search results to return typed dictionaries, ensuring consistent data handling outside of standard ORM querysets.
-- **Secret Management**: Hardened the production `SECRET_KEY` logic to ensure the application crashes early if a production secret is not provided, preventing insecure fallback keys.
-- **Error Handling**: Added robust try/except blocks around third-party API calls (Mistral) and raw database cursors to prevent unhandled 500 errors during search or indexing failures.
+## 10. Architectural Integrity & Reliability
+- **Service Layer Hardening**: Refactored `CacheService` and `ParliamentarianService` to use structured logging and allow explicit error propagation, ensuring infrastructure failures are visible and debuggable.
+- **Deep Prefetching**: Optimized `FeedService` to resolve N+1 query issues in representative data by implementing deep prefetching of related AI analysis and impact categories.
+- **Logic Isolation**: Completed the migration of business logic from serializers and views into dedicated services, adhering strictly to the "Fat Models/Services, Thin Views" pattern.
 
 
 ## 4. Automation & Personalization

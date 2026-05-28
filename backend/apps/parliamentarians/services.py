@@ -1,19 +1,22 @@
+import logging
 from django.db.utils import OperationalError, ProgrammingError
 from .models import Parliamentarian
 from apps.core.services import CacheService
 
+logger = logging.getLogger(__name__)
+
 class ParliamentarianService:
     @staticmethod
-    def get_party_options():
+    def get_party_options(raise_exception: bool = False):
         """
         Retrieves unique parties for deputies with caching.
         """
         cache_key = "deputy_party_options_v1"
-        cached = CacheService.get(cache_key)
-        if cached:
-            return cached
-
         try:
+            cached = CacheService.get(cache_key, raise_exception=raise_exception)
+            if cached:
+                return cached
+
             parties = (
                 Parliamentarian.objects
                 .filter(chamber__icontains="deput")
@@ -23,7 +26,10 @@ class ParliamentarianService:
                 .distinct()
             )
             options = [{"value": party, "label": party} for party in sorted(parties)]
-            CacheService.set(cache_key, options, 86400) # 24h
+            CacheService.set(cache_key, options, 86400, raise_exception=raise_exception)
             return options
-        except (OperationalError, ProgrammingError):
+        except (OperationalError, ProgrammingError, Exception) as e:
+            logger.error(f"Error fetching party options: {e}", exc_info=True)
+            if raise_exception:
+                raise
             return []

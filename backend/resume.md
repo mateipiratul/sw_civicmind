@@ -1,11 +1,18 @@
-# Backend Audit Complete
+# Backend Refactoring Status
 
-The backend codebase has been thoroughly refactored to address technical debt, scalability, and security concerns. All major and minor code smells identified during the audit have been resolved.
+The backend codebase has undergone significant refactoring to address technical debt, observability, and architectural integrity. While major monolithic methods and generic error handling have been resolved, some scalability gaps remain.
 
-## Final Improvements
-- **Security Hardening**: Hardened `DEBUG`, `CORS`, and `SECRET_KEY` settings to prevent accidental exposure in production environments.
-- **Scalability**: Implemented database indexes on all high-traffic columns and transitioned to `CursorPagination` for high-volume feeds.
-- **Maintainability**: Centralized global constants and abstracted raw database logic into dedicated Service layers.
-- **Architectural Integrity**: Structure semantic search results to return consistent dictionary formats and added extensive documentation regarding "Set Returning Functions" in PostgreSQL.
+## Resolved Improvements
+- **Logging & Observability**: Generic `print()` calls have been replaced with structured Python logging across all layers (Backend, AI, Scrapers).
+- **Architectural Integrity**: Decomposed monolithic service methods (e.g., `execute_global_search`) into maintainable, single-responsibility helpers.
+- **ORM Optimization**: Fixed N+1 query vulnerabilities in the feed and detail views.
+- **Error Handling**: Hardened infrastructure services (Cache, DB) to prevent hidden error paths.
+- **Security**: Production-hardened all sensitive configuration settings in `settings.py`.
 
-The backend is now considered **production-ready** for its current feature set.
+## Remaining Scalability Gaps
+- **Missing Database Indexes**:
+    - `Parliamentarian.mp_name`: Used extensively for searching and alphabetized ordering in the directory.
+    - `VoteSession.date`: Primary field for ordering legislative history and feed chronicity.
+    - *Impact*: As the dataset scales beyond a few thousand records, these missing indexes will lead to significant latency in API response times.
+
+The backend is structurally sound but requires a final pass on indexing to be fully "production-optimized" at scale.

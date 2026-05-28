@@ -25,8 +25,6 @@ from agents.rag_tools import (
     search_legislation_chunks,
 )
 
-load_project_env()
-
 CHAT_MODEL = "mistral-small-latest"
 DEFAULT_TOP_K = 8
 DEFAULT_THRESHOLD = 0.72

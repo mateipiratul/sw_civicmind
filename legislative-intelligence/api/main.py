@@ -28,6 +28,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
+@app.on_event("startup")
+def startup_event():
+    from env_setup import load_project_env
+    load_project_env()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

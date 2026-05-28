@@ -7,6 +7,7 @@ Graph:
 """
 import json
 import os
+import logging
 from typing import Any
 
 from dotenv import load_dotenv
@@ -16,7 +17,7 @@ from mistralai.client import Mistral
 from agents.state import MessengerState
 from agents.prompts import MESSENGER_SYSTEM, MESSENGER_USER
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _MODEL = "open-mistral-nemo"   # cheaper model — email writing doesn't need reasoning
 
@@ -81,10 +82,10 @@ def generate_email(state: MessengerState) -> dict:
 
 def return_draft(state: MessengerState) -> dict:
     if state.get("error"):
-        print(f"  [MESSENGER ERROR] {state['error']}")
+        logger.error(f"[MESSENGER ERROR] {state['error']}")
         return {"email_draft": {"subject": "", "body": ""}}
     draft = state.get("email_draft", {})
-    print(f"  [MESSENGER OK] Subject: {draft.get('subject', '')}")
+    logger.info(f"[MESSENGER OK] Subject: {draft.get('subject', '')}")
     return {}
 
 

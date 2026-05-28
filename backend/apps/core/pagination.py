@@ -31,4 +31,7 @@ class StandardCursorPagination(CursorPagination):
     ordering = '-registered_at' # Default ordering
 
 class PersonalizedFeedPagination(StandardCursorPagination):
-    ordering = ('-is_match', '-registered_at')
+    # Keep cursor ordering on a real model field to avoid FieldError when
+    # the queryset doesn't have the `is_match` annotation yet.
+    # `FeedService.get_personalized_bills` still orders by `-is_match` where applicable.
+    ordering = '-registered_at'

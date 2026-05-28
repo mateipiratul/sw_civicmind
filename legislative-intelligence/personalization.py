@@ -9,8 +9,6 @@ from supabase import Client, create_client
 
 from env_setup import load_project_env
 
-load_project_env()
-
 DATA_RAW = Path("data/raw")
 PROFILE_LIST_FIELDS = {
     "roles",

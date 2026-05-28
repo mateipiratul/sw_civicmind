@@ -14,6 +14,7 @@ import re
 import ssl
 import time
 import warnings
+import logging
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -89,7 +90,7 @@ def _fetch(url: str, retries: int = 3) -> Optional[str]:
                 return None
         except requests.RequestException as exc:
             if attempt == retries - 1:
-                print(f"    [WARN] Failed {url}: {exc}")
+                logger.warning(f"Failed {url}: {exc}")
     return None
 
 
@@ -98,7 +99,7 @@ def _fetch(url: str, retries: int = 3) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 def find_session_days(days_back: int = 30) -> list[date]:
-    print(f"Scanning last {days_back} days for session dates...")
+    logger.info(f"Scanning last {days_back} days for session dates...")
     found: list[date] = []
     today = date.today()
     for i in range(days_back):
@@ -107,7 +108,7 @@ def find_session_days(days_back: int = 30) -> list[date]:
         html = _fetch(url)
         if html and "evot2015.nominal" in html.lower():
             found.append(d)
-            print(f"  OK {d} has votes")
+            logger.info(f"  OK {d} has votes")
         time.sleep(_DELAY)
     return found
 
@@ -150,7 +151,7 @@ def _load_bill_cache(year: int) -> None:
         return
     entries = parse_bill_list(html)
     _bill_cache.update(entries)
-    print(f"  Bill cache loaded: {len(entries)} entries for {year}")
+    logger.info(f"  Bill cache loaded: {len(entries)} entries for {year}")
     time.sleep(_DELAY)
 
 
@@ -201,7 +202,7 @@ def run_scraper(
     # 1. Find session days
     session_days = find_session_days(days_back)
     if not session_days:
-        print("No session days found.")
+        logger.info("No session days found.")
         return []
 
     # 2. Collect all vote sessions, keep only final votes
@@ -214,12 +215,12 @@ def run_scraper(
             if s["type"] == "final"
             and re.search(r"P[Ll][-x\s]*\d+/\d{4}", s["description"], re.I)
         ]
-        print(f"  {d}: {len(sessions)} votes total, {len(final)} final PL bills")
+        logger.info(f"  {d}: {len(sessions)} votes total, {len(final)} final PL bills")
         raw_votes.extend(final)
         time.sleep(_DELAY)
 
     raw_votes = raw_votes[:max_bills]
-    print(f"\nProcessing {len(raw_votes)} final vote sessions...")
+    logger.info(f"\nProcessing {len(raw_votes)} final vote sessions...")
 
     # 3. For each final vote → nominal data + bill detail
     bills: dict[int, dict] = {}  # idp → bill document
@@ -229,17 +230,17 @@ def run_scraper(
     for vote_meta in raw_votes:
         idv  = vote_meta["idv"]
         desc = vote_meta["description"]
-        print(f"\n>> idv={idv}  {desc[:70]}")
+        logger.info(f"\n>> idv={idv}  {desc[:70]}")
 
         # Link to bill
         bill_number = extract_bill_number(desc)
         if not bill_number:
-            print("  [SKIP] No bill number in description")
+            logger.warning("  [SKIP] No bill number in description")
             continue
 
         idp = find_bill_idp(bill_number)
         if not idp:
-            print(f"  [SKIP] idp not found for {bill_number}")
+            logger.warning(f"  [SKIP] idp not found for {bill_number}")
             continue
 
         time.sleep(_DELAY)
@@ -250,16 +251,16 @@ def run_scraper(
             if skip_existing and existing_file.exists():
                 bills[idp] = json.loads(existing_file.read_text(encoding="utf-8"))
                 bills[idp].setdefault("vote_sessions", [])
-                print(f"  Reusing existing bill JSON for {bill_number}; checking votes only")
+                logger.info(f"  Reusing existing bill JSON for {bill_number}; checking votes only")
             else:
                 detail = scrape_bill_detail(idp)
                 if not detail:
-                    print(f"  [SKIP] Could not scrape bill idp={idp}")
+                    logger.warning(f"  [SKIP] Could not scrape bill idp={idp}")
                     continue
 
                 # OCR all available PDFs and embed text directly in the document
                 from scraper.pdf_ocr import extract_bill_documents
-                print(f"  Running OCR on documents for {bill_number}...")
+                logger.info(f"  Running OCR on documents for {bill_number}...")
                 ocr_content = extract_bill_documents(detail.get("documents", {}))
 
                 bills[idp] = {
@@ -280,7 +281,7 @@ def run_scraper(
             if vs.get("idv") is not None
         }
         if idv in existing_idvs:
-            print(f"  [SKIP] Vote session idv={idv} already exists for {bill_number}")
+            logger.info(f"  [SKIP] Vote session idv={idv} already exists for {bill_number}")
             continue
 
         # Nominal votes are only needed for genuinely new vote sessions.
@@ -299,7 +300,7 @@ def run_scraper(
             "nominal_votes": nominal["nominal_votes"],
         })
         changed_idps.add(idp)
-        print(f"  [OK] {bill_number} (idp={idp}) - {len(nominal['nominal_votes'])} MP votes")
+        logger.info(f"  [OK] {bill_number} (idp={idp}) - {len(nominal['nominal_votes'])} MP votes")
 
     # 4. Save to disk
     output = list(bills.values())
@@ -313,7 +314,7 @@ def run_scraper(
             encoding="utf-8",
         )
         written += 1
-        print(f"Saved: {path}")
+        logger.info(f"Saved: {path}")
 
-    print(f"\nDone. {written} bills written to {output_dir}/")
+    logger.info(f"\nDone. {written} bills written to {output_dir}/")
     return output

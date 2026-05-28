@@ -9,11 +9,11 @@ Graph:
 """
 import json
 import os
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
 
@@ -23,7 +23,7 @@ from agents.prompts import (
     SCOUT_OPPOSITION_SYSTEM, SCOUT_OPPOSITION_USER,
 )
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _MODEL_STRUCTURED = "mistral-small-latest"
 _MAX_EXPUNERE_CHARS = 8_000
@@ -176,14 +176,14 @@ def assemble(state: ScoutState) -> dict:
 
 def save(state: ScoutState) -> dict:
     if state.get("error"):
-        print(f"  [SCOUT ERROR] {state['error']}")
+        logger.error(f"[SCOUT ERROR] {state['error']}")
         return {}
     bill = state["bill"]
     bill["ai_analysis"] = state["ai_analysis"]
     path = Path(state["bill_path"])
     path.write_text(json.dumps(bill, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     title = state["ai_analysis"].get("title_short", bill.get("bill_number"))
-    print(f"  [SCOUT OK] {title}")
+    logger.info(f"[SCOUT OK] {title}")
     return {}
 
 

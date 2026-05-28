@@ -121,6 +121,9 @@ def run_messenger_interactive(single_file: str) -> None:
 
 
 def main() -> None:
+    from env_setup import load_project_env
+    load_project_env()
+    
     parser = argparse.ArgumentParser(description="CivicMind agent runner")
     parser.add_argument("--scout",     action="store_true")
     parser.add_argument("--auditor",   action="store_true")

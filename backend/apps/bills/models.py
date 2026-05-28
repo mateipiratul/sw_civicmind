@@ -206,4 +206,3 @@ class BillFlag(models.Model):
         managed = True
         verbose_name = "Bill Flag"
         verbose_name_plural = "Bill Flags"
- "Bill Flags"

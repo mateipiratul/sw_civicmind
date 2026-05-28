@@ -9,12 +9,12 @@ Returns plain markdown text — ready to feed into LangGraph agents.
 """
 import os
 import time
+import logging
 from typing import Optional
 
 from mistralai.client import Mistral
-from dotenv import load_dotenv
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _client: Optional[Mistral] = None
 
@@ -48,7 +48,7 @@ def ocr_pdf_url(pdf_url: str, retries: int = 2) -> Optional[str]:
             return "\n\n---\n\n".join(pages)
         except Exception as exc:
             if attempt == retries - 1:
-                print(f"  [OCR FAIL] {pdf_url}: {exc}")
+                logger.error(f"[OCR FAIL] {pdf_url}: {exc}", exc_info=True)
                 return None
             time.sleep(2)
     return None
@@ -84,7 +84,7 @@ def ocr_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf", retries: int
             return "\n\n---\n\n".join(pages)
         except Exception as exc:
             if attempt == retries - 1:
-                print(f"  [OCR FAIL] {filename}: {exc}")
+                logger.error(f"[OCR FAIL] {filename}: {exc}", exc_info=True)
                 return None
             time.sleep(2)
     return None
@@ -98,7 +98,7 @@ def _download_pdf(url: str) -> Optional[bytes]:
         if resp.status_code == 200 and resp.content:
             return resp.content
     except Exception as exc:
-        print(f"  [DL FAIL] {url}: {exc}")
+        logger.warning(f"[DL FAIL] {url}: {exc}")
     return None
 
 
@@ -118,18 +118,18 @@ def extract_bill_documents(documents: dict) -> dict[str, Optional[str]]:
         url = documents.get(doc_type)
         if not url:
             continue
-        print(f"  [OCR] {doc_type}: downloading...")
+        logger.info(f"[OCR] {doc_type}: downloading...")
         pdf_bytes = _download_pdf(url)
         if not pdf_bytes:
             results[doc_type] = None
             continue
 
         filename = url.split("/")[-1]
-        print(f"    -> {len(pdf_bytes)} bytes, sending to Mistral OCR...")
+        logger.info(f"  -> {len(pdf_bytes)} bytes, sending to Mistral OCR...")
         text = ocr_pdf_bytes(pdf_bytes, filename=filename)
         results[doc_type] = text
         if text:
-            print(f"    -> {len(text)} chars extracted")
+            logger.info(f"  -> {len(text)} chars extracted")
         time.sleep(0.5)
 
     return results

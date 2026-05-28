@@ -42,7 +42,7 @@ class Command(BaseCommand):
                         county = electoral_district.split('/')[-1].strip()
                         county_map[name] = county
                         self.stdout.write(f"  {name} → {county}")
-            except Exception as e:
+            except (json.JSONDecodeError, OSError) as e:
                 self.stdout.write(self.style.ERROR(f"Error reading {json_file}: {e}"))
                 continue
 

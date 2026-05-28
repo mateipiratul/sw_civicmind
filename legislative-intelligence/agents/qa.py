@@ -17,8 +17,6 @@ from mistralai.client import Mistral
 from agents.state import QAState
 from agents.prompts import QA_SYSTEM, QA_USER
 
-load_dotenv()
-
 _MODEL = "mistral-small-latest"
 _MAX_OCR_CHARS = 6_000
 

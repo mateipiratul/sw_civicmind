@@ -35,11 +35,11 @@ export function BillVotes({ votes }: BillVotesProps) {
     [allVotedMPs, voteFilter, partyFilter],
   );
 
-  if (!votes) {
+  if (!votes || !votes.vote_session) {
     return (
       <section className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="text-[10.5px] font-bold tracking-wider uppercase text-gray-400 mb-4">Voturi</div>
-        <div className="text-sm text-gray-400 text-center py-3">Nu există date de vot.</div>
+        <div className="text-sm text-gray-400 text-center py-3">Nu există date de vot pentru acest proiect.</div>
       </section>
     );
   }
@@ -146,10 +146,6 @@ export function BillVotes({ votes }: BillVotesProps) {
           </div>
         </div>
       )}
-    </section>
-  );
-}
-     )}
     </section>
   );
 }
