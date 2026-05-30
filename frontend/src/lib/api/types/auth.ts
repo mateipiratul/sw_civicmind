@@ -21,6 +21,7 @@ export interface User {
   education_context?: string[];
   energy_focus?: string[];
   public_service_focus?: string[];
+  avatar_url?: string | null;
   questionnaire_completed?: boolean;
   
   status: "active" | "suspended" | "banned" | "inactive";

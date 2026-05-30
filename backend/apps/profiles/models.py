@@ -26,6 +26,7 @@ class Profile(models.Model):
     education_context = models.JSONField(default=list, blank=True)
     energy_focus = models.JSONField(default=list, blank=True)
     public_service_focus = models.JSONField(default=list, blank=True)
+    avatar_url = models.URLField(max_length=500, blank=True, null=True)
     questionnaire_completed = models.BooleanField(default=False)
     
     def __str__(self):

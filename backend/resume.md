@@ -9,7 +9,7 @@ The backend codebase has undergone significant refactoring to address technical 
 - **Error Handling**: Hardened infrastructure services (Cache, DB) to prevent hidden error paths.
 - **Security**: Production-hardened all sensitive configuration settings in `settings.py`.
 
-- **Auth (Google OAuth)**: Implemented frontend popup-based Google OAuth with a redirect fallback; backend callback URL is configurable via `GOOGLE_OAUTH_CALLBACK_URL` and example env updated.
+- **Auth (Google OAuth)**: Implemented frontend popup-based Google OAuth with a redirect fallback; backend callback URL is configurable via `GOOGLE_OAUTH_CALLBACK_URL`. Captured and synced Google profile pictures to the internal user Profile.
 
 ## Remaining Scalability Gaps
 - **Missing Database Indexes**:

@@ -36,11 +36,12 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
+    avatar_url = serializers.URLField(source='profile.avatar_url', read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
-        read_only_fields = ['id', 'role']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'avatar_url']
+        read_only_fields = ['id', 'role', 'avatar_url']
 
     def get_role(self, obj: User) -> str:
         if obj.is_superuser:

@@ -22,10 +22,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'county', 'preferred_party', 'interests',
             'persona_tags', 'work_domain', 'employment_status', 'personal_interest_areas',
             'age_range', 'housing_status', 'mobility_modes', 'education_context',
-            'energy_focus', 'public_service_focus', 'questionnaire_completed'
+            'energy_focus', 'public_service_focus', 'avatar_url', 'questionnaire_completed'
         ]
         read_only_fields = [
-            'id', 'username', 'email', 'interests', 'persona_tags', 'questionnaire_completed'
+            'id', 'username', 'email', 'interests', 'persona_tags', 'avatar_url', 'questionnaire_completed'
         ]
 
     def validate(self, attrs: Dict[str, Union[str, List[str], bool, None]]) -> Dict[str, Union[str, List[str], bool, None]]:

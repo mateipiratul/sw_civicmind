@@ -65,9 +65,17 @@ export function Header() {
             <DropdownMenuTrigger asChild>
                 <Button className="avatar-btn">
                   <Avatar className="avatar-size">
-                    <AvatarFallback style={{ background: "#f0f0f0", color: "#111", fontSize: 11, fontWeight: 600 }}>
-                      {user.username.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
+                    {user.avatar_url ? (
+                      <img 
+                        src={user.avatar_url} 
+                        alt={user.username} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <AvatarFallback style={{ background: "#f0f0f0", color: "#111", fontSize: 11, fontWeight: 600 }}>
+                        {user.username.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
