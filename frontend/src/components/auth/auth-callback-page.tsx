@@ -23,8 +23,22 @@ export function AuthCallbackPage() {
 
     const handleCallback = async () => {
       processed.current = true;
+      // If this page was opened as a popup, postMessage the code to the opener and close.
       try {
-        const user = await api.googleLoginWithCode(code);
+        if (typeof window !== 'undefined' && window.opener && window.opener !== window) {
+          try {
+            window.opener.postMessage({ type: 'civic:google_oauth', code }, window.location.origin);
+          } catch (postErr) {
+            console.warn('[AuthCallback] postMessage to opener failed, falling back to direct exchange', postErr);
+            // fallback to server-side exchange below
+          }
+          try { window.close(); } catch {}
+          return;
+        }
+
+        // Normal redirect flow (no opener) - perform server-side exchange here
+        const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+        const user = await api.googleLoginWithCode(code, redirectUri);
         login(user);
         navigate({ to: "/" });
       } catch (err) {
