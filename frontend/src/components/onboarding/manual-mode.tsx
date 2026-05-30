@@ -14,7 +14,7 @@ export function ManualMode({ onComplete, onBack }: ManualModeProps) {
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
-    api.getMetadata().then(setMetadata).catch(console.error);
+    api.getMetadata().then(setMetadata).catch(() => {});
   }, []);
 
   const toggle = (cat: string) => {

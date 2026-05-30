@@ -53,8 +53,6 @@ export function RegisterPage() {
   const passwordsMatch = password === confirmPassword && password.length > 0;
 
   const handleRegister = async () => {
-    console.log("Se trimite formularul de înregistrare");
-    
     if (!username.trim()) {
       setError("Numele de utilizator este obligatoriu");
       return;
@@ -78,11 +76,8 @@ export function RegisterPage() {
     try {
       setIsLoading(true);
       setError(null);
-      console.log("Calling API...");
       const user = await api.register(username, email, password);
-      console.log("API Success, logging in...");
       login(user);
-      console.log("Login success, navigating...");
       navigate({ to: "/onboarding" });
     } catch (err) {
       console.error("Register error:", err);
@@ -114,7 +109,6 @@ export function RegisterPage() {
         {/* Form */}
         <form
           onSubmit={(e) => { 
-            console.log("Form onSubmit triggered");
             e.preventDefault(); 
             handleRegister(); 
           }}

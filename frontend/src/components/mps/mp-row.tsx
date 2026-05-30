@@ -21,7 +21,7 @@ export function MPRow({ mp }: MPRowProps) {
   const pct = (n: number) => t > 0 ? Math.round((n / t) * 100) : 0;
 
   return (
-    <div style={{ width: "100%", background: "white", border: "1px solid #e8e8e8", borderRadius: 10, padding: "18px 22px", marginBottom: 12 }}>
+    <div style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "18px 22px", marginBottom: 12 }}>
       {/* Header — always visible */}
       <div
         onClick={() => setExpanded(v => !v)}
@@ -29,7 +29,7 @@ export function MPRow({ mp }: MPRowProps) {
       >
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: "#111" }}>{mp.mp_name}</span>
+            <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>{mp.mp_name}</span>
             {mp.party?.trim() && (
               <span className="span-partycounty" style={{ fontSize: 13 }}>
                 {mp.party}
@@ -43,7 +43,7 @@ export function MPRow({ mp }: MPRowProps) {
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {mp.chamber && (
-              <span style={{ fontSize: 13, color: "#999" }}>
+              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
                 {mp.chamber === "deputies" ? "Deputat" : mp.chamber === "senate" ? "Senator" : mp.chamber}
               </span>
             )}
@@ -56,7 +56,7 @@ export function MPRow({ mp }: MPRowProps) {
               {s.score.toFixed(0)}
             </span>
           )}
-          <span style={{ color: "#ccc", display: "flex" }}>
+          <span style={{ color: "var(--color-input)", display: "flex" }}>
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </span>
         </div>
@@ -80,7 +80,7 @@ export function MPRow({ mp }: MPRowProps) {
               ].map(({ label, n, color }) => (
                 <span key={label} style={{ fontSize: 13 }}>
                   <span style={{ color, fontWeight: 600 }}>{pct(n)}%</span>
-                  <span style={{ color: "#bbb", marginLeft: 4 }}>{label}</span>
+                  <span style={{ color: "var(--text-muted)", marginLeft: 4 }}>{label}</span>
                 </span>
               ))}
             </div>
@@ -88,14 +88,14 @@ export function MPRow({ mp }: MPRowProps) {
         )}
 
         {s?.narrative && (
-          <p style={{ fontSize: 15, color: "#555", lineHeight: 1.6, margin: "0 0 16px" }}>{s.narrative}</p>
+          <p style={{ fontSize: 15, color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 16px" }}>{s.narrative}</p>
         )}
 
         <Link
           to="/mps/$slug"
           params={{ slug: mp.mp_slug }}
           onClick={e => e.stopPropagation()}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#111", textDecoration: "none", fontWeight: 600 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "var(--text)", textDecoration: "none", fontWeight: 600 }}
         >
           Profil complet <ExternalLink size={13} />
         </Link>

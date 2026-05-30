@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading] = useState(false);
 
   const logout = useCallback(() => {
-    console.log("[AuthContext] Logging out, clearing storage.");
     setUser(null);
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
@@ -30,7 +29,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = useCallback(async () => {
     try {
-      console.log("[AuthContext] Fetching latest profile...");
       const profile = await api.getProfile();
       setUser(prev => {
         if (!prev) return null;
@@ -39,11 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("auth_user", JSON.stringify(userData));
         return updated;
       });
-      console.log("[AuthContext] Profile refreshed.");
     } catch (error) {
       console.error("[AuthContext] Failed to fetch user profile:", error);
       if (error instanceof Error && error.message.includes("401")) {
-        console.warn("[AuthContext] 401 detected in refresh, logging out.");
         logout();
       }
     }
@@ -61,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }).catch(err => {
         if (err instanceof Error && err.message.includes("401")) {
-           console.warn("[AuthContext] BG Refresh 401");
            logout();
         }
       });
@@ -69,7 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [logout]);
 
   const login = useCallback((newUser: User) => {
-    console.log("[AuthContext] Login logic...");
     if (newUser.token) {
       localStorage.setItem("auth_token", newUser.token);
     }

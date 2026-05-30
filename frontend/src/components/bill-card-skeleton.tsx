@@ -4,8 +4,8 @@ export function BillCardSkeleton() {
   return (
     <div
       style={{
-        background: "white",
-        border: "1px solid #e8e8e8",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
         borderRadius: 10,
         padding: "16px 18px",
         display: "flex",

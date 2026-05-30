@@ -17,10 +17,10 @@ export function MPProfileHeader({ mp }: MPProfileHeaderProps) {
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
 
   return (
-    <div style={{ background: "white", border: "1px solid #e8e8e8", borderRadius: 12, padding: "24px 28px", marginBottom: 16 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "24px 28px", marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 10 }}>{mp.mp_name}</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{mp.mp_name}</h1>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {mp.party && (
               <span className="span-partycounty">{mp.party}</span>
@@ -71,13 +71,13 @@ export function MPProfileHeader({ mp }: MPProfileHeaderProps) {
                 <span className="muted" style={{ marginLeft: 4 }}>{label} ({n})</span>
               </span>
             ))}
-            <span style={{ fontSize: 12, color: "#bbb", marginLeft: "auto" }}>{total} voturi total</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>{total} voturi total</span>
           </div>
         </div>
       )}
 
       {s?.narrative && (
-        <p style={{ fontSize: 13.5, color: "#555", lineHeight: 1.65, margin: 0, paddingTop: total > 0 ? 0 : 4 }}>
+        <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.65, margin: 0, paddingTop: total > 0 ? 0 : 4 }}>
           {s.narrative}
         </p>
       )}

@@ -41,10 +41,44 @@ export function LoginPage() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
+  const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+  // Redirect variant (fallback)
+  const googleLoginRedirect = useGoogleLogin({
     flow: "auth-code",
     ux_mode: "redirect",
-    redirect_uri: `${window.location.origin}/auth/callback`,
+    redirect_uri: redirectUri,
+  });
+
+  // Preferred: popup flow. If popup fails (blocked or closed), fall back to redirect.
+  const googleLogin = useGoogleLogin({
+    flow: "auth-code",
+    ux_mode: "popup",
+    redirect_uri: redirectUri,
+    onSuccess: async (response) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // response should contain `code` when using `flow: 'auth-code'`
+        const code = response?.code;
+        if (!code) throw new Error("Nu am primit codul de la Google...");
+        const user = await api.googleLoginWithCode(code);
+        login(user);
+        navigate({ to: "/" });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Autentificarea a eșuat");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: (err) => {
+      console.warn("[LoginPage] Google popup failed, falling back to redirect.", err);
+      try {
+        // Fallback to redirect-based OAuth (will navigate away)
+        googleLoginRedirect();
+      } catch (e) {
+        setError(err instanceof Error ? err.toString() : "Eroare Google OAuth");
+      }
+    },
   });
 
   return (

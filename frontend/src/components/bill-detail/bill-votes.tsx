@@ -129,11 +129,19 @@ export function BillVotes({ votes }: BillVotesProps) {
                       <div className="text-[13px] font-semibold text-gray-900 truncate">{mp.mp_name}</div>
                       <div className="text-[11.5px] text-gray-400">{mp.party}</div>
                     </div>
-                    <span className={`text-[11px] font-bold shrink-0 px-2 py-0.5 rounded-sm ${
-                      mp.bucket === "Pentru" ? "text-green-600 bg-green-50" :
-                      mp.bucket === "Contra" ? "text-red-600 bg-red-50" :
-                      "text-gray-400 bg-gray-50"
-                    }`}>
+                    <span style={{ 
+                      fontSize: "11px", 
+                      fontWeight: "bold", 
+                      flexShrink: 0, 
+                      padding: "2px 8px", 
+                      borderRadius: "4px",
+                      color: mp.bucket === "Pentru" ? "var(--color-success)" : 
+                             mp.bucket === "Contra" ? "var(--color-destructive)" : 
+                             "var(--text-muted)",
+                      backgroundColor: mp.bucket === "Pentru" ? "color-mix(in srgb, var(--color-success) 10%, white)" : 
+                                       mp.bucket === "Contra" ? "color-mix(in srgb, var(--color-destructive) 10%, white)" : 
+                                       "var(--color-muted)"
+                    }}>
                       {mp.bucket}
                     </span>
                   </div>

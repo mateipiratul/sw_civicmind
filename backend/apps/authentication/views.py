@@ -1,3 +1,4 @@
+import os
 from rest_framework import permissions
 from rest_framework.response import Response
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -17,5 +18,6 @@ class CsrfTokenView(APIView):
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
-    callback_url = 'http://localhost:5173/auth/callback'
+    # Allow configuring the callback URL via environment for production vs local
+    callback_url = os.getenv('GOOGLE_OAUTH_CALLBACK_URL', 'http://localhost:5173/auth/callback')
     client_class = OAuth2Client

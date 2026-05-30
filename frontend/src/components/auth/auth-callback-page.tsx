@@ -24,10 +24,8 @@ export function AuthCallbackPage() {
     const handleCallback = async () => {
       processed.current = true;
       try {
-        console.log("[AuthCallback] Exchanging code for token...");
         const user = await api.googleLoginWithCode(code);
         login(user);
-        console.log("[AuthCallback] Login successful, redirecting...");
         navigate({ to: "/" });
       } catch (err) {
         console.error("[AuthCallback] Error during exchange:", err);

@@ -34,7 +34,7 @@ export function VoteRow({ vote }: { vote: MPVote }) {
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: 12,
-      padding: "12px 0", borderBottom: "1px solid #f0f0f0",
+      padding: "12px 0", borderBottom: "1px solid var(--border)",
     }}>
       <span style={{
         fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
@@ -45,7 +45,7 @@ export function VoteRow({ vote }: { vote: MPVote }) {
         {voteLabel}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 500, color: "#111", lineHeight: 1.4, marginBottom: 4 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text)", lineHeight: 1.4, marginBottom: 4 }}>
           {vote.title_short || vote.bill_title}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -55,15 +55,15 @@ export function VoteRow({ vote }: { vote: MPVote }) {
             </span>
           )}
           {vote.vote_type && (
-            <span style={{ fontSize: 11, color: "#bbb" }}>{vote.vote_type}</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{vote.vote_type}</span>
           )}
           {vote.impact_categories?.slice(0, 2).map(cat => (
-            <span key={cat} style={{ fontSize: 11, color: "#666", background: "#f0f0f0", padding: "1px 7px", borderRadius: 4 }}>
+            <span key={cat} style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--color-muted)", padding: "1px 7px", borderRadius: 4 }}>
               {cat}
             </span>
           ))}
           {vote.controversy_score != null && vote.controversy_score > 0.6 && (
-            <span style={{ fontSize: 11, color: "#d97706", background: "#fef3c7", padding: "1px 7px", borderRadius: 4 }}>
+            <span style={{ fontSize: 11, color: "var(--color-warning)", background: "color-mix(in srgb, var(--color-warning) 12%, white)", padding: "1px 7px", borderRadius: 4 }}>
               controversat
             </span>
           )}

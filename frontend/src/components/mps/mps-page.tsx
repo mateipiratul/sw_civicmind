@@ -81,10 +81,10 @@ export function MPsPage() {
       <main style={{ flex: 1, padding: "24px 28px", minWidth: 0 }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 24 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 600, color: "#111", letterSpacing: "-0.02em" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", letterSpacing: "-0.02em" }}>
               Parlamentari
             </h1>
-            {total > 0 && <span className="muted" style={{ fontSize: 13.5, color: "#666" }}>{total} rezultate</span>}
+            {total > 0 && <span className="muted" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>{total} rezultate</span>}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 24 }}>
@@ -111,7 +111,7 @@ export function MPsPage() {
             {loading
               ? [...Array(12)].map((_, i) => <MPRowSkeleton key={i} />)
               : mps.length === 0
-              ? <div className="muted" style={{ textAlign: "center", padding: "48px 0", fontSize: 13 }}>
+              ? <div className="muted" style={{ textAlign: "center", padding: "48px 0", fontSize: 13, color: "var(--text-muted)" }}>
                   {tab === "mine" ? "Nu am găsit parlamentari din județul tău." : "Nu s-au găsit parlamentari."}
                 </div>
               : mps.map(mp => <MPRow key={mp.mp_slug} mp={mp} />)
@@ -123,13 +123,13 @@ export function MPsPage() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                style={{ padding: "5px 12px", fontSize: 12.5, border: "1px solid #e2e2e2", borderRadius: 6, background: "white", cursor: page === 1 ? "default" : "pointer", color: page === 1 ? "#ccc" : "#111", fontFamily: "inherit" }}
+                style={{ padding: "5px 12px", fontSize: 12.5, border: "1px solid var(--border)", borderRadius: 6, background: "var(--surface)", cursor: page === 1 ? "default" : "pointer", color: page === 1 ? "var(--color-input)" : "var(--text)", fontFamily: "inherit" }}
               >←</button>
-              <span style={{ fontSize: 12.5, color: "#666" }}>{page} / {totalPages}</span>
+              <span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{page} / {totalPages}</span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                style={{ padding: "5px 12px", fontSize: 12.5, border: "1px solid #e2e2e2", borderRadius: 6, background: "white", cursor: page === totalPages ? "default" : "pointer", color: page === totalPages ? "#ccc" : "#111", fontFamily: "inherit" }}
+                style={{ padding: "5px 12px", fontSize: 12.5, border: "1px solid var(--border)", borderRadius: 6, background: "var(--surface)", cursor: page === totalPages ? "default" : "pointer", color: page === totalPages ? "var(--color-input)" : "var(--text)", fontFamily: "inherit" }}
               >→</button>
             </div>
           )}
