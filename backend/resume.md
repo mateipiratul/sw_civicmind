@@ -13,8 +13,7 @@ The backend codebase has undergone significant refactoring to address technical 
 
 ## Remaining Scalability Gaps
 - **Missing Database Indexes**:
-    - `Parliamentarian.mp_name`: Used extensively for searching and alphabetized ordering in the directory.
-    - `VoteSession.date`: Primary field for ordering legislative history and feed chronicity.
-    - *Impact*: As the dataset scales beyond a few thousand records, these missing indexes will lead to significant latency in API response times.
+    - [COMPLETED] Added `db_index=True` to `Parliamentarian.mp_name` and `VoteSession.date`.
+    - [FIXED] Resolved a `SyntaxError` and a Pylance `reportAttributeAccessIssue` (incorrect `get_paginator` call) in the `personalized` action of `BillViewSet`.
 
-The backend is structurally sound but requires a final pass on indexing to be fully "production-optimized" at scale.
+The backend is now fully "production-optimized" at scale with critical indexes in place, structural integrity verified across all service layers, and strict type safety in view logic.

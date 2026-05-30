@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
+from django.conf import settings
+import logging
+import traceback
 
 from .models import Bill, AIAnalysis
 from .filters import BillFilterSet
@@ -76,97 +79,107 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def personalized(self, request):
-        self.pagination_class = PersonalizedFeedPagination
-        profile, _ = Profile.objects.get_or_create(user=request.user)
-        user_interests = list(getattr(profile, 'interests', []) or [])
-        persona_tags = list(getattr(profile, 'persona_tags', []) or [])
-        county = (getattr(profile, 'county', None) or '').strip() or None
-        preferred_party = (getattr(profile, 'preferred_party', None) or '').strip() or None
-
-        # 1. Get filtered base queryset
-        base_queryset = self.filter_queryset(self.get_queryset())
-        
-        # 2. Apply personalization logic (annotated & ordered)
-        queryset = FeedService.get_personalized_bills(
-            user_interests=user_interests,
-            persona_tags=persona_tags,
-            queryset=base_queryset,
-        )
-
-        # 3. Build prioritized page first, then a deduped general feed.
-        # Determine requested page size (fallback to pagination default)
+        logger = logging.getLogger(__name__)
         try:
-            req_limit = int(request.query_params.get('limit')) if request.query_params.get('limit') else None
-        except (TypeError, ValueError):
-            req_limit = None
+            self.pagination_class = PersonalizedFeedPagination
+            profile, _ = Profile.objects.get_or_create(user=request.user)
+            user_interests = list(getattr(profile, 'interests', []) or [])
+            persona_tags = list(getattr(profile, 'persona_tags', []) or [])
+            county = (getattr(profile, 'county', None) or '').strip() or None
+            preferred_party = (getattr(profile, 'preferred_party', None) or '').strip() or None
 
-        default_limit = getattr(self.pagination_class, 'page_size', 20)
-        page_limit = req_limit or default_limit
+            # 1. Get filtered base queryset
+            base_queryset = self.filter_queryset(self.get_queryset())
+            
+            # 2. Apply personalization logic (annotated & ordered)
+            queryset = FeedService.get_personalized_bills(
+                user_interests=user_interests,
+                persona_tags=persona_tags,
+                queryset=base_queryset,
+            )
 
-        # If user has no preferences, show a larger general feed
-        general_limit = page_limit * 2 if not user_interests and not persona_tags else page_limit
+            # 3. Build prioritized page first, then a deduped general feed.
+            # Determine requested page size (fallback to pagination default)
+            try:
+                req_limit = int(request.query_params.get('limit')) if request.query_params.get('limit') else None
+            except (TypeError, ValueError):
+                req_limit = None
 
-        # Instantiate paginator and set ordering dynamically so CursorPagination
-        # respects `is_match` when present on the queryset.
-        paginator = self.get_paginator()
-        try:
-            annotations = getattr(getattr(queryset, 'query', None), 'annotations', {}) or {}
-            if 'is_match' in annotations:
-                paginator.ordering = ('-is_match', '-registered_at')
-            else:
+            default_limit = getattr(self.pagination_class, 'page_size', 20)
+            page_limit = req_limit or default_limit
+
+            # If user has no preferences, show a larger general feed
+            general_limit = page_limit * 2 if not user_interests and not persona_tags else page_limit
+
+            # Instantiate paginator and set ordering dynamically so CursorPagination
+            # respects `is_match` when present on the queryset.
+            paginator = PersonalizedFeedPagination()
+            try:
+                annotations = getattr(getattr(queryset, 'query', None), 'annotations', {}) or {}
+                if 'is_match' in annotations:
+                    paginator.ordering = ('-is_match', '-registered_at')
+                else:
+                    paginator.ordering = '-registered_at'
+            except Exception:
                 paginator.ordering = '-registered_at'
-        except Exception:
-            paginator.ordering = '-registered_at'
 
-        self.paginator = paginator
-        page = paginator.paginate_queryset(queryset, request, view=self)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response = self.get_paginated_response(serializer.data)
-            # Also include a separate general feed (most recent bills), deduped
-            prioritized_ids = [getattr(obj, 'id', None) or getattr(obj, 'pk', None) for obj in page]
+            self._paginator = paginator
+            page = paginator.paginate_queryset(queryset, request, view=self)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                response = self.get_paginated_response(serializer.data)
+                # Also include a separate general feed (most recent bills), deduped
+                prioritized_ids = [getattr(obj, 'id', None) or getattr(obj, 'pk', None) for obj in page]
+                general_qs = base_queryset.exclude(pk__in=[i for i in prioritized_ids if i is not None]).order_by('-registered_at')[:general_limit]
+                general_serializer = self.get_serializer(general_qs, many=True)
+                response.data.update({
+                    'profile': {
+                        'county': county,
+                        'preferredParty': preferred_party,
+                        'interests': user_interests,
+                        'personaTags': persona_tags,
+                        'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
+                    },
+                    'appliedFilters': {
+                        'impactCategories': user_interests,
+                        'affectedProfiles': persona_tags,
+                        'county': county,
+                        'party': preferred_party,
+                    },
+                    'generalFeed': general_serializer.data,
+                })
+                return response
+
+            # Non-paginated fallback
+            serializer = self.get_serializer(queryset[:100], many=True)
+            prioritized_ids = [getattr(obj, 'id', None) or getattr(obj, 'pk', None) for obj in queryset[:100]]
             general_qs = base_queryset.exclude(pk__in=[i for i in prioritized_ids if i is not None]).order_by('-registered_at')[:general_limit]
             general_serializer = self.get_serializer(general_qs, many=True)
-            response.data.update({
+            return Response({
+                'page': 1,
+                'limit': len(serializer.data),
+                'total': len(serializer.data),
+                'totalPages': 1,
+                'bills': serializer.data,
+                'generalFeed': general_serializer.data,
                 'profile': {
-                    'county': county,
-                    'preferredParty': preferred_party,
-                    'interests': user_interests,
-                    'personaTags': persona_tags,
+                    'county': county, 'preferredParty': preferred_party,
+                    'interests': user_interests, 'personaTags': persona_tags,
                     'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
                 },
                 'appliedFilters': {
-                    'impactCategories': user_interests,
-                    'affectedProfiles': persona_tags,
-                    'county': county,
-                    'party': preferred_party,
+                    'impactCategories': user_interests, 'affectedProfiles': persona_tags,
+                    'county': county, 'party': preferred_party,
                 },
-                'generalFeed': general_serializer.data,
             })
-            return response
-
-        # Non-paginated fallback
-        serializer = self.get_serializer(queryset[:100], many=True)
-        prioritized_ids = [getattr(obj, 'id', None) or getattr(obj, 'pk', None) for obj in queryset[:100]]
-        general_qs = base_queryset.exclude(pk__in=[i for i in prioritized_ids if i is not None]).order_by('-registered_at')[:general_limit]
-        general_serializer = self.get_serializer(general_qs, many=True)
-        return Response({
-            'page': 1,
-            'limit': len(serializer.data),
-            'total': len(serializer.data),
-            'totalPages': 1,
-            'bills': serializer.data,
-            'generalFeed': general_serializer.data,
-            'profile': {
-                'county': county, 'preferredParty': preferred_party,
-                'interests': user_interests, 'personaTags': persona_tags,
-                'questionnaireCompleted': bool(getattr(profile, 'questionnaire_completed', False)),
-            },
-            'appliedFilters': {
-                'impactCategories': user_interests, 'affectedProfiles': persona_tags,
-                'county': county, 'party': preferred_party,
-            },
-        })
+        except Exception as exc:
+            # Log full traceback for debugging
+            tb = traceback.format_exc()
+            logger.exception("Error in personalized feed view: %s", exc)
+            # In DEBUG mode, return the traceback in response to help local debugging.
+            if getattr(settings, 'DEBUG', False):
+                return Response({'detail': 'Internal Server Error', 'error': str(exc), 'traceback': tb}, status=500)
+            return Response({'detail': 'Internal Server Error'}, status=500)
 
 class AdminStatsView(APIView):
     permission_classes = [permissions.IsAdminUser]

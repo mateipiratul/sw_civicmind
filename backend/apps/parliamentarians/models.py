@@ -3,7 +3,7 @@ from apps.bills.models import VoteSession
 
 class Parliamentarian(models.Model):
     mp_slug = models.CharField(primary_key=True, max_length=255)
-    mp_name = models.CharField(max_length=255, blank=True, null=True)
+    mp_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     party = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     chamber = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     

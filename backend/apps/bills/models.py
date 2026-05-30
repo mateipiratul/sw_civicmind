@@ -139,7 +139,7 @@ class VoteSession(models.Model):
         blank=True
     )
     type = models.CharField(max_length=100, blank=True, null=True)
-    date = models.DateField(blank=True, null=True)
+    date = models.DateField(blank=True, null=True, db_index=True)
     time = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     present = models.IntegerField(default=0)
