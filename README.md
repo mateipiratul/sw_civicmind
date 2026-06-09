@@ -101,11 +101,12 @@ CivicMind integrates a multi-agent architecture (using selfhosted Qwen 3.5 & Lan
 
 ## 🧱 High-Level Architecture
 
-* **Frontend:** React Native / Flutter
-* **Backend:** Python *(Django, FastAPI)*
-* **Data Ingestion Layer (ETL):** Firecrawl API, Python
-* **AI Agents Layer:** selfhosted Qwen 3.5, LangGraph
-* **Database:** PostgreSQL *(Supabase)*
+* **Frontend:** React + Vite + TypeScript SPA (using TanStack Router, TanStack Query, and Tailwind CSS)
+* **Backend:** Django 6.0 + Django REST Framework (handles User authentication, Profile questionnaires, and cached metadata)
+* **AI Service (FastAPI):** FastAPI + LangGraph (powers the multi-agent pipelines, scrapers, RAG, and personalization feed generation)
+* **Database:** Supabase PostgreSQL (configured with `pgvector` for semantic document retrieval and HNSW indexing)
+
+For complete diagrams including UML data schemas, component interactions, and multi-agent workflows, please see the detailed [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -156,19 +157,24 @@ The Django backend has recently undergone a major refactor to improve performanc
 
 ## 📋 Product Backlog & Roadmap
 
-### 🟢 Completed / Current Sprint
+### 🟢 Completed
 - [x] Configure daily scraping scripts for `cdep.ro`.
 - [x] Set up Supabase architecture and Django managed models.
 - [x] Core API Refactoring (Serializers, Search, Pagination).
-- [ ] Define LangGraph workflow for the Scout Agent.
-- [ ] Integration with the SOAP API at `legislatie.just.ro/apiws/FreeWebService.svc`.
+- [x] Define LangGraph workflow for the Scout Agent (`scout.py`).
+- [x] Integration with the SOAP API at `legislatie.just.ro/apiws/FreeWebService.svc` (`legislatie_just.py`).
+- [x] Refactor Backend Django Unit & Integration tests (Adhered to real database standards, 34 tests passing).
+- [x] Setup & Refactor Frontend Unit & Integration testing suite (Vitest + JSDOM + MSW stateful mock DB, 51 tests passing).
+- [x] Implement localized user profile form components (Romanian county selection combobox, interests section, AI complete, save confirmation modal).
+- [x] Authentication Cleanup: Standardize auth views to exclusively use standard DRF/allauth flows.
+- [x] Service Layer Expansion: Move feed personalization and vote analytics logic into dedicated service classes.
+- [x] Onboarding Flow: Build onboarding wizard screens that prompt new users to select their county and interests upon first sign-in.
+- [x] Agent 1 (Scout) Configuration: Enable processing of explanatory memorandum PDFs for AI summaries.
+- [x] Impact Score Algorithm: Refine the calculation logic based on auditor metadata.
+- [x] Add high-fidelity system diagrams (UML schemas, component boundaries, and agent workflows) to [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### 🟡 Short-Term Backlog
-- [ ] **Authentication Cleanup**: Standardize auth views to exclusively use standard DRF/allauth flows.
-- [ ] **Service Layer Expansion**: Move feed personalization and vote analytics logic into dedicated service classes.
-- [ ] **Figma Design Integration**: Implement onboarding screens for county and interest selection.
-- [ ] **Agent 1 (Scout) Configuration**: Enable processing of explanatory memorandum PDFs for AI summaries.
-- [ ] **Impact Score Algorithm**: Refine the calculation logic based on auditor metadata.
+*(No active items in the short-term backlog. Current roadmap milestones completed.)*
 
 ### 🔵 Icebox (Future Epics)
 * **Social Sharing & Gamification:** Share a politician's "track record" on social media.
