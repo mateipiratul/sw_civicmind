@@ -8,10 +8,15 @@ Usage:
     python main.py --skip-existing  # reuse existing bill JSON, add only new votes
 """
 import argparse
+import logging
 from scraper.cdep import run_scraper
 from env_setup import load_project_env
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
     load_project_env()
     parser = argparse.ArgumentParser(description="CivicMind cdep.ro scraper")
     parser.add_argument("--days", type=int, default=14,  help="How many days back to search")

@@ -28,11 +28,8 @@ def get_client() -> Client:
     if not url or not key:
         raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
     return create_client(url, key)
-...
-def main():
-    load_project_env()
-    parser = argparse.ArgumentParser()
-
+def slugify(text: str) -> str:
+    if not text:
         return "unknown"
     text = text.lower()
     text = re.sub(r'[^\w\s-]', '', text)
@@ -169,6 +166,7 @@ def push_bill(bill: dict, db: Client) -> None:
     print(f"  [OK] Bill {idp} synced")
 
 def main():
+    load_project_env()
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", help="Single filename in data/raw/")
     args = parser.parse_args()

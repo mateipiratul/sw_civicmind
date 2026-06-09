@@ -24,6 +24,8 @@ import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
 
+logger = logging.getLogger(__name__)
+
 # cdep.ro has a self-signed cert in its chain — suppress the noise
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -35,7 +37,7 @@ from .parsers import (
 )
 from .utils import extract_bill_number
 
-BASE_URL = "https://www.cdep.ro"
+BASE_URL = "https://www.cdep.ro/ords"
 
 
 class _LegacySSLAdapter(HTTPAdapter):
@@ -179,7 +181,7 @@ def find_bill_idp(bill_number: str) -> Optional[int]:
 # ---------------------------------------------------------------------------
 
 def scrape_bill_detail(idp: int) -> Optional[dict]:
-    url = f"{BASE_URL}/pls/proiecte/upl_pck2015.proiect?cam=1&idp={idp}"
+    url = f"{BASE_URL}/pls/proiecte/upl_pck2015.proiect?cam=2&idp={idp}"
     html = _fetch(url)
     if not html:
         return None
@@ -266,7 +268,7 @@ def run_scraper(
                 bills[idp] = {
                     **detail,
                     "bill_number":  bill_number,
-                    "source_url":   f"{BASE_URL}/pls/proiecte/upl_pck2015.proiect?cam=1&idp={idp}",
+                    "source_url":   f"{BASE_URL}/pls/proiecte/upl_pck2015.proiect?cam=2&idp={idp}",
                     "scraped_at":   datetime.utcnow().isoformat() + "Z",
                     "ocr_content":  ocr_content,
                     "vote_sessions": [],

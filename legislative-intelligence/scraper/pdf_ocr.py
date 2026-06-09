@@ -114,6 +114,11 @@ def extract_bill_documents(documents: dict) -> dict[str, Optional[str]]:
     results: dict[str, Optional[str]] = {}
     priority = ["expunere_de_motive", "aviz_ces", "aviz_cl", "forma_initiatorului"]
 
+    api_key = os.getenv("MISTRAL_API_KEY")
+    if not api_key:
+        logger.warning("MISTRAL_API_KEY not set in environment. Skipping OCR extraction.")
+        return {doc_type: None for doc_type in priority if doc_type in documents}
+
     for doc_type in priority:
         url = documents.get(doc_type)
         if not url:
@@ -126,10 +131,14 @@ def extract_bill_documents(documents: dict) -> dict[str, Optional[str]]:
 
         filename = url.split("/")[-1]
         logger.info(f"  -> {len(pdf_bytes)} bytes, sending to Mistral OCR...")
-        text = ocr_pdf_bytes(pdf_bytes, filename=filename)
-        results[doc_type] = text
-        if text:
-            logger.info(f"  -> {len(text)} chars extracted")
+        try:
+            text = ocr_pdf_bytes(pdf_bytes, filename=filename)
+            results[doc_type] = text
+            if text:
+                logger.info(f"  -> {len(text)} chars extracted")
+        except Exception as exc:
+            logger.error(f"[OCR ERROR] {doc_type} failed: {exc}", exc_info=True)
+            results[doc_type] = None
         time.sleep(0.5)
 
     return results
