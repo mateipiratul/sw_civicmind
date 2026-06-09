@@ -10,7 +10,7 @@ from .models import Profile
 class ProfileModelTest(APITestCase):
     def test_profile_str_method(self):
         user = User.objects.create_user(username="matei", password="test12345")
-        profile = Profile.objects.create(user=user)
+        profile = user.profile
 
         self.assertEqual(str(profile), "matei's Profile")
 
@@ -20,7 +20,8 @@ class ProfileModelTest(APITestCase):
             {
                 "username": "ana",
                 "email": "ana@example.com",
-                "password": "StrongPass1!",
+                "password1": "StrongPass1!",
+                "password2": "StrongPass1!",
             },
             format="json",
         )
@@ -75,10 +76,14 @@ class ProfileViewSetTests(APITestCase):
         self.assertIn("it", response.data["persona_tags"])
         self.assertTrue(response.data["questionnaire_completed"])
 
-    @patch("apps.parliamentarians.models.Parliamentarian.objects")
-    def test_questionnaire_metadata_endpoint_returns_form_options(self, mock_manager):
-        deputies = mock_manager.filter.return_value
-        deputies.exclude.return_value.exclude.return_value.values_list.return_value.distinct.return_value = ["USR", "PSD"]
+    def test_questionnaire_metadata_endpoint_returns_form_options(self):
+        from django.core.cache import cache
+        from apps.parliamentarians.models import Parliamentarian
+        cache.clear()
+        
+        # Create actual Parliamentarian objects in the test database
+        Parliamentarian.objects.create(mp_slug="mp-psd", mp_name="MP PSD", chamber="deputies", party="PSD")
+        Parliamentarian.objects.create(mp_slug="mp-usr", mp_name="MP USR", chamber="deputies", party="USR")
 
         response = self.client.get(reverse("profile-questionnaire"))
 

@@ -114,13 +114,38 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+import sys
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+# Clean sys.path to avoid importing local apps under "backend.apps.*" namespace
+if TESTING:
+    parent_dir = str(BASE_DIR.parent)
+    if parent_dir in sys.path:
+        sys.path.remove(parent_dir)
+
+    # Override CACHES for tests to avoid Redis module dependencies
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+    # Connect to local PostgreSQL on 127.0.0.1:5433 for testing
+    DATABASES = {
+        'default': dj_database_url.config(
+            env='TEST_DATABASE_URL',
+            default='postgresql://postgres:postgres@127.0.0.1:5433/civicmind_test',
+            conn_max_age=600,
+        )
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
@@ -181,14 +206,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 UPSTASH_REDIS_REST_URL = os.getenv("UPSTASH_REDIS_REST_URL")
 UPSTASH_REDIS_REST_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN")
 
-if UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN:
+if not TESTING and UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
             'LOCATION': UPSTASH_REDIS_REST_URL.replace('https://', 'rediss://') + f'?token={UPSTASH_REDIS_REST_TOKEN}',
         }
     }
-else:
+elif not TESTING:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',

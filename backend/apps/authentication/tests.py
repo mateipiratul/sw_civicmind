@@ -11,7 +11,8 @@ class AuthenticationValidationTests(APITestCase):
             {
                 "username": "  Matei.User  ",
                 "email": "  Matei.User@Example.COM  ",
-                "password": "StrongPass1!",
+                "password1": "StrongPass1!",
+                "password2": "StrongPass1!",
             },
             format="json",
         )
@@ -26,7 +27,8 @@ class AuthenticationValidationTests(APITestCase):
             {
                 "username": "valid-user",
                 "email": "bad..email@example..com",
-                "password": "StrongPass1!",
+                "password1": "StrongPass1!",
+                "password2": "StrongPass1!",
             },
             format="json",
         )
@@ -40,13 +42,14 @@ class AuthenticationValidationTests(APITestCase):
             {
                 "username": "another-user",
                 "email": "another@example.com",
-                "password": "weakpass1!",
+                "password1": "weakpass1!",
+                "password2": "weakpass1!",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("password", response.data)
+        self.assertIn("password1", response.data)
 
     def test_register_rejects_password_without_special_character(self):
         response = self.client.post(
@@ -54,13 +57,14 @@ class AuthenticationValidationTests(APITestCase):
             {
                 "username": "third-user",
                 "email": "third@example.com",
-                "password": "StrongPass1",
+                "password1": "StrongPass1",
+                "password2": "StrongPass1",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("password", response.data)
+        self.assertIn("password1", response.data)
 
     def test_login_accepts_username_with_surrounding_spaces(self):
         user = User.objects.create_user(
@@ -76,4 +80,4 @@ class AuthenticationValidationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["user"]["id"], user.id)  # type: ignore
+        self.assertIn("key", response.data)

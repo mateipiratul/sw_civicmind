@@ -10,10 +10,10 @@ class GlobalSearchTests(APITestCase):
     def setUp(self):
         # Create a bill
         self.bill = Bill.objects.create(
-            idp=123, bill_number="PL-x 123/2026", title="Lege despre Sănătate"
+            idp=123, bill_number="PL-x 123/2026", title="Lege despre Sanatate"
         )
-        self.analysis = AIAnalysis.objects.create(bill=self.bill, title_short="Sănătate Publică")
-        self.cat_health = ImpactCategory.objects.create(name="Sănătate", slug="sanatate")
+        self.analysis = AIAnalysis.objects.create(bill=self.bill, title_short="Sanatate Publica")
+        self.cat_health = ImpactCategory.objects.create(name="Sanatate", slug="sanatate")
         self.analysis.rel_impact_categories.add(self.cat_health)
 
         # Create an MP
@@ -56,7 +56,7 @@ class GlobalSearchTests(APITestCase):
     @patch("apps.search.services.SearchService.semantic_bill_search")
     def test_search_semantic_match(self, mock_semantic, mock_embed):
         mock_embed.return_value = [0.1] * 1024
-        mock_semantic.return_value = [(123, 0.85)] # Mocking a semantic match for bill 123
+        mock_semantic.return_value = [{"bill_idp": 123, "similarity": 0.85}] # Mocking a semantic match for bill 123
 
         url = reverse("global-search")
         response = self.client.get(url, {"q": "something obscure but semantically related"})
