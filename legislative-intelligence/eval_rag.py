@@ -8,9 +8,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+from env_setup import load_project_env
+load_project_env()
 
 from agents.rag_tools import compare_bill_to_corpus, search_legislation_chunks
 
@@ -73,6 +80,26 @@ def _run_case(case: dict[str, Any]) -> dict[str, Any]:
     similarity_ok = top_similarity >= min_top_similarity
     passed = bool(items) and expected_source_ok and keyword_ok and similarity_ok
 
+    # Calculate Reciprocal Rank (RR) and Hit Status
+    hit_rank = None
+    for idx, item in enumerate(items, start=1):
+        is_hit = False
+        if "bill_idp" in case and case.get("mode") != "compare_bill":
+            is_hit = (str(item.get("bill_idp")) == str(case["bill_idp"]))
+        elif expected_source:
+            is_hit = (item.get("source") == expected_source)
+        elif expected_terms:
+            is_hit = _matches_terms(item, expected_terms)
+        else:
+            is_hit = True
+
+        if is_hit:
+            hit_rank = idx
+            break
+
+    rr = 1.0 / hit_rank if hit_rank else 0.0
+    hit_at_k = 1.0 if hit_rank is not None else 0.0
+
     return {
         "name": case["name"],
         "mode": mode,
@@ -86,6 +113,8 @@ def _run_case(case: dict[str, Any]) -> dict[str, Any]:
         "keyword_ok": keyword_ok,
         "min_top_similarity": min_top_similarity,
         "similarity_ok": similarity_ok,
+        "hit_at_k": hit_at_k,
+        "reciprocal_rank": round(rr, 4),
         "top_items": [
             {
                 "chunk_id": item.get("chunk_id"),
@@ -112,12 +141,22 @@ def run_eval(cases_path: Path, *, limit: int | None = None) -> dict[str, Any]:
         round(sum(result["top_similarity"] for result in results) / len(results), 4)
         if results else 0.0
     )
+    hit_rate = (
+        round((sum(result["hit_at_k"] for result in results) / len(results)) * 100, 1)
+        if results else 0.0
+    )
+    mrr = (
+        round(sum(result["reciprocal_rank"] for result in results) / len(results), 4)
+        if results else 0.0
+    )
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cases_path": str(cases_path),
         "total_cases": len(results),
         "passed_cases": passed,
         "pass_rate": round((passed / len(results)) * 100, 1) if results else 0.0,
+        "hit_rate": hit_rate,
+        "mrr": mrr,
         "avg_top_similarity": avg_top_similarity,
         "results": results,
     }
@@ -137,13 +176,14 @@ def main() -> int:
 
     print(
         f"RAG eval: {report['passed_cases']}/{report['total_cases']} passed "
-        f"({report['pass_rate']}%), avg top similarity={report['avg_top_similarity']}"
+        f"({report['pass_rate']}%). Hit Rate={report['hit_rate']}%, MRR={report['mrr']}, avg top similarity={report['avg_top_similarity']}"
     )
     for result in report["results"]:
         marker = "PASS" if result["passed"] else "FAIL"
         print(
             f"[{marker}] {result['name']}: "
             f"top_source={result['top_source']} top_similarity={result['top_similarity']} "
+            f"hit={result['hit_at_k']} RR={result['reciprocal_rank']} "
             f"keyword_hits={result['keyword_hit_count']}"
         )
     print(f"Report written to {args.report}")

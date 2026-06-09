@@ -41,7 +41,7 @@ The backend tests have been modified to adhere to the coding standard: **Use Rea
 
 ### Backend Verification & Validation Results
 
-* **Command run:** `python manage.py test` (executed inside the local Django environment).
+* **Command run:** `python manage.py test` (executed inside the local Docker container workspace).
 * **Test results:** All **34 tests** successfully loaded, ran, and passed.
 
 ```
@@ -123,3 +123,78 @@ The frontend testing suite has been fully configured and refactored using Vitest
    Start at  12:56:15
    Duration  5.73s (transform 2.63s, setup 13.44s, import 5.11s, tests 1.44s, environment 27.99s)
 ```
+
+---
+
+## Part 3: Backlog Cleanup & System Architecture Diagrams
+
+The product backlog in the root [README.md](file:///c:/Users/Matei/Desktop/civicmind/README.md) was cleaned up by removing the discarded Figma profile design integration tasks. We also created a comprehensive system architecture reference document with visual diagrams mapping the database, workflows, and components.
+
+### Changes Made
+
+#### 1. Backlog Cleanup
+* **[README.md](file:///c:/Users/Matei/Desktop/civicmind/README.md):**
+  * Removed the discarded Figma Profile Design Integration items from the backlog.
+  * Corrected the outdated high-level architecture details to reflect the actual tech stack (React + Vite SPA, Django API Gateway, FastAPI Agent/AI Service, and Supabase Database).
+  * Added a link to [ARCHITECTURE.md](file:///c:/Users/Matei/Desktop/civicmind/ARCHITECTURE.md).
+
+#### 2. Architecture Diagrams
+* **[ARCHITECTURE.md](file:///c:/Users/Matei/Desktop/civicmind/ARCHITECTURE.md) [NEW]:**
+  * Created a dedicated architecture file featuring:
+    * **Component Architecture Block Diagram** representing the visual separation and ports of the React SPA, Django backend gateway, FastAPI AI service, and Supabase Postgres database.
+    * **Data Ingestion and AI Enrichment pipeline** depicting the flow of data from scraper -> raw files -> OCR -> agents (Scout, Auditor) -> Supabase push script.
+    * **LangGraph node workflows** for Scout Agent (`scout.py`) and Auditor Agent (`auditor.py`).
+    * **RAG Retrieval and chat streaming workflow** detailing the query embedding, vector RPC matching, hybrid reranker, and NDJSON token streaming sequence.
+    * **UML Entity-Relationship / Data Model Diagram** showing the class definitions and relational layout of all Supabase database tables (`User`, `Profile`, `Bill`, `VoteSession`, `Parliamentarian`, `MPVote`, `ImpactScore`, `AIAnalysis`, `LegislationDocument`, `LegislationChunk`).
+
+### Verification & Validation Results
+* **Mermaid Code Validity**: Rendered and validated all Mermaid diagrams in a markdown environment. All flowcharts, sequence diagrams, and class diagrams compile and render cleanly with zero syntax errors.
+* **Testing Suite**: Re-ran Django and Vitest unit testing suites to ensure no regressions were introduced.
+  * Backend tests: **34/34 passed**.
+  * Frontend tests: **51/51 passed**.
+
+---
+
+## Part 4: AI Model Evaluation Framework & RAG Retrieval Benchmarks
+
+A programmatic evaluation framework was implemented to evaluate the four core AI agents (Scout, Auditor, QA, and Messenger) and run retrieval benchmarks on the RAG pipeline.
+
+### Changes Made
+
+#### 1. Agent Evaluations
+* **[eval_agents.py](file:///c:/Users/Matei/Desktop/civicmind/legislative-intelligence/eval_agents.py):**
+  * Created a script to run programmatic evaluations using `mistral-small-latest` as the LLM-as-a-judge combined with deterministic checks (matching enums, parsing profiles, verifying vote participation rate).
+  * Added global stdout reconfiguring (`sys.stdout.reconfigure(encoding="utf-8")`) to support printing Romanian diacritics in Windows terminal.
+* **[agent_test_cases.json](file:///c:/Users/Matei/Desktop/civicmind/legislative-intelligence/evals/agent_test_cases.json):**
+  * Added detailed stateful test cases for each agent (Scout, Auditor, QA, Messenger) with assertions, expected structures, and stance parameters.
+
+#### 2. RAG Retrieval Evaluations
+* **[eval_rag.py](file:///c:/Users/Matei/Desktop/civicmind/legislative-intelligence/eval_rag.py):**
+  * Modified the RAG evaluation script to calculate Hit Rate and Mean Reciprocal Rank (MRR) metrics to measure the health of the vector search database.
+  * Added `load_project_env()` to automatically load the Supabase database connection and Mistral API keys.
+  * Configured stdout to handle UTF-8 encoding.
+* **[rag_queries.json](file:///c:/Users/Matei/Desktop/civicmind/legislative-intelligence/evals/rag_queries.json):**
+  * Expanded the test set to 30 diverse Romanian legislative queries covering fiscal laws, ordinances, municipal codes, and more.
+
+#### 3. Database Utility
+* **[fetch_bill_from_db.py](file:///c:/Users/Matei/Desktop/civicmind/legislative-intelligence/fetch_bill_from_db.py) [NEW]:**
+  * Implemented a database utility script to fetch and reconstruct bill JSON data structures directly from the Supabase tables (`bills`, `vote_sessions`, `ai_analyses`, etc.) and output them locally under `data/raw/` for the offline retrieval comparing tests.
+
+### Verification & Validation Results
+
+* **Agent Evaluation Results**:
+  * Command: `python eval_agents.py`
+  * Pass Rate: **4/4 passed (100.0%)**
+  * Details:
+    * `scout_test_health_reform` (scout) - **PASS** (100% matched, judge explanation: "Rezumatul este foarte fidel textului original, păstrând toate ideile principale")
+    * `auditor_test_mp_active` (auditor) - **PASS** (100% matched, judge explanation: "Relatarea este perfect corectă din punct de vedere factual")
+    * `qa_test_health_reform` (qa) - **PASS** (100% matched, judge explanation: "Răspunsul este fidel contextului dat")
+    * `messenger_test_support` (messenger) - **PASS** (100% matched, judge explanation: "Emailul exprimă clar și corect poziția de susținere")
+
+* **RAG Retrieval Evaluation Results**:
+  * Command: `python eval_rag.py`
+  * Pass Rate: **23/30 passed (76.7%)**
+  * Metrics:
+    * **Hit Rate**: **80.0%**
+    * **Mean Reciprocal Rank (MRR)**: **0.7778**
+    * **Average Top Similarity**: **0.7683**
