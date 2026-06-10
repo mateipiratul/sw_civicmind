@@ -14,6 +14,8 @@ from typing import Optional
 
 from mistralai.client import Mistral
 
+from .http_client import _SESSION, _HEADERS
+
 logger = logging.getLogger(__name__)
 
 _client: Optional[Mistral] = None
@@ -61,6 +63,7 @@ def ocr_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf", retries: int
     """
     client = _get_client()
     for attempt in range(retries):
+        file_id = None
         try:
             # Upload file
             upload_resp = client.files.upload(
@@ -87,12 +90,18 @@ def ocr_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf", retries: int
                 logger.error(f"[OCR FAIL] {filename}: {exc}", exc_info=True)
                 return None
             time.sleep(2)
+        finally:
+            if file_id:
+                try:
+                    client.files.delete(file_id=file_id)
+                    logger.info(f"Deleted temporary OCR file: {file_id}")
+                except Exception as clean_exc:
+                    logger.warning(f"Failed to delete temporary OCR file {file_id}: {clean_exc}")
     return None
 
 
 def _download_pdf(url: str) -> Optional[bytes]:
     """Download a PDF using the same SSL-bypassing session as the scraper."""
-    from scraper.cdep import _SESSION, _HEADERS
     try:
         resp = _SESSION.get(url, headers=_HEADERS, timeout=30)
         if resp.status_code == 200 and resp.content:

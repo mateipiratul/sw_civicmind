@@ -17,7 +17,8 @@ from pathlib import Path
 from typing import Optional
 
 from mistralai.client import Mistral
-from supabase import Client, create_client
+from supabase import Client
+from db.client import get_supabase_client
 
 from env_setup import load_project_env
 
@@ -36,11 +37,8 @@ ROMANIAN_STOPWORDS = {
 
 
 def get_supabase() -> Client:
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
-    return create_client(url, key)
+    return get_supabase_client()
+
 
 
 def embed_query(query: str) -> list[float]:

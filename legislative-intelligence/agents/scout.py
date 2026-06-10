@@ -211,8 +211,18 @@ def build_scout() -> Any:
     return g.compile()
 
 
+_SCOUT_GRAPH = None
+
+
+def get_scout_graph() -> Any:
+    global _SCOUT_GRAPH
+    if _SCOUT_GRAPH is None:
+        _SCOUT_GRAPH = build_scout()
+    return _SCOUT_GRAPH
+
+
 def run_scout(bill_path: str) -> dict:
-    graph = build_scout()
+    graph = get_scout_graph()
     initial: ScoutState = {
         "bill_path":     bill_path,
         "bill":          {},

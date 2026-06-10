@@ -8,6 +8,7 @@ Graph:
 import json
 import os
 import logging
+import time
 from typing import Any
 
 from dotenv import load_dotenv
@@ -63,21 +64,31 @@ def generate_email(state: MessengerState) -> dict:
         f"SCHEMA OBLIGATORIE:\n{schema}"
     )
 
-    try:
-        client = _mistral()
-        resp = client.chat.complete(
-            model=_MODEL,
-            messages=[
-                {"role": "system", "content": MESSENGER_SYSTEM},
-                {"role": "user",   "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.4,
-        )
-        draft = json.loads(resp.choices[0].message.content)
-        return {"email_draft": draft}
-    except Exception as exc:
-        return {"error": f"generate_email failed: {exc}"}
+    _MESSENGER_RETRIES = 2
+    _MESSENGER_RETRY_DELAY = 3
+
+    client = _mistral()
+    last_exc = None
+    for attempt in range(_MESSENGER_RETRIES + 1):
+        try:
+            resp = client.chat.complete(
+                model=_MODEL,
+                messages=[
+                    {"role": "system", "content": MESSENGER_SYSTEM},
+                    {"role": "user",   "content": prompt},
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.4,
+            )
+            draft = json.loads(resp.choices[0].message.content)
+            return {"email_draft": draft}
+        except Exception as exc:
+            last_exc = exc
+            if attempt < _MESSENGER_RETRIES:
+                logger.warning(f"generate_email failed: {exc}. Retrying in {_MESSENGER_RETRY_DELAY * (attempt + 1)}s...")
+                time.sleep(_MESSENGER_RETRY_DELAY * (attempt + 1))
+            else:
+                return {"error": f"generate_email failed after {_MESSENGER_RETRIES} retries: {last_exc}"}
 
 
 def return_draft(state: MessengerState) -> dict:
@@ -105,6 +116,16 @@ def build_messenger() -> Any:
     return g.compile()
 
 
+_MESSENGER_GRAPH = None
+
+
+def get_messenger_graph() -> Any:
+    global _MESSENGER_GRAPH
+    if _MESSENGER_GRAPH is None:
+        _MESSENGER_GRAPH = build_messenger()
+    return _MESSENGER_GRAPH
+
+
 def run_messenger(
     bill: dict,
     mp_name: str,
@@ -115,7 +136,7 @@ def run_messenger(
     Returns {"subject": "...", "body": "..."} — the email draft.
     The frontend shows this to the user before sending.
     """
-    graph = build_messenger()
+    graph = get_messenger_graph()
     initial: MessengerState = {
         "bill":        bill,
         "mp_name":     mp_name,

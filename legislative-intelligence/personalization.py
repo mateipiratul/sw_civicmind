@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
-from supabase import Client, create_client
+from supabase import Client
+from db.client import get_supabase_client
 
 from env_setup import load_project_env
 
@@ -30,11 +31,7 @@ _STATUS_LABELS: dict[str, str] = {
 
 
 def _db() -> Client:
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
-    return create_client(url, key)
+    return get_supabase_client()
 
 
 def _as_list(value: Any) -> list:
@@ -45,11 +42,19 @@ def _as_list(value: Any) -> list:
     return [value]
 
 
-def _load_bills() -> list[dict]:
-    bills = []
-    for path in sorted(DATA_RAW.glob("bill_*.json")):
-        bills.append(json.loads(path.read_text(encoding="utf-8")))
-    return bills
+_BILLS_CACHE: Optional[list[dict]] = None
+
+def _load_bills(clear_cache: bool = False) -> list[dict]:
+    global _BILLS_CACHE
+    if _BILLS_CACHE is None or clear_cache:
+        bills = []
+        for path in sorted(DATA_RAW.glob("bill_*.json")):
+            try:
+                bills.append(json.loads(path.read_text(encoding="utf-8")))
+            except Exception:
+                pass
+        _BILLS_CACHE = bills
+    return _BILLS_CACHE
 
 
 def _get_one(table: str, field: str, value: Any) -> dict | None:
@@ -85,7 +90,7 @@ def _profile_completion(profile: dict) -> dict:
     ]
     filled = sum(
         1 for f in fields
-        if (lambda v: bool(v))(profile.get(f))
+        if bool(profile.get(f))
     )
     return {
         "filled_fields": filled,

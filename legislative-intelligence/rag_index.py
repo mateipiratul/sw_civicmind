@@ -21,12 +21,11 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from mistralai.client import Mistral
-from supabase import Client, create_client
+from supabase import Client
+from db.client import get_supabase_client
 
 from env_setup import load_project_env
 from scraper.legislatie_just import LegislativeAct, LegislatieJustClient
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 
 RAW_DIR = Path("data/raw")
@@ -68,11 +67,7 @@ class Chunk:
 
 
 def _supabase() -> Client:
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
-    return create_client(url, key)
+    return get_supabase_client()
 
 
 def _mistral() -> Mistral:
@@ -276,30 +271,38 @@ def _filter_changed(db: Client, documents: list[dict], chunks: list[Chunk]) -> t
     if not documents:
         return documents, chunks
 
+    doc_ids = [doc["document_id"] for doc in documents]
+
+    # Batch query 1: Fetch existing document hashes
+    existing_docs = (
+        db.table("legislation_documents")
+        .select("document_id,content_hash")
+        .in_("document_id", doc_ids)
+        .execute()
+        .data
+    )
+    existing_map = {row["document_id"]: row["content_hash"] for row in existing_docs}
+
+    # Batch query 2: Check which documents already have chunks
+    existing_chunks = (
+        db.table("legislation_chunks")
+        .select("document_id")
+        .in_("document_id", doc_ids)
+        .execute()
+        .data
+    )
+    documents_with_chunks = {row["document_id"] for row in existing_chunks}
+
     changed_docs: list[dict] = []
     changed_ids: set[str] = set()
+
     for doc in documents:
-        existing = (
-            db.table("legislation_documents")
-            .select("document_id,content_hash")
-            .eq("document_id", doc["document_id"])
-            .limit(1)
-            .execute()
-            .data
-        )
-        if existing and existing[0].get("content_hash") == doc["content_hash"]:
-            chunk_probe = (
-                db.table("legislation_chunks")
-                .select("chunk_id")
-                .eq("document_id", doc["document_id"])
-                .limit(1)
-                .execute()
-                .data
-            )
-            if chunk_probe:
-                continue
+        doc_id = doc["document_id"]
+        existing_hash = existing_map.get(doc_id)
+        if existing_hash == doc["content_hash"] and doc_id in documents_with_chunks:
+            continue
         changed_docs.append(doc)
-        changed_ids.add(doc["document_id"])
+        changed_ids.add(doc_id)
 
     return changed_docs, [chunk for chunk in chunks if chunk.document_id in changed_ids]
 
@@ -425,4 +428,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     main()

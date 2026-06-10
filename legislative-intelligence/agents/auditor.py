@@ -10,6 +10,7 @@ import json
 import os
 import logging
 import time
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -32,25 +33,28 @@ def _mistral() -> Mistral:
     return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
 
 
-def _generate_narrative(client: Mistral, prompt: str) -> str:
+async def _generate_narrative_async(client: Mistral, prompt: str) -> str:
+    def call():
+        resp = client.chat.complete(
+            model=_MODEL,
+            messages=[
+                {"role": "system", "content": AUDITOR_NARRATIVE_SYSTEM},
+                {"role": "user",   "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.2,
+        )
+        result = json.loads(resp.choices[0].message.content)
+        return result.get("narrative", "")
+
     last_error: Exception | None = None
     for attempt in range(_NARRATIVE_RETRIES + 1):
         try:
-            resp = client.chat.complete(
-                model=_MODEL,
-                messages=[
-                    {"role": "system", "content": AUDITOR_NARRATIVE_SYSTEM},
-                    {"role": "user",   "content": prompt},
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.2,
-            )
-            result = json.loads(resp.choices[0].message.content)
-            return result.get("narrative", "")
+            return await asyncio.to_thread(call)
         except Exception as exc:
             last_error = exc
             if attempt < _NARRATIVE_RETRIES:
-                time.sleep(_NARRATIVE_RETRY_DELAY)
+                await asyncio.sleep(_NARRATIVE_RETRY_DELAY)
 
     raise RuntimeError(f"narrative generation failed after retry: {last_error}")
 
@@ -155,14 +159,15 @@ def generate_narratives(state: AuditorState) -> dict:
 
     client = _mistral()
     scores = state["scores"]
-    narratives: dict[str, str] = {}
 
     # Only generate narratives for MPs with enough data (min 3 votes)
     eligible = {k: v for k, v in scores.items() if v["total"] >= 3}
     logger.info(f"Generating narratives for {len(eligible)} MPs...")
 
-    for slug, data in eligible.items():
-        try:
+    async def run_all():
+        tasks = []
+        slugs = []
+        for slug, data in eligible.items():
             prompt = AUDITOR_NARRATIVE_USER.format(
                 mp_name     = data["mp_name"],
                 party       = data["party"],
@@ -174,11 +179,20 @@ def generate_narratives(state: AuditorState) -> dict:
                 absent_count  = data["absent"],
                 categories  = ", ".join(data["categories_voted"]) or "diverse",
             )
-            narratives[slug] = _generate_narrative(client, prompt)
-        except Exception as exc:
-            narratives[slug] = ""
-            logger.warning(f"narrative failed for {slug}: {exc}")
+            tasks.append(_generate_narrative_async(client, prompt))
+            slugs.append(slug)
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        narratives = {}
+        for slug, res in zip(slugs, results):
+            if isinstance(res, Exception):
+                logger.warning(f"narrative failed for {slug}: {res}")
+                narratives[slug] = ""
+            else:
+                narratives[slug] = res
+        return narratives
 
+    narratives = asyncio.run(run_all())
     return {"narratives": narratives}
 
 
@@ -236,8 +250,18 @@ def build_auditor() -> Any:
     return g.compile()
 
 
+_AUDITOR_GRAPH = None
+
+
+def get_auditor_graph() -> Any:
+    global _AUDITOR_GRAPH
+    if _AUDITOR_GRAPH is None:
+        _AUDITOR_GRAPH = build_auditor()
+    return _AUDITOR_GRAPH
+
+
 def run_auditor(data_dir: str = "data/raw") -> list[dict]:
-    graph = build_auditor()
+    graph = get_auditor_graph()
     initial: AuditorState = {
         "data_dir":   data_dir,
         "all_votes":  [],

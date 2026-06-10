@@ -10,11 +10,12 @@ import json
 import subprocess
 import sys
 import unicodedata
+import uuid
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -43,18 +44,35 @@ app.add_middleware(
 
 # ── Data loading ──────────────────────────────────────────────────────────────
 
-def _load_bills() -> list[dict]:
-    bills = []
-    for path in sorted(DATA_RAW.glob("bill_*.json")):
-        bills.append(json.loads(path.read_text(encoding="utf-8")))
-    return bills
+_BILLS_CACHE: Optional[list[dict]] = None
+_BILLS_BY_IDP_CACHE: Optional[dict[int, dict]] = None
+_IMPACT_SCORES_CACHE: Optional[list[dict]] = None
+_MP_VOTE_HISTORY_CACHE: Optional[dict[str, list[dict]]] = None
+
+BACKGROUND_JOBS: dict[str, dict] = {}
 
 
-def _load_impact_scores() -> list[dict]:
-    path = DATA_PROCESSED / "impact_scores.json"
-    if not path.exists():
-        return []
-    return json.loads(path.read_text(encoding="utf-8"))
+def _load_bills(clear_cache: bool = False) -> list[dict]:
+    global _BILLS_CACHE
+    if _BILLS_CACHE is None or clear_cache:
+        bills = []
+        for path in sorted(DATA_RAW.glob("bill_*.json")):
+            try:
+                bills.append(json.loads(path.read_text(encoding="utf-8")))
+            except Exception:
+                pass
+        _BILLS_CACHE = bills
+    return _BILLS_CACHE
+
+
+def _load_impact_scores(clear_cache: bool = False) -> list[dict]:
+    global _IMPACT_SCORES_CACHE
+    if _IMPACT_SCORES_CACHE is None or clear_cache:
+        path = DATA_PROCESSED / "impact_scores.json"
+        if not path.exists():
+            return []
+        _IMPACT_SCORES_CACHE = json.loads(path.read_text(encoding="utf-8"))
+    return _IMPACT_SCORES_CACHE
 
 
 def _load_notification_events() -> list[dict]:
@@ -78,8 +96,86 @@ def _load_notification_jobs() -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _bills_by_idp() -> dict[int, dict]:
-    return {b["idp"]: b for b in _load_bills()}
+def _bills_by_idp(clear_cache: bool = False) -> dict[int, dict]:
+    global _BILLS_BY_IDP_CACHE
+    if _BILLS_BY_IDP_CACHE is None or clear_cache:
+        _BILLS_BY_IDP_CACHE = {b["idp"]: b for b in _load_bills(clear_cache)}
+    return _BILLS_BY_IDP_CACHE
+
+
+def _get_mp_vote_histories(clear_cache: bool = False) -> dict[str, list[dict]]:
+    global _MP_VOTE_HISTORY_CACHE
+    if _MP_VOTE_HISTORY_CACHE is None or clear_cache:
+        histories: dict[str, list[dict]] = {}
+        for bill in _load_bills(clear_cache):
+            bill_idp = bill["idp"]
+            bill_number = bill.get("bill_number", "")
+            ai = bill.get("ai_analysis") or {}
+            title_short = ai.get("title_short", bill.get("title", ""))[:80]
+            categories = ai.get("impact_categories", [])
+            for session in bill.get("vote_sessions", []):
+                session_date = session.get("date")
+                for mv in session.get("nominal_votes", []):
+                    slug = mv["mp_slug"]
+                    if slug not in histories:
+                        histories[slug] = []
+                    histories[slug].append({
+                        "idp":         bill_idp,
+                        "bill_number": bill_number,
+                        "title_short": title_short,
+                        "vote":        mv["vote"],
+                        "date":        session_date,
+                        "categories":  categories,
+                    })
+        for slug in histories:
+            histories[slug].sort(key=lambda x: x.get("date") or "", reverse=True)
+        _MP_VOTE_HISTORY_CACHE = histories
+    return _MP_VOTE_HISTORY_CACHE
+
+
+def run_subprocess_job(job_id: str, cmd: list[str], cwd: Path, report_path: Optional[Path] = None):
+    BACKGROUND_JOBS[job_id]["status"] = "running"
+    try:
+        completed = subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=True,
+        )
+        report = None
+        if report_path and report_path.exists():
+            try:
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        BACKGROUND_JOBS[job_id].update({
+            "status": "completed",
+            "stdout": completed.stdout[-4000:],
+            "stderr": completed.stderr[-2000:],
+            "report": report,
+        })
+    except subprocess.CalledProcessError as exc:
+        BACKGROUND_JOBS[job_id].update({
+            "status": "failed",
+            "returncode": exc.returncode,
+            "stdout": exc.stdout[-4000:] if exc.stdout else "",
+            "stderr": exc.stderr[-2000:] if exc.stderr else "",
+        })
+    except subprocess.TimeoutExpired as exc:
+        BACKGROUND_JOBS[job_id].update({
+            "status": "failed",
+            "stdout": (exc.stdout or "")[-4000:],
+            "stderr": (exc.stderr or "")[-2000:],
+            "message": "timeout expired",
+        })
+    except Exception as exc:
+        BACKGROUND_JOBS[job_id].update({
+            "status": "failed",
+            "message": str(exc),
+        })
 
 
 def _norm(value: str) -> str:
@@ -323,24 +419,7 @@ def get_mp(mp_slug: str):
     if not mp:
         raise HTTPException(status_code=404, detail=f"MP '{mp_slug}' not found")
 
-    # Build vote history by scanning all bills
-    vote_history = []
-    for bill in _load_bills():
-        bill_number = bill.get("bill_number", "")
-        ai = bill.get("ai_analysis") or {}
-        for session in bill.get("vote_sessions", []):
-            for mv in session.get("nominal_votes", []):
-                if mv["mp_slug"] == mp_slug:
-                    vote_history.append({
-                        "idp":         bill["idp"],
-                        "bill_number": bill_number,
-                        "title_short": ai.get("title_short", bill.get("title", ""))[:80],
-                        "vote":        mv["vote"],
-                        "date":        session.get("date"),
-                        "categories":  ai.get("impact_categories", []),
-                    })
-
-    vote_history.sort(key=lambda x: x.get("date") or "", reverse=True)
+    vote_history = _get_mp_vote_histories().get(mp_slug, [])
 
     return {
         **mp,
@@ -806,7 +885,7 @@ def rag_compare_bill(req: RAGBillCompareRequest):
 
 
 @app.post("/rag/reindex")
-def rag_reindex(req: RAGReindexRequest):
+def rag_reindex(req: RAGReindexRequest, background_tasks: BackgroundTasks):
     if req.source not in ("bills", "legislatie-just"):
         raise HTTPException(status_code=422, detail="source must be 'bills' or 'legislatie-just'")
     if req.source == "bills" and not req.all and not req.file:
@@ -831,41 +910,17 @@ def rag_reindex(req: RAGReindexRequest):
         cmd.append("--dry-run")
 
     root = Path(__file__).resolve().parents[1]
-    try:
-        completed = subprocess.run(
-            cmd,
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=900,
-            check=True,
-        )
-        return {
-            "status": "ok",
-            "command": cmd,
-            "stdout": completed.stdout[-4000:],
-            "stderr": completed.stderr[-2000:],
-        }
-    except subprocess.CalledProcessError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "command": cmd,
-                "returncode": exc.returncode,
-                "stdout": exc.stdout[-4000:] if exc.stdout else "",
-                "stderr": exc.stderr[-2000:] if exc.stderr else "",
-            },
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise HTTPException(
-            status_code=504,
-            detail={
-                "command": cmd,
-                "stdout": (exc.stdout or "")[-4000:],
-                "stderr": (exc.stderr or "")[-2000:],
-                "message": "rag reindex timed out",
-            },
-        )
+    job_id = f"reindex_{uuid.uuid4().hex[:8]}"
+    BACKGROUND_JOBS[job_id] = {
+        "status": "queued",
+        "command": cmd,
+    }
+    background_tasks.add_task(run_subprocess_job, job_id, cmd, root)
+    return {
+        "status": "ok",
+        "job_id": job_id,
+        "message": "Reindexing job queued in background.",
+    }
 
 
 @app.get("/rag/eval-report")
@@ -877,55 +932,32 @@ def rag_eval_report():
 
 
 @app.post("/rag/eval")
-def rag_eval(req: RAGEvalRequest | None = None):
+def rag_eval(background_tasks: BackgroundTasks, req: RAGEvalRequest | None = None):
     payload = req or RAGEvalRequest()
     cmd = [sys.executable, "eval_rag.py", "--cases", payload.cases, "--report", payload.report]
     if payload.limit is not None:
         cmd.extend(["--limit", str(payload.limit)])
 
     root = Path(__file__).resolve().parents[1]
-    try:
-        completed = subprocess.run(
-            cmd,
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=900,
-            check=True,
-        )
-        report_path = root / payload.report
-        report = (
-            json.loads(report_path.read_text(encoding="utf-8"))
-            if report_path.exists()
-            else None
-        )
-        return {
-            "status": "ok",
-            "command": cmd,
-            "stdout": completed.stdout[-4000:],
-            "stderr": completed.stderr[-2000:],
-            "report": report,
-        }
-    except subprocess.CalledProcessError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "command": cmd,
-                "returncode": exc.returncode,
-                "stdout": exc.stdout[-4000:] if exc.stdout else "",
-                "stderr": exc.stderr[-2000:] if exc.stderr else "",
-            },
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise HTTPException(
-            status_code=504,
-            detail={
-                "command": cmd,
-                "stdout": (exc.stdout or "")[-4000:],
-                "stderr": (exc.stderr or "")[-2000:],
-                "message": "rag eval timed out",
-            },
-        )
+    job_id = f"eval_{uuid.uuid4().hex[:8]}"
+    BACKGROUND_JOBS[job_id] = {
+        "status": "queued",
+        "command": cmd,
+    }
+    background_tasks.add_task(run_subprocess_job, job_id, cmd, root, root / payload.report)
+    return {
+        "status": "ok",
+        "job_id": job_id,
+        "message": "Evaluation job queued in background.",
+    }
+
+
+@app.get("/rag/jobs/{job_id}")
+def get_job_status(job_id: str):
+    job = BACKGROUND_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
+    return job
 
 
 # ── Stats (useful for dashboard overview) ─────────────────────────────────────

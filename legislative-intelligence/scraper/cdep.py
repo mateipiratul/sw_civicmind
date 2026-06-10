@@ -15,20 +15,13 @@ import ssl
 import time
 import warnings
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
 import requests
-import urllib3
-from requests.adapters import HTTPAdapter
-from urllib3.util.ssl_ import create_urllib3_context
 
-logger = logging.getLogger(__name__)
-
-# cdep.ro has a self-signed cert in its chain — suppress the noise
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
+from .http_client import _SESSION, _HEADERS
 from .parsers import (
     parse_bill_detail,
     parse_bill_list,
@@ -37,40 +30,9 @@ from .parsers import (
 )
 from .utils import extract_bill_number
 
+logger = logging.getLogger(__name__)
+
 BASE_URL = "https://www.cdep.ro/ords"
-
-
-class _LegacySSLAdapter(HTTPAdapter):
-    """
-    cdep.ro uses a self-signed cert chain and an old TLS stack.
-    We disable verification and relax ciphers inside the adapter so that
-    verify=False doesn't conflict with a custom context's check_hostname.
-    """
-    def init_poolmanager(self, *args, **kwargs):
-        ctx = create_urllib3_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
-        kwargs["ssl_context"] = ctx
-        super().init_poolmanager(*args, **kwargs)
-
-    def send(self, request, **kwargs):
-        kwargs["verify"] = False
-        return super().send(request, **kwargs)
-
-
-_SESSION = requests.Session()
-_SESSION.mount("https://", _LegacySSLAdapter())
-
-_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "ro-RO,ro;q=0.9,en;q=0.8",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-}
 
 # Seconds to wait between requests — be polite to the government server
 _DELAY = 0.8
@@ -269,7 +231,7 @@ def run_scraper(
                     **detail,
                     "bill_number":  bill_number,
                     "source_url":   f"{BASE_URL}/pls/proiecte/upl_pck2015.proiect?cam=2&idp={idp}",
-                    "scraped_at":   datetime.utcnow().isoformat() + "Z",
+                    "scraped_at":   datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                     "ocr_content":  ocr_content,
                     "vote_sessions": [],
                     "ai_analysis":  None,
