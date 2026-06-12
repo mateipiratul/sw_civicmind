@@ -1,11 +1,11 @@
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Modular Components
 import { BillDetailsHeader } from "@/components/bill-detail/bill-details-header";
@@ -89,26 +89,27 @@ export function BillDetailPage() {
       <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <Breadcrumbs items={[{ label: "Feed", href: "/" }, { label: bill.bill_number }]} />
-          <Link
-            to="/"
+          <button
+            onClick={() => window.history.back()}
             style={{ 
               display: "inline-flex", 
               alignItems: "center", 
               gap: "8px", 
-              padding: "8px 16px", 
+              padding: "7px 16px", 
               borderRadius: "999px", 
               background: "var(--surface)", 
               border: "1px solid var(--border)", 
               fontSize: "13.5px", 
-              fontWeight: 700, 
+              fontWeight: 600, 
               color: "var(--text)", 
-              textDecoration: "none",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              cursor: "pointer",
+              fontFamily: "inherit",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)"
             }}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={15} />
             Înapoi
-          </Link>
+          </button>
         </div>
 
         <BillDetailsHeader bill={bill} />

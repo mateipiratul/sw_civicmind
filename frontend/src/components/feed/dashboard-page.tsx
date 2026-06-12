@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
@@ -7,12 +7,25 @@ import { Pagination } from "@/components/ui/pagination";
 import { RefreshCw } from "lucide-react";
 import { FeedBillCard } from "./feed-bill-card";
 import { RightSidebar } from "./right-sidebar";
+import { useSearch, useNavigate } from "@tanstack/react-router";
 
 export function DashboardPage() {
   const { user, isAuthenticated } = useAuth();
-  const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
-  const [page, setPage] = useState(1);
+  const navigate = useNavigate();
+
+  // Read page and category from URL so back-navigation restores them
+  const search = useSearch({ strict: false }) as { page?: string; category?: string };
+  const page = Math.max(1, parseInt(search.page ?? "1", 10) || 1);
+  const activeCategory = search.category || undefined;
   const limit = 10;
+
+  const setPage = useCallback((newPage: number) => {
+    navigate({ to: "/", search: { page: String(newPage), ...(activeCategory ? { category: activeCategory } : {}) }, replace: false });
+  }, [navigate, activeCategory]);
+
+  const handleCategoryChange = useCallback((cat: string | undefined) => {
+    navigate({ to: "/", search: { page: "1", ...(cat ? { category: cat } : {}) }, replace: false });
+  }, [navigate]);
 
   // Bills Query
   const billsQuery = useQuery({
@@ -36,11 +49,6 @@ export function DashboardPage() {
     queryFn: () => api.listMPs({ county: user?.county, limit: 5 }),
     enabled: !!user?.county,
   });
-
-  const handleCategoryChange = (cat: string | undefined) => {
-    setActiveCategory(cat);
-    setPage(1);
-  };
 
   const data = billsQuery.data;
   const bills = data?.bills && Array.isArray(data.bills) ? data.bills : [];

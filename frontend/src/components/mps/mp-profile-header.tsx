@@ -1,10 +1,11 @@
 import type { ParliamentarianDetail } from "@/lib/api";
+import { cleanText } from "@/lib/utils";
 
 function scoreColor(score?: number | null) {
-  if (score == null) return "#aaa";
-  if (score >= 80) return "#16a34a";
-  if (score >= 60) return "#d97706";
-  return "#dc2626";
+  if (score == null) return "var(--text-muted)";
+  if (score >= 80) return "var(--color-success)";
+  if (score >= 60) return "var(--color-warning)";
+  return "var(--color-destructive)";
 }
 
 interface MPProfileHeaderProps {
@@ -20,7 +21,7 @@ export function MPProfileHeader({ mp }: MPProfileHeaderProps) {
     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "24px 28px", marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{mp.mp_name}</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{cleanText(mp.mp_name)}</h1>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {mp.party && (
               <span className="span-partycounty">{mp.party}</span>

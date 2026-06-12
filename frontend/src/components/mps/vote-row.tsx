@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 import type { MPVote } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, extractBillTitleAndBody } from "@/lib/utils";
 
 const VOTE_COLORS: Record<string, string> = {
   for: "var(--color-success)",
@@ -45,8 +45,8 @@ export function VoteRow({ vote }: { vote: MPVote }) {
         {voteLabel}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text)", lineHeight: 1.4, marginBottom: 4 }}>
-          {vote.title_short || vote.bill_title}
+        <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text)", lineHeight: 1.45, marginBottom: 4 }}>
+          {extractBillTitleAndBody(vote.title_short || vote.bill_title).title || vote.bill_number}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {vote.vote_date && (

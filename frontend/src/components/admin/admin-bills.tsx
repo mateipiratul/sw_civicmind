@@ -102,12 +102,16 @@ export function AdminBillsPage() {
                         {bill.initiator_type || "N/A"}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <Badge 
-                          variant={bill.status === "Adoptată" ? "default" : "secondary"}
-                          className="capitalize font-bold px-3 py-1"
-                        >
-                          {bill.status || "Unknown"}
-                        </Badge>
+                        {(!bill.status || bill.status.toLowerCase() === "la_comisii" || bill.status.toLowerCase() === "la comisii") ? (
+                          <span className="text-gray-400 text-xs italic">N/A</span>
+                        ) : (
+                          <Badge 
+                            variant={bill.status.toLowerCase().includes("adoptat") ? "default" : "secondary"}
+                            className="capitalize font-bold px-3 py-1"
+                          >
+                            {bill.status}
+                          </Badge>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Button 

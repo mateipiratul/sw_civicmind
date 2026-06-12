@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { Sparkles, Check, Send, RotateCcw } from "lucide-react";
 import { useInterestAnalysis } from "@/lib/hooks/use-interest-analysis";
-import { cn } from "@/lib/utils";
 
 interface InterestsSectionProps {
   selectedInterests: string[];
@@ -40,44 +39,60 @@ export function InterestsSection({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-baseline gap-2">
-          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Interese civice</h3>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Interese civice
+          </span>
           {selectedInterests.length > 0 && (
-            <span className="text-[11px] font-bold text-gray-400">({selectedInterests.length})</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
+              ({selectedInterests.length})
+            </span>
           )}
         </div>
 
-        <div className="flex bg-gray-50 border border-gray-100 rounded-lg p-1 gap-1">
+        {/* Manual / AI toggle */}
+        <div style={{ display: "flex", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 3, gap: 2 }}>
           <button
             type="button"
             onClick={() => setMode("manual")}
-            className={cn(
-              "px-2.5 py-1 rounded-md text-[11px] font-bold transition-all",
-              mode === "manual" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
-            )}
+            style={{
+              padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+              border: "none", cursor: "pointer", fontFamily: "inherit",
+              background: mode === "manual" ? "var(--surface)" : "transparent",
+              color: mode === "manual" ? "var(--text)" : "var(--text-muted)",
+              boxShadow: mode === "manual" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.15s",
+            }}
           >
             Manual
           </button>
           <button
             type="button"
-            onClick={() => {
-              setMode("ai");
-              setTimeout(() => textareaRef.current?.focus(), 50);
+            onClick={() => { setMode("ai"); setTimeout(() => textareaRef.current?.focus(), 50); }}
+            style={{
+              padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+              border: "none", cursor: "pointer", fontFamily: "inherit",
+              display: "flex", alignItems: "center", gap: 4,
+              background: mode === "ai" ? "var(--surface)" : "transparent",
+              color: mode === "ai" ? "var(--primary)" : "var(--text-muted)",
+              boxShadow: mode === "ai" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.15s",
             }}
-            className={cn(
-              "px-2.5 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1.5",
-              mode === "ai" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400 hover:text-indigo-400"
-            )}
           >
             <Sparkles size={11} /> AI
           </button>
         </div>
       </div>
 
+      {/* Manual mode: pill grid */}
       {mode === "manual" && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 2 }}>
+          {allCategories.length === 0 && (
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Se încarcă categoriile...</span>
+          )}
           {allCategories.map(cat => {
             const active = selectedInterests.includes(cat);
             return (
@@ -85,12 +100,20 @@ export function InterestsSection({
                 key={cat}
                 type="button"
                 onClick={() => onToggle(cat)}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-full text-[13px] font-bold transition-all border-2",
-                  active
-                    ? "bg-gray-900 border-gray-900 text-white shadow-lg shadow-gray-100"
-                    : "bg-white border-gray-100 text-gray-500 hover:border-gray-200"
-                )}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: active ? "1.5px solid var(--primary)" : "1.5px solid var(--border)",
+                  background: active ? "var(--primary)" : "var(--surface)",
+                  color: active ? "var(--primary-text)" : "var(--text-muted)",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.borderColor = "var(--text-muted)"; (e.currentTarget as HTMLElement).style.color = "var(--text)"; } }}
+                onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; } }}
               >
                 {cat}
               </button>
@@ -99,12 +122,13 @@ export function InterestsSection({
         </div>
       )}
 
+      {/* AI mode: input step */}
       {mode === "ai" && aiStep === "input" && (
-        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-          <p className="text-[13px] text-gray-500 leading-relaxed italic">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, fontStyle: "italic" }}>
             Descrie-te pe scurt și AI-ul îți va sugera interesele.
           </p>
-          <div className="relative">
+          <div style={{ position: "relative" }}>
             <textarea
               ref={textareaRef}
               value={aiInput}
@@ -113,42 +137,58 @@ export function InterestsSection({
               disabled={isAnalyzing}
               placeholder="Ex: Sunt medic în Iași..."
               rows={3}
-              className="w-full p-4 pr-12 text-sm border-2 border-gray-50 rounded-xl bg-gray-50 focus:bg-white focus:border-indigo-100 focus:ring-0 outline-none transition-all resize-none placeholder:text-gray-300"
+              style={{
+                width: "100%", padding: "12px 48px 12px 14px", fontSize: 13.5,
+                border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                background: "var(--bg)", color: "var(--text)", fontFamily: "inherit",
+                outline: "none", resize: "none", lineHeight: 1.55,
+                transition: "border-color 0.15s", boxSizing: "border-box",
+              }}
+              onFocus={(e) => { (e.target as HTMLTextAreaElement).style.borderColor = "var(--primary)"; (e.target as HTMLTextAreaElement).style.background = "var(--surface)"; }}
+              onBlur={(e) => { (e.target as HTMLTextAreaElement).style.borderColor = "var(--border)"; (e.target as HTMLTextAreaElement).style.background = "var(--bg)"; }}
             />
             <button
               type="button"
               onClick={handleAiAnalyze}
               disabled={!aiInput.trim() || isAnalyzing}
-              className="absolute right-2.5 bottom-2.5 w-8 h-8 rounded-lg bg-indigo-600 text-white disabled:bg-gray-100 disabled:text-gray-400 flex items-center justify-center transition-all shadow-sm active:scale-95"
+              style={{
+                position: "absolute", right: 10, bottom: 10, width: 32, height: 32,
+                borderRadius: 8, border: "none", cursor: aiInput.trim() && !isAnalyzing ? "pointer" : "default",
+                background: aiInput.trim() && !isAnalyzing ? "var(--primary)" : "var(--border)",
+                color: aiInput.trim() && !isAnalyzing ? "var(--primary-text)" : "var(--text-muted)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.15s",
+              }}
             >
               <Send size={14} />
             </button>
           </div>
           {isAnalyzing && (
-            <div className="flex items-center gap-2 text-indigo-600 text-xs font-bold animate-pulse">
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>
               <Sparkles size={12} /> Se analizează...
             </div>
           )}
           {error && (
-            <div className="p-2.5 rounded-lg bg-red-50 border border-red-100 text-[12px] text-red-600 font-medium">
+            <div style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", background: "#fef2f2", border: "1px solid #fecaca", fontSize: 12.5, color: "#dc2626" }}>
               {error}
             </div>
           )}
         </div>
       )}
 
+      {/* AI mode: confirm step */}
       {mode === "ai" && aiStep === "confirm" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex gap-3 shadow-sm shadow-indigo-50/50">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-100">
-              <Sparkles size={13} className="text-white" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "12px 14px", display: "flex", gap: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Sparkles size={13} style={{ color: "var(--primary-text)" }} />
             </div>
-            <p className="text-[13px] text-indigo-950 leading-relaxed">
-              <strong className="font-bold">Am extras {aiSuggested.length} categorii</strong> — marcate cu <span className="opacity-50 text-[10px]">✦</span>. Ajustează și confirmă mai jos.
+            <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.55, margin: 0 }}>
+              <strong>Am extras {aiSuggested.length} categorii</strong> — ajustează și confirmă mai jos.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {allCategories.map(cat => {
               const active = selectedInterests.includes(cat);
               const wasSuggested = aiSuggested.includes(cat);
@@ -157,35 +197,48 @@ export function InterestsSection({
                   key={cat}
                   type="button"
                   onClick={() => onToggle(cat)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-[12.5px] font-bold transition-all border-2 flex items-center gap-1.5",
-                    active
-                      ? wasSuggested
-                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100"
-                        : "bg-gray-900 border-gray-900 text-white shadow-lg shadow-gray-100"
-                      : "bg-white border-gray-100 text-gray-400 hover:border-gray-200"
-                  )}
+                  style={{
+                    padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 600,
+                    border: active
+                      ? "1.5px solid var(--primary)"
+                      : "1.5px solid var(--border)",
+                    background: active
+                      ? (wasSuggested ? "var(--primary)" : "var(--primary)")
+                      : "var(--surface)",
+                    color: active ? "var(--primary-text)" : "var(--text-muted)",
+                    cursor: "pointer", fontFamily: "inherit",
+                    display: "flex", alignItems: "center", gap: 5,
+                    transition: "all 0.15s",
+                  }}
                 >
-                  {active && <Check size={12} />}
+                  {active && <Check size={11} />}
                   {cat}
-                  {wasSuggested && !active && <span className="text-[9px] opacity-40">✦</span>}
+                  {wasSuggested && !active && <span style={{ fontSize: 9, opacity: 0.5 }}>✦</span>}
                 </button>
               );
             })}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
               onClick={handleAiConfirm}
-              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-[13px] font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2"
+              style={{
+                padding: "8px 16px", borderRadius: "var(--radius-sm)", border: "none",
+                background: "var(--primary)", color: "var(--primary-text)", fontSize: 13, fontWeight: 600,
+                cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6,
+              }}
             >
-              <Check size={14} /> Confirmă selecția
+              <Check size={13} /> Confirmă selecția
             </button>
             <button
               type="button"
               onClick={() => { setAiStep("input"); setAiSuggested([]); }}
-              className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors flex items-center gap-1.5"
+              style={{
+                background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
+                fontSize: 12, fontWeight: 600, color: "var(--text-muted)",
+                display: "flex", alignItems: "center", gap: 5,
+              }}
             >
               <RotateCcw size={12} /> Rescrie
             </button>

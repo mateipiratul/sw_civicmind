@@ -105,8 +105,30 @@ class VoteSessionSerializer(serializers.ModelSerializer):
     def get_by_party(self, obj):
         return PartyVoteResultSerializer(obj.rel_party_results.all(), many=True).data
 
+class AIAnalysisListSerializer(serializers.ModelSerializer):
+    bill_idp = serializers.IntegerField(source='bill.idp', read_only=True)
+    
+    # Reduced relational replacements for list view (no key_ideas or arguments)
+    impact_categories = serializers.SerializerMethodField()
+    affected_profiles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AIAnalysis
+        fields = [
+            'bill_idp', 'processed_at', 'model', 'title_short', 'impact_categories', 
+            'affected_profiles', 'controversy_score', 'passed_by', 'dominant_party', 
+            'vote_date', 'ocr_quality', 'confidence'
+        ]
+        read_only_fields = fields
+
+    def get_impact_categories(self, obj):
+        return [cat.name for cat in obj.rel_impact_categories.all()]
+
+    def get_affected_profiles(self, obj):
+        return [prof.name for prof in obj.rel_affected_profiles.all()]
+
 class BillListSerializer(serializers.ModelSerializer):
-    ai_analysis = AIAnalysisSerializer(read_only=True)
+    ai_analysis = AIAnalysisListSerializer(read_only=True)
 
     class Meta:
         model = Bill

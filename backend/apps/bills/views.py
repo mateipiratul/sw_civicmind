@@ -20,6 +20,7 @@ from apps.core.pagination import BillPagination
 from apps.core.constants import DEFAULT_TRENDING_TOPICS
 
 from django.db.models import Count, Case, When, IntegerField
+from apps.core.decorators import cache_endpoint
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
@@ -36,11 +37,22 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action in ('list', 'personalized', 'retrieve', 'votes'):
-            return BillService.get_enriched_bills_queryset().order_by('-registered_at')
+        if self.action in ('list', 'personalized'):
+            return BillService.get_list_bills_queryset().order_by('-registered_at')
+        elif self.action in ('retrieve', 'votes'):
+            return BillService.get_detail_bills_queryset().order_by('-registered_at')
         return queryset
 
+    @cache_endpoint()
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @cache_endpoint()
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     @action(detail=True, methods=['get'])
+    @cache_endpoint()
     def votes(self, request, pk=None):
         bill = self.get_object()
         # Get the latest final vote session
@@ -78,6 +90,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @cache_endpoint()
     def personalized(self, request):
         logger = logging.getLogger(__name__)
         try:
