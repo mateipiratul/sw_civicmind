@@ -1,18 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SearchPage } from "@/components/search/search-page";
-
-export type SearchParams = {
-  q: string;
-  tab: "laws" | "mps" | "all";
-  l_status?: string;
-  l_initiator?: string;
-  l_category?: string;
-  l_dateFrom?: string;
-  l_dateTo?: string;
-  m_party?: string;
-  m_county?: string;
-  m_chamber?: string;
-};
+import type { SearchParams } from "@/lib/search-filters";
 
 export const Route = createFileRoute("/search")({
   validateSearch: (search: Record<string, unknown>): SearchParams => {

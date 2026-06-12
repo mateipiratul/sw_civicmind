@@ -19,7 +19,7 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | string)[] = [];
     const showMax = 5;
 
     if (totalPages <= showMax) {

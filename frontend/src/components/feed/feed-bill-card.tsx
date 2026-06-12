@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Calendar, FileText, ChevronRight } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, extractBillTitleAndBody, cleanText } from "@/lib/utils";
 import type { Bill } from "@/lib/api";
 
 interface FeedBillCardProps {
@@ -10,7 +10,7 @@ interface FeedBillCardProps {
 
 export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
   const ai = bill.ai_analysis;
-  const title = ai?.title_short || bill.title;
+  const { title } = extractBillTitleAndBody(ai?.title_short || bill.title);
   const isAdopted = bill.status?.toLowerCase().includes("adoptat");
 
   const allCats = ai?.impact_categories || [];
@@ -66,7 +66,7 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
           {ai.key_ideas.slice(0, 2).map((idea, i) => (
             <div key={i} style={{ display: "flex", gap: 6, fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
               <span style={{ color: "var(--color-input)", flexShrink: 0 }}>•</span>
-              <span>{idea}</span>
+              <span>{cleanText(idea)}</span>
             </div>
           ))}
         </div>

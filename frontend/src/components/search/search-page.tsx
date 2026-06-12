@@ -2,8 +2,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SearchResultsShell } from "@/components/search/search-results-shell";
 import { api } from "@/lib/api";
-import type { SearchParams } from "@/routes/search";
-import type { LawFilters, MpFilters, SearchTab } from "@/lib/search-filters";
+import type { SearchParams, LawFilters, MpFilters, SearchTab } from "@/lib/search-filters";
 import { EMPTY_FILTERS, EMPTY_MP_FILTERS } from "@/lib/constants";
 
 export function SearchPage() {
