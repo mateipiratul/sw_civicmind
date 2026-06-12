@@ -10,6 +10,7 @@ Graph:
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,8 @@ FLAGS_FILE = "bill_flags.json"
 JOBS_FILE = "notification_jobs.json"
 
 IMPORTANCE_RANK = {"low": 0, "normal": 1, "high": 2, "review": 3}
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> str:
@@ -168,7 +171,7 @@ def load_inputs(state: NotificationState) -> dict:
     previous_events = _read_json(processed_dir / EVENTS_FILE, [])
     preferences = _load_preferences(preferences_path)
 
-    print(f"  Loaded {len(bills)} bills, {len(previous_events)} prior events, {len(preferences)} notification preferences")
+    logger.info(f"Loaded {len(bills)} bills, {len(previous_events)} prior events, {len(preferences)} notification preferences")
     return {
         "bills": bills,
         "previous_events": previous_events,
@@ -217,7 +220,7 @@ def detect_events(state: NotificationState) -> dict:
             if _event_key(vote_event) not in seen:
                 events.append(vote_event)
 
-    print(f"  Detected {len(events)} new event(s)")
+    logger.info(f"Detected {len(events)} new event(s)")
     return {"events": events}
 
 
@@ -244,7 +247,7 @@ def classify_flags(state: NotificationState) -> dict:
             "classified_at": _now(),
         }
 
-    print(f"  Classified flags for {len(flags)} event(s)")
+    logger.info(f"Classified flags for {len(flags)} event(s)")
     return {"flags": flags}
 
 
@@ -290,13 +293,13 @@ def match_preferences(state: NotificationState) -> dict:
                 "created_at": _now(),
             })
 
-    print(f"  Queued {len(jobs)} notification job(s)")
+    logger.info(f"Queued {len(jobs)} notification job(s)")
     return {"jobs": jobs}
 
 
 def save_outputs(state: NotificationState) -> dict:
     if state.get("error"):
-        print(f"  [NOTIFICATIONS ERROR] {state['error']}")
+        logger.error(f"[NOTIFICATIONS ERROR] {state['error']}")
         return {}
 
     processed_dir = Path(state["processed_dir"])
@@ -312,7 +315,7 @@ def save_outputs(state: NotificationState) -> dict:
     _write_json(processed_dir / FLAGS_FILE, previous_flags)
     _write_json(processed_dir / JOBS_FILE, all_jobs)
 
-    print(f"  [NOTIFICATIONS OK] {len(state.get('events', []))} events, {len(state.get('jobs', []))} jobs")
+    logger.info(f"[NOTIFICATIONS OK] {len(state.get('events', []))} events, {len(state.get('jobs', []))} jobs")
     return {}
 
 

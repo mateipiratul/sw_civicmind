@@ -1,37 +1,85 @@
-from unittest.mock import MagicMock, patch
-
 from django.contrib.auth.models import User
-from django.test import SimpleTestCase
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.profiles.models import Profile
+from apps.bills.models import Bill
+from .models import Parliamentarian, MPVote, VoteSession
 from .filters import ParliamentarianFilterSet
 from .serializers import ParliamentarianListSerializer, ParliamentarianVoteMapSerializer
 from .views import ParliamentarianViewSet
 
 
-class ParliamentarianFilterSetTests(SimpleTestCase):
+class ParliamentarianFilterSetTests(TestCase):
+    def setUp(self):
+        # Create parliamentarians
+        self.mp1 = Parliamentarian.objects.create(
+            mp_slug="mp-1", mp_name="Ion Popescu", chamber="deputies", county="Cluj", party="USR"
+        )
+        self.mp2 = Parliamentarian.objects.create(
+            mp_slug="mp-2", mp_name="Ana Ionescu", chamber="deputies", county="Bucuresti", party="PSD"
+        )
+        self.mp3 = Parliamentarian.objects.create(
+            mp_slug="mp-3", mp_name="Gheorghe Vasile", chamber="senate", county="Cluj", party="PNL"
+        )
+
     def test_filter_county_uses_case_insensitive_contains(self):
-        queryset = MagicMock()
-        queryset.filter.return_value = "filtered-queryset"
-
+        queryset = Parliamentarian.objects.all()
         filterset = ParliamentarianFilterSet(data={}, queryset=queryset)
+        
+        # Test exact match with spacing
         result = filterset.filter_county(queryset, "county", "  Cluj  ")
+        self.assertEqual(result.count(), 2)
+        self.assertIn(self.mp1, result)
+        self.assertIn(self.mp3, result)
+        self.assertNotIn(self.mp2, result)
 
-        queryset.filter.assert_called_once_with(county__icontains="Cluj")
-        self.assertEqual(result, "filtered-queryset")
+        # Test case insensitivity
+        result = filterset.filter_county(queryset, "county", "cluj")
+        self.assertEqual(result.count(), 2)
 
     def test_filter_party_uses_case_insensitive_exact_match(self):
-        queryset = MagicMock()
-        queryset.filter.return_value = "filtered-queryset"
-
+        queryset = Parliamentarian.objects.all()
         filterset = ParliamentarianFilterSet(data={}, queryset=queryset)
-        result = filterset.filter_party(queryset, "party", "  USR  ")
 
-        queryset.filter.assert_called_once_with(party__iexact="USR")
-        self.assertEqual(result, "filtered-queryset")
+        # Test exact match with spacing
+        result = filterset.filter_party(queryset, "party", "  USR  ")
+        self.assertEqual(result.count(), 1)
+        self.assertIn(self.mp1, result)
+
+        # Test case insensitivity
+        result = filterset.filter_party(queryset, "party", "usr")
+        self.assertEqual(result.count(), 1)
+
+    def test_filter_bill_ids(self):
+        queryset = Parliamentarian.objects.all()
+        filterset = ParliamentarianFilterSet(data={}, queryset=queryset)
+
+        # Create bill, session, vote
+        bill = Bill.objects.create(idp=10, bill_number="PL-x 10/2026", title="Test Bill")
+        session = VoteSession.objects.create(idv=10, bill=bill, type="final")
+        MPVote.objects.create(parliamentarian=self.mp1, vote_session=session, vote="PENTRU", party="USR")
+
+        result = filterset.filter_bill_ids(queryset, "bill_ids", "10")
+        self.assertEqual(result.count(), 1)
+        self.assertIn(self.mp1, result)
+        self.assertNotIn(self.mp2, result)
+
+    def test_filter_bill_numbers(self):
+        queryset = Parliamentarian.objects.all()
+        filterset = ParliamentarianFilterSet(data={}, queryset=queryset)
+
+        # Create bill, session, vote
+        bill = Bill.objects.create(idp=20, bill_number="PL-x 20/2026", title="Test Bill")
+        session = VoteSession.objects.create(idv=20, bill=bill, type="final")
+        MPVote.objects.create(parliamentarian=self.mp2, vote_session=session, vote="CONTRA", party="PSD")
+
+        result = filterset.filter_bill_numbers(queryset, "bill_numbers", "PL-x 20/2026")
+        self.assertEqual(result.count(), 1)
+        self.assertIn(self.mp2, result)
+        self.assertNotIn(self.mp1, result)
 
     def test_viewset_uses_parliamentarian_filterset(self):
         self.assertIs(ParliamentarianViewSet.filterset_class, ParliamentarianFilterSet)
@@ -54,7 +102,10 @@ class ParliamentarianVoteMapTests(APITestCase):
     def setUpTestData(cls):
         # Create user with profile
         cls.user = User.objects.create_user(username="county-user", password="StrongPass1!")
-        Profile.objects.create(user=cls.user, county="Cluj", preferred_party="USR")
+        profile = cls.user.profile
+        profile.county = "Cluj"
+        profile.preferred_party = "USR"
+        profile.save()
 
         # Create parliamentarians
         cls.mp1 = Parliamentarian.objects.create(mp_slug="mp-1", mp_name="Ion Popescu", chamber="deputies", county="Cluj", party="USR")
@@ -67,7 +118,7 @@ class ParliamentarianVoteMapTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["page"], 1)
         self.assertEqual(response.data["limit"], 25)
-        self.assertEqual(response.data["voteLimit"], 50) # default is 50, not None
+        self.assertIsNone(response.data["voteLimit"])
         self.assertEqual(response.data["total"], 2) # only deputies
         self.assertEqual(response.data["totalPages"], 1)
         self.assertEqual(len(response.data["parliamentarians"]), 2)

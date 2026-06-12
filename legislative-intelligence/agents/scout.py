@@ -9,13 +9,15 @@ Graph:
 """
 import json
 import os
+import logging
+import httpx
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 
 from agents.state import ScoutState
 from agents.prompts import (
@@ -23,15 +25,18 @@ from agents.prompts import (
     SCOUT_OPPOSITION_SYSTEM, SCOUT_OPPOSITION_USER,
 )
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _MODEL_STRUCTURED = "mistral-small-latest"
 _MAX_EXPUNERE_CHARS = 8_000
 _MAX_AVIZ_CHARS = 4_000
 
 
+from env_setup import get_mistral_api_key
+
+
 def _mistral() -> Mistral:
-    return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
 
 def _llm_json(system: str, user: str) -> dict:
@@ -85,7 +90,7 @@ def extract_structure(state: ScoutState) -> dict:
             SCOUT_STRUCTURE_USER.format(text=state["expunere_text"]),
         )
         return {"structure": result}
-    except Exception as exc:
+    except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
         return {"error": f"extract_structure failed: {exc}"}
 
 
@@ -101,7 +106,7 @@ def extract_opposition(state: ScoutState) -> dict:
             SCOUT_OPPOSITION_USER.format(text=aviz),
         )
         return {"opposition": result}
-    except Exception as exc:
+    except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
         return {"error": f"extract_opposition failed: {exc}"}
 
 
@@ -176,14 +181,14 @@ def assemble(state: ScoutState) -> dict:
 
 def save(state: ScoutState) -> dict:
     if state.get("error"):
-        print(f"  [SCOUT ERROR] {state['error']}")
+        logger.error(f"[SCOUT ERROR] {state['error']}")
         return {}
     bill = state["bill"]
     bill["ai_analysis"] = state["ai_analysis"]
     path = Path(state["bill_path"])
     path.write_text(json.dumps(bill, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     title = state["ai_analysis"].get("title_short", bill.get("bill_number"))
-    print(f"  [SCOUT OK] {title}")
+    logger.info(f"[SCOUT OK] {title}")
     return {}
 
 
@@ -211,8 +216,18 @@ def build_scout() -> Any:
     return g.compile()
 
 
+_SCOUT_GRAPH = None
+
+
+def get_scout_graph() -> Any:
+    global _SCOUT_GRAPH
+    if _SCOUT_GRAPH is None:
+        _SCOUT_GRAPH = build_scout()
+    return _SCOUT_GRAPH
+
+
 def run_scout(bill_path: str) -> dict:
-    graph = build_scout()
+    graph = get_scout_graph()
     initial: ScoutState = {
         "bill_path":     bill_path,
         "bill":          {},

@@ -7,22 +7,29 @@ Graph:
 """
 import json
 import os
+import logging
+import time
+import httpx
 from typing import Any
 
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 
 from agents.state import MessengerState
 from agents.prompts import MESSENGER_SYSTEM, MESSENGER_USER
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _MODEL = "open-mistral-nemo"   # cheaper model — email writing doesn't need reasoning
 
 
+from env_setup import get_mistral_api_key
+
+
 def _mistral() -> Mistral:
-    return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
 
 # ── Nodes ─────────────────────────────────────────────────────────────────────
@@ -62,29 +69,39 @@ def generate_email(state: MessengerState) -> dict:
         f"SCHEMA OBLIGATORIE:\n{schema}"
     )
 
-    try:
-        client = _mistral()
-        resp = client.chat.complete(
-            model=_MODEL,
-            messages=[
-                {"role": "system", "content": MESSENGER_SYSTEM},
-                {"role": "user",   "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.4,
-        )
-        draft = json.loads(resp.choices[0].message.content)
-        return {"email_draft": draft}
-    except Exception as exc:
-        return {"error": f"generate_email failed: {exc}"}
+    _MESSENGER_RETRIES = 2
+    _MESSENGER_RETRY_DELAY = 3
+
+    client = _mistral()
+    last_exc = None
+    for attempt in range(_MESSENGER_RETRIES + 1):
+        try:
+            resp = client.chat.complete(
+                model=_MODEL,
+                messages=[
+                    {"role": "system", "content": MESSENGER_SYSTEM},
+                    {"role": "user",   "content": prompt},
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.4,
+            )
+            draft = json.loads(resp.choices[0].message.content)
+            return {"email_draft": draft}
+        except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
+            last_exc = exc
+            if attempt < _MESSENGER_RETRIES:
+                logger.warning(f"generate_email failed: {exc}. Retrying in {_MESSENGER_RETRY_DELAY * (attempt + 1)}s...")
+                time.sleep(_MESSENGER_RETRY_DELAY * (attempt + 1))
+            else:
+                return {"error": f"generate_email failed after {_MESSENGER_RETRIES} retries: {last_exc}"}
 
 
 def return_draft(state: MessengerState) -> dict:
     if state.get("error"):
-        print(f"  [MESSENGER ERROR] {state['error']}")
+        logger.error(f"[MESSENGER ERROR] {state['error']}")
         return {"email_draft": {"subject": "", "body": ""}}
     draft = state.get("email_draft", {})
-    print(f"  [MESSENGER OK] Subject: {draft.get('subject', '')}")
+    logger.info(f"[MESSENGER OK] Subject: {draft.get('subject', '')}")
     return {}
 
 
@@ -104,6 +121,16 @@ def build_messenger() -> Any:
     return g.compile()
 
 
+_MESSENGER_GRAPH = None
+
+
+def get_messenger_graph() -> Any:
+    global _MESSENGER_GRAPH
+    if _MESSENGER_GRAPH is None:
+        _MESSENGER_GRAPH = build_messenger()
+    return _MESSENGER_GRAPH
+
+
 def run_messenger(
     bill: dict,
     mp_name: str,
@@ -114,7 +141,7 @@ def run_messenger(
     Returns {"subject": "...", "body": "..."} — the email draft.
     The frontend shows this to the user before sending.
     """
-    graph = build_messenger()
+    graph = get_messenger_graph()
     initial: MessengerState = {
         "bill":        bill,
         "mp_name":     mp_name,

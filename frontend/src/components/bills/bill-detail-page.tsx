@@ -1,11 +1,11 @@
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Modular Components
 import { BillDetailsHeader } from "@/components/bill-detail/bill-details-header";
@@ -18,8 +18,8 @@ import { BillChat } from "@/components/bill-detail/bill-chat";
 
 function BillDetailSkeleton() {
   return (
-    <div className="min-h-screen bg-[#f8f8f7] p-10 lg:p-14">
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
+    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "40px 24px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-[280px] w-full rounded-xl" />
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -67,16 +67,16 @@ export function BillDetailPage() {
 
   if (!bill) {
     return (
-      <div className="min-h-screen bg-[#f8f8f7] flex items-center justify-center p-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-8 max-w-md w-full text-center shadow-sm">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "32px", maxWidth: "400px", width: "100%", textAlign: "center", boxShadow: "var(--shadow-card)" }}>
+          <div style={{ width: "64px", height: "64px", margin: "0 auto 24px", borderRadius: "50%", background: "var(--color-muted)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
             <FileText size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Legislație negăsită</h1>
-          <p className="text-gray-500 leading-relaxed mb-8">
+          <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text)", marginBottom: "12px" }}>Legislație negăsită</h1>
+          <p style={{ color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "32px" }}>
             {billError instanceof Error ? billError.message : "Acest proiect legislativ nu a putut fi încărcat sau nu există."}
           </p>
-          <Button onClick={() => navigate({ to: "/" })} className="w-full bg-gray-900 hover:bg-gray-800 text-white">
+          <Button onClick={() => navigate({ to: "/" })} style={{ width: "100%", background: "var(--primary)", color: "var(--primary-text)" }}>
             Înapoi la feed
           </Button>
         </div>
@@ -85,17 +85,31 @@ export function BillDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f8f7] p-6 lg:p-10">
-      <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
+    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "24px", paddingBottom: "60px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <Breadcrumbs items={[{ label: "Feed", href: "/" }, { label: bill.bill_number }]} />
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 text-[13.5px] font-bold text-gray-900 hover:bg-gray-50 transition-colors shadow-sm"
+          <button
+            onClick={() => window.history.back()}
+            style={{ 
+              display: "inline-flex", 
+              alignItems: "center", 
+              gap: "8px", 
+              padding: "7px 16px", 
+              borderRadius: "999px", 
+              background: "var(--surface)", 
+              border: "1px solid var(--border)", 
+              fontSize: "13.5px", 
+              fontWeight: 600, 
+              color: "var(--text)", 
+              cursor: "pointer",
+              fontFamily: "inherit",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)"
+            }}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={15} />
             Înapoi
-          </Link>
+          </button>
         </div>
 
         <BillDetailsHeader bill={bill} />

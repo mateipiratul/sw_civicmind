@@ -10,27 +10,18 @@ import io
 import re
 from pathlib import Path
 
-# Fix encoding for console output
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from supabase import create_client, Client
+from supabase import Client
+from db.client import get_supabase_client
 from env_setup import load_project_env
 
-load_project_env()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 PROCESSED_DIR = Path("data/processed")
 
 def get_client() -> Client:
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
-
+    return get_supabase_client()
 def slugify(text: str) -> str:
     if not text:
         return "unknown"
@@ -71,10 +62,15 @@ def push_bill(bill: dict, db: Client) -> None:
         "ocr_aviz_cl":      ocr.get("aviz_cl"),
     }).execute()
 
-    # 2. Upsert vote sessions
+    # 2. Gather all vote sessions, party results, and nominal votes
+    vote_sessions_rows = []
+    party_results_rows = []
+    all_mp_rows = []
+    all_vote_rows = []
+
     for vs in bill.get("vote_sessions", []):
         idv = vs["idv"]
-        db.table("vote_sessions").upsert({
+        vote_sessions_rows.append({
             "idv":         idv,
             "bill_idp":    idp,
             "type":        vs.get("type"),
@@ -86,34 +82,45 @@ def push_bill(bill: dict, db: Client) -> None:
             "against":     vs.get("summary", {}).get("against", 0),
             "abstain":     vs.get("summary", {}).get("abstain", 0),
             "absent":      vs.get("summary", {}).get("absent", 0),
-        }).execute()
+        })
 
-        # Party results
         for party_data in vs.get("by_party", []):
             if not isinstance(party_data, dict) or 'party' not in party_data:
                 continue
-            db.table("party_vote_results").upsert({
+            party_results_rows.append({
                 "vote_session_id": idv,
                 "party":           party_data["party"],
                 "for_votes":       party_data.get("for", 0),
                 "against":         party_data.get("against", 0),
                 "abstain":         party_data.get("abstain", 0),
                 "absent":          party_data.get("absent", 0),
-            }, on_conflict="vote_session_id,party").execute()
+            })
 
-        # Parliamentarians and MP votes
-        mp_rows = []
-        vote_rows = []
         for mv in vs.get("nominal_votes", []):
-            mp_rows.append({"mp_slug": mv["mp_slug"], "mp_name": mv["mp_name"], "party": mv["party"]})
-            vote_rows.append({"idv": idv, "mp_slug": mv["mp_slug"], "party": mv["party"], "vote": mv["vote"]})
+            all_mp_rows.append({"mp_slug": mv["mp_slug"], "mp_name": mv["mp_name"], "party": mv["party"]})
+            all_vote_rows.append({"idv": idv, "mp_slug": mv["mp_slug"], "party": mv["party"], "vote": mv["vote"]})
 
-        if mp_rows:
-            for i in range(0, len(mp_rows), 200):
-                db.table("parliamentarians").upsert(mp_rows[i:i+200], on_conflict="mp_slug").execute()
-        if vote_rows:
-            for i in range(0, len(vote_rows), 200):
-                db.table("mp_votes").upsert(vote_rows[i:i+200], on_conflict="idv,mp_slug").execute()
+    # Execute vote sessions upsert in batch
+    if vote_sessions_rows:
+        db.table("vote_sessions").upsert(vote_sessions_rows).execute()
+
+    # Execute party results upsert in batch
+    if party_results_rows:
+        db.table("party_vote_results").upsert(party_results_rows, on_conflict="vote_session_id,party").execute()
+
+    # Execute parliamentarians upsert in batch
+    if all_mp_rows:
+        unique_mps = {}
+        for row in all_mp_rows:
+            unique_mps[row["mp_slug"]] = row
+        deduped_mps = list(unique_mps.values())
+        for i in range(0, len(deduped_mps), 500):
+            db.table("parliamentarians").upsert(deduped_mps[i:i+500], on_conflict="mp_slug").execute()
+
+    # Execute mp_votes upsert in batch
+    if all_vote_rows:
+        for i in range(0, len(all_vote_rows), 500):
+            db.table("mp_votes").upsert(all_vote_rows[i:i+500], on_conflict="idv,mp_slug").execute()
 
     # 3. Upsert ai_analysis
     ai = bill.get("ai_analysis")
@@ -131,21 +138,29 @@ def push_bill(bill: dict, db: Client) -> None:
             "confidence":        ai.get("confidence"),
         }).execute()
 
-        # Impact Categories (M2M)
+        # Impact Categories (M2M) - Batched!
+        cat_rows = []
         for cat_name in ai.get("impact_categories", []):
             if not cat_name: continue
-            slug = slugify(cat_name)
-            cat_res = db.table("impact_categories").upsert({"name": cat_name, "slug": slug}, on_conflict="slug").execute()
-            cat_id = cat_res.data[0]["id"]
-            db.table("ai_analyses_rel_impact_categories").upsert({"aianalysis_id": idp, "impactcategory_id": cat_id}, on_conflict="aianalysis_id,impactcategory_id").execute()
+            cat_rows.append({"name": cat_name, "slug": slugify(cat_name)})
+        
+        if cat_rows:
+            cat_res = db.table("impact_categories").upsert(cat_rows, on_conflict="slug").execute()
+            slug_to_id = {row["slug"]: row["id"] for row in cat_res.data}
+            rel_cat_rows = [{"aianalysis_id": idp, "impactcategory_id": slug_to_id[row["slug"]]} for row in cat_rows]
+            db.table("ai_analyses_rel_impact_categories").upsert(rel_cat_rows, on_conflict="aianalysis_id,impactcategory_id").execute()
 
-        # Affected Profiles (M2M)
+        # Affected Profiles (M2M) - Batched!
+        prof_rows = []
         for prof_name in ai.get("affected_profiles", []):
             if not prof_name: continue
-            slug = slugify(prof_name)
-            prof_res = db.table("affected_profiles").upsert({"name": prof_name, "slug": slug}, on_conflict="slug").execute()
-            prof_id = prof_res.data[0]["id"]
-            db.table("ai_analyses_rel_affected_profiles").upsert({"aianalysis_id": idp, "affectedprofile_id": prof_id}, on_conflict="aianalysis_id,affectedprofile_id").execute()
+            prof_rows.append({"name": prof_name, "slug": slugify(prof_name)})
+
+        if prof_rows:
+            prof_res = db.table("affected_profiles").upsert(prof_rows, on_conflict="slug").execute()
+            slug_to_id = {row["slug"]: row["id"] for row in prof_res.data}
+            rel_prof_rows = [{"aianalysis_id": idp, "affectedprofile_id": slug_to_id[row["slug"]]} for row in prof_rows]
+            db.table("ai_analyses_rel_affected_profiles").upsert(rel_prof_rows, on_conflict="aianalysis_id,affectedprofile_id").execute()
 
         # Key Ideas
         db.table("ai_key_ideas").delete().eq("analysis_id", idp).execute()
@@ -169,6 +184,7 @@ def push_bill(bill: dict, db: Client) -> None:
     print(f"  [OK] Bill {idp} synced")
 
 def main():
+    load_project_env()
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", help="Single filename in data/raw/")
     args = parser.parse_args()
@@ -181,4 +197,5 @@ def main():
     print("Sync complete")
 
 if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     main()

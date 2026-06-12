@@ -63,17 +63,22 @@ export function MPDetailPage() {
   return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 24px" }}>
       {/* Back */}
-      <Link to="/mps" className="muted" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 24, textDecoration: "none" }}>
+      <button
+        onClick={() => window.history.back()}
+        className="muted"
+        style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 24, background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, fontFamily: "inherit" }}
+      >
         <ChevronLeft size={14} /> Toți parlamentarii
-      </Link>
+      </button>
 
       {/* Profile header */}
       <MPProfileHeader mp={mp} />
 
       {/* Vote history */}
-      <div style={{ background: "white", border: "1px solid #e8e8e8", borderRadius: 12, padding: "20px 28px" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+          <h2 style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
+
             {isFilteredHistory ? `Voturi pentru "${filterQuery}"` : "Istoric Voturi"}
           </h2>
           <span className="muted" style={{ fontSize: 12 }}>

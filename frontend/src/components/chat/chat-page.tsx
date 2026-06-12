@@ -1,16 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ApiError, api, type RagSource } from "@/lib/api";
+import type { RagSource } from "@/lib/api";
+import { useRagStream, type ChatMessage } from "@/lib/hooks/use-rag-stream";
 import { MessageBubble } from "./message-bubble";
 import { SourceCard, type Fragment } from "./source-card";
 import { ChatInput } from "./chat-input";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
-
-const WELCOME: Message = {
+const WELCOME: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
@@ -23,11 +18,6 @@ const SUGGESTIONS = [
   "Ce acte din 2025 despre sănătate și asigurări sociale sunt cele mai apropiate?",
   "Caută texte similare despre PFA și obligații fiscale.",
 ];
-
-const createId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const formatSimilarity = (value?: number | null) =>
   typeof value === "number" ? `${Math.round(value * 100)}% potrivire` : undefined;
@@ -44,23 +34,12 @@ const toFragment = (source: RagSource, index: number): Fragment => ({
   similarity: formatSimilarity(source.score ?? source.similarity ?? null),
 });
 
-function buildErrorMessage(error: unknown) {
-  if (error instanceof ApiError) {
-    return `Conversația nu a reușit: ${error.message}`;
-  }
-  if (error instanceof Error && error.message) {
-    return `Conversația nu a reușit: ${error.message}`;
-  }
-  return "Conversația nu a reușit. Verifică dacă serviciul AI rulează pe portul configurat și încearcă din nou.";
-}
-
 export function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([WELCOME]);
+  const { messages, isLoading, sources, resolvedSource, sendMessage } = useRagStream([WELCOME]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [fragments, setFragments] = useState<Fragment[]>([]);
-  const [resolvedSource, setResolvedSource] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const fragments = useMemo(() => sources.map(toFragment), [sources]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,99 +47,9 @@ export function ChatPage() {
 
   const canSend = useMemo(() => input.trim().length > 0 && !isLoading, [input, isLoading]);
 
-  const sendMessage = async (rawText: string) => {
-    const text = rawText.trim();
-    if (!text) return;
-
-    const userMessage: Message = { id: createId(), role: "user", content: text };
-    const assistantId = createId();
-    let assistantStarted = false;
-    let streamedText = "";
-
-    setMessages((prev) => [...prev, userMessage]);
+  const handleSend = (text: string) => {
+    sendMessage(text);
     setInput("");
-    setIsLoading(true);
-    setFragments([]);
-    setResolvedSource(null);
-
-    try {
-      const result = await api.streamRagChat(
-        text,
-        {},
-        {
-          onEvent: (event) => {
-            if (event.type === "start") {
-              setResolvedSource(event.resolved_source ?? null);
-              return;
-            }
-
-            if (event.type === "sources") {
-              setFragments(event.items.map(toFragment));
-              return;
-            }
-
-            if (event.type === "token") {
-              streamedText += event.delta;
-              if (!assistantStarted) {
-                assistantStarted = true;
-                setMessages((prev) => [
-                  ...prev,
-                  { id: assistantId, role: "assistant", content: event.delta },
-                ]);
-              } else {
-                setMessages((prev) =>
-                  prev.map((message) =>
-                    message.id === assistantId
-                      ? { ...message, content: message.content + event.delta }
-                      : message,
-                  ),
-                );
-              }
-              return;
-            }
-
-            if (event.type === "done") {
-              setResolvedSource(event.resolved_source ?? null);
-              setFragments(event.sources.map(toFragment));
-              if (!assistantStarted) {
-                assistantStarted = true;
-                streamedText = event.answer;
-                setMessages((prev) => [
-                  ...prev,
-                  { id: assistantId, role: "assistant", content: event.answer },
-                ]);
-              } else if (event.answer && event.answer !== streamedText) {
-                streamedText = event.answer;
-                setMessages((prev) =>
-                  prev.map((message) =>
-                    message.id === assistantId ? { ...message, content: event.answer } : message,
-                  ),
-                );
-              }
-            }
-          },
-        },
-      );
-
-      if (!assistantStarted) {
-        setMessages((prev) => [
-          ...prev,
-          { id: assistantId, role: "assistant", content: result.answer },
-        ]);
-      }
-
-      setFragments(result.sources.map(toFragment));
-      setResolvedSource(result.resolved_source ?? null);
-    } catch (error) {
-      const errorMessage = buildErrorMessage(error);
-      setMessages((prev) => [
-        ...prev,
-        { id: assistantId, role: "assistant", content: errorMessage },
-      ]);
-      setFragments([]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -193,7 +82,7 @@ export function ChatPage() {
         {messages.length === 1 && (
           <div className="suggestions">
             {SUGGESTIONS.map((suggestion) => (
-              <button key={suggestion} onClick={() => sendMessage(suggestion)} className="suggestion-btn">
+              <button key={suggestion} onClick={() => handleSend(suggestion)} className="suggestion-btn">
                 {suggestion}
               </button>
             ))}
@@ -203,7 +92,7 @@ export function ChatPage() {
         <ChatInput 
           input={input}
           setInput={setInput}
-          onSend={sendMessage}
+          onSend={handleSend}
           canSend={canSend}
         />
       </div>

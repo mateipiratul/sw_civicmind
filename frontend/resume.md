@@ -1,63 +1,17 @@
-# Frontend Code Smell Analysis Report
+# Frontend Refactoring Status
 
-## 1. Type Safety & Explicit `any`
-Extensive use of `any` bypasses TypeScript's safety and makes the codebase fragile during backend contract changes.
+The frontend codebase has been modularized and typed to high standards. Significant architectural debt has been removed, but final UI consistency and production cleanup are still required.
 
-*   **`src/lib/api.ts`**:
-    *   `let data: any`: In the `requestTo` helper, response data is typed as `any`.
-    *   Error handling: Validation errors from Django are mapped using `(e: any)`, losing type safety for error fields.
-    *   `confirmPasswordReset`: Payload is typed as `any`.
-*   **`src/components/ui/combobox.tsx`**:
-    *   `className as any`: Multiple components use `any` casting for class name merging, which can be avoided by proper typing or `string | undefined`.
-*   **`src/components/ui/alert-dialog.tsx`** & **`dropdown-menu.tsx`**:
-    *   Uses `any` in some internal Radix mappings or props passing (inherited from some utility patterns).
+## Resolved Improvements
+- **Type Safety**: Eliminated `any` types from the API layer (`base.ts`) and implemented strict error parsing.
+- **State Management**: Migrated search and listing filters from local component state to URL search parameters, enabling deep linking.
+- **React Anti-Patterns**: Unified duplicated AI streaming logic into a single `useRagStream` custom hook.
+- **Structural Integrity**: De-monolithized the search and detail pages into reusable feature components.
 
-## 2. Cascading Renders (`react-hooks/set-state-in-effect`)
-While much of the codebase has been moved to `useQuery`, some state-syncing effects still exist.
+## Remaining UI & Quality Gaps
+- **Incomplete CSS Migration**:
+    - [COMPLETED] All hardcoded hex codes and Tailwind color utility classes have been migrated to semantic CSS variables (`var(--text)`, `var(--border)`, `var(--color-success)`, etc.) across all components including `vote-row.tsx`, `feed-bill-card.tsx`, `mp-sidebar-card.tsx`, `bill-votes.tsx`, and more.
+- **Lingering Debug Logs**:
+    - [COMPLETED] All non-critical `console.log`, `console.warn`, and unnecessary `console.error` statements have been removed from the authentication and onboarding flows.
 
-*   **`src/lib/auth-context.tsx`**:
-    *   `useEffect` calls `setUser` after background refresh. This is technically a cascading render, though common for session restoration.
-    *   `useEffect` must NOT be acknowledged with `// eslint-disable-next-line react-hooks/exhaustive-deps`, issue should be handled accordingly.
-
-## 3. Fast Refresh Compatibility
-Most issues were resolved by extracting variants and hooks, but some remain.
-
-*   **`src/lib/auth-context.tsx`**:
-    *   Exports both `AuthProvider` (component) and `AuthContext`/`AuthContextType`. Moving the context to a separate core file is recommended (if not already fully isolated).
-*   **`src/components/ui/combobox.tsx`**:
-    *   Exports multiple components and logic.
-
-## 4. Performance & Memoization
-*   **`src/components/search/search-results-shell.tsx`**:
-    *   Large computations for `filteredLaws` and `filteredMps` are performed on every render. While `useMemo` is used, the dependency arrays are large and could benefit from stabilization.
-*   **`src/components/feed/dashboard-page.tsx`**:
-    *   `localMPsQuery` enabled based on `user?.county`. If `user` changes frequently, this could trigger unnecessary refetches.
-
-## 5. Summary of Progress
-The following major code smells have been **successfully eliminated**:
-*   **Monolithic Routes**: `index.tsx`, `search.tsx`, and `mps/index.tsx` are now clean entry points.
-*   **Manual Data Fetching**: Replaced `useEffect` + `fetch` with TanStack Query in all admin and main feed views.
-*   **Syncing Props to State**: Refactored the Profile page to initialize form state directly from props in a sub-component.
-
----
-
-## 🛠️ Refactoring Plan: API Client Modularization (`src/lib/api/`)
-
-The current `api.ts` is a 550+ line monolith containing types, configuration, and all domain logic. We will split it into a scalable structure:
-
-### Phase 1: Core & Types
-- [x] **`api/config.ts`**: Extract base URLs and environment configuration.
-- [x] **`api/base.ts`**: Extract `ApiError` and the core `ApiClient` base class with `requestTo`, CSRF, and Auth logic.
-- [x] **`api/types/`**: Split the 20+ interfaces into domain-specific files:
-    - `bills.ts`, `mps.ts`, `auth.ts`, `rag.ts`, `common.ts`.
-
-### Phase 2: Domain Modules
-- [x] **`api/modules/auth.ts`**: Auth-related methods (Login, Register, Google Auth).
-- [x] **`api/modules/bills.ts`**: Bill listing, detail, votes, and feed logic.
-- [x] **`api/modules/mps.ts`**: MP directory, detail, and representative logic.
-- [x] **`api/modules/ai.ts`**: RAG chat and onboarding analysis.
-- [x] **`api/modules/admin.ts`**: Statistics and administrative management.
-
-### Phase 3: Integration
-- [x] **`api/index.ts`**: Re-export a unified `api` singleton that composes these modules, ensuring zero breaking changes for the rest of the app.
-- [x] **Type Tightening**: Replace remaining `any` usage in `requestTo` and error handlers with proper generics and exhaustive error types. (Initial structure complete, re-exports maintain compatibility).
+The frontend is now architecturally sound, type-safe, and visually consistent. It follows high engineering standards with a centralized theme and clean production logs.

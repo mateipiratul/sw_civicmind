@@ -1,0 +1,120 @@
+[
+  {
+    "agent": "scout",
+    "name": "scout_test_health_reform",
+    "input_bill": {
+      "idp": 23048,
+      "bill_number": "PL-x 100/2026",
+      "title": "Proiect de lege privind reforma în sănătate publică și managementul spitalicesc",
+      "ocr_content": {
+        "expunere_de_motive": "Prezentul proiect de lege vizează modernizarea sistemului de sănătate din România prin digitalizarea fișelor medicale și reorganizarea managementului spitalelor publice. Această reformă va afecta direct pacienții prin reducerea timpilor de așteptare și personalul medical prin implementarea de noi protocoale clinice. Digitalizarea este esențială pentru eficientizarea alocării resurselor și combaterea birocrației excesive.",
+        "aviz_ces": "Consiliul Economic și Social avizează favorabil, dar atrage atenția că digitalizarea accelerată poate crea dificultăți pentru pacienții în vârstă din zonele rurale fără acces stabil la internet și poate suprasolicita spitalele mici județene.",
+        "aviz_cl": "Consiliul Legislativ avizează favorabil cu observații privind corelarea terminologică."
+      },
+      "vote_sessions": [
+        {
+          "idv": 9999,
+          "type": "final",
+          "date": "2026-05-10",
+          "summary": {
+            "present": 300,
+            "for": 280,
+            "against": 10,
+            "abstain": 10
+          },
+          "by_party": [
+            {
+              "party": "PSD",
+              "for": 150
+            },
+            {
+              "party": "PNL",
+              "for": 130
+            }
+          ]
+        }
+      ]
+    },
+    "assertions": {
+      "expected_categories": ["sanatate"],
+      "expected_profiles_any": ["pacient", "personal medical"],
+      "min_key_ideas": 2,
+      "expected_pro_terms": ["digitalizarea", "managementul", "eficientizarea"],
+      "expected_con_terms": ["pacienții în vârstă", "internet", "spitalele mici"]
+    }
+  },
+  {
+    "agent": "auditor",
+    "name": "auditor_test_mp_active",
+    "input_votes": [
+      {
+        "mp_slug": "ionescu-vasile",
+        "mp_name": "Ionescu Vasile",
+        "party": "PSD",
+        "vote": "for",
+        "categories": ["sănătate"]
+      },
+      {
+        "mp_slug": "ionescu-vasile",
+        "mp_name": "Ionescu Vasile",
+        "party": "PSD",
+        "vote": "against",
+        "categories": ["fiscalitate"]
+      },
+      {
+        "mp_slug": "ionescu-vasile",
+        "mp_name": "Ionescu Vasile",
+        "party": "PSD",
+        "vote": "for",
+        "categories": ["educație"]
+      }
+    ],
+    "assertions": {
+      "expected_participation_rate": 1.0,
+      "expected_decisiveness_rate": 1.0,
+      "expected_score": 100.0,
+      "expected_narrative_terms": ["Ionescu Vasile", "PSD", "votat"]
+    }
+  },
+  {
+    "agent": "qa",
+    "name": "qa_test_health_reform",
+    "context": {
+      "title_short": "Reforma Sănătății",
+      "key_ideas": [
+        "Digitalizarea fișelor medicale pacienților",
+        "Reorganizarea managementului spitalelor",
+        "Reducerea birocrației"
+      ],
+      "pro_args": [
+        "Scurtarea timpului de așteptare pentru pacienți",
+        "Alocare mai bună a resurselor clinice"
+      ],
+      "con_args": [
+        "Dificultăți de acces la internet în mediul rural",
+        "Suprasolicitarea spitalelor județene mici"
+      ],
+      "expunere_text": "Digitalizarea fișelor medicale va asigura un acces rapid la istoricul pacienților. Spitalele județene mici vor primi sprijin suplimentar pentru digitalizare."
+    },
+    "query": "Cum sunt afectate spitalele mici prin această lege?",
+    "assertions": {
+      "forbidden_terms": ["blockchain", "bitcoin", "america"],
+      "required_terms_any": ["spitale", "sprijin", "digitalizare", "suprasolicitarea"]
+    }
+  },
+  {
+    "agent": "messenger",
+    "name": "messenger_test_support",
+    "context": {
+      "title_short": "Reforma Sănătății",
+      "key_ideas": ["Digitalizarea fișelor medicale pacienților"],
+      "pro_args": ["Eficientizarea accesului la datele pacienților"],
+      "con_args": ["Risc de securitate a datelor"]
+    },
+    "stance": "support",
+    "assertions": {
+      "required_subject_terms": ["Stimate", "lege", "proiect", "Sănătății"],
+      "required_body_terms": ["susțin", "digitalizarea", "stimate", "deputat"]
+    }
+  }
+]

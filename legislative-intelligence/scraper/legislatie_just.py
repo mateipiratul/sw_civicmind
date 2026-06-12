@@ -16,8 +16,20 @@ from typing import Iterator, Optional
 
 import requests
 
-SOAP_URL = "http://legislatie.just.ro/apiws/FreeWebService.svc/SOAP"
-WSDL_URL = "http://legislatie.just.ro/apiws/FreeWebService.svc?singleWsdl"
+import os
+
+SOAP_URL = os.getenv("LEGISLATION_JUST_SOAP_URL", "http://legislatie.just.ro/apiws/FreeWebService.svc/SOAP")
+WSDL_URL = os.getenv("LEGISLATION_JUST_WSDL_URL", "http://legislatie.just.ro/apiws/FreeWebService.svc?singleWsdl")
+
+try:
+    _DELAY = float(os.getenv("LEGISLATION_JUST_DELAY", "0.4"))
+except ValueError:
+    _DELAY = 0.4
+
+try:
+    _TIMEOUT = int(os.getenv("LEGISLATION_JUST_TIMEOUT", "30"))
+except ValueError:
+    _TIMEOUT = 30
 
 _SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/"
 _TEMPURI_NS = "http://tempuri.org/"
@@ -48,8 +60,8 @@ class LegislatieJustClient:
     def __init__(
         self,
         soap_url: str = SOAP_URL,
-        timeout: int = 30,
-        delay_seconds: float = 0.4,
+        timeout: int = _TIMEOUT,
+        delay_seconds: float = _DELAY,
     ) -> None:
         self.soap_url = soap_url
         self.timeout = timeout

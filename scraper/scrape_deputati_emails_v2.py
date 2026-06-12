@@ -13,6 +13,7 @@ import json
 import re
 import ssl
 import time
+import logging
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 from urllib.parse import urljoin
@@ -24,6 +25,9 @@ from urllib3.util.ssl_ import create_urllib3_context
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 class LegacySSLAdapter(requests.adapters.HTTPAdapter):
@@ -88,7 +92,7 @@ class CDEPDeputiesScraper:
                 response.encoding = "iso-8859-2"
                 return response.text
             except requests.RequestException as exc:
-                print(f"Fetch failed ({attempt}/{retries}) for {url}: {exc}")
+                logger.warning(f"Fetch failed ({attempt}/{retries}) for {url}: {exc}")
                 if attempt < retries:
                     time.sleep(2 ** (attempt - 1))
         return None
@@ -244,25 +248,25 @@ class CDEPDeputiesScraper:
             deputies = deputies[:limit]
 
         total = len(deputies)
-        print(f"Found {total} active deputies in legislature {self.legislature}.")
+        logger.info(f"Found {total} active deputies in legislature {self.legislature}.")
 
         results: List[Dict[str, Optional[str]]] = []
         for index, deputy in enumerate(deputies, start=1):
-            print(f"[{index}/{total}] Fetching profile for idm={deputy['idm']}")
+            logger.info(f"[{index}/{total}] Fetching profile for idm={deputy['idm']}")
             result = dict(deputy)
             result["email"] = self.get_deputy_email(deputy["profile_url"])
             results.append(result)
 
             if progress_path and index % self.progress_every == 0:
                 self.save_to_json(results, progress_path)
-                print(f"Progress saved after {index} deputies.")
+                logger.info(f"Progress saved after {index} deputies.")
 
             if delay_seconds > 0 and index < total:
                 time.sleep(delay_seconds)
 
         if progress_path:
             self.save_to_json(results, progress_path)
-            print("Progress file synced with final results.")
+            logger.info("Progress file synced with final results.")
 
         return results
 
@@ -270,7 +274,7 @@ class CDEPDeputiesScraper:
         path = Path(output_path)
         with path.open("w", encoding="utf-8") as handle:
             json.dump(data, handle, ensure_ascii=False, indent=2)
-        print(f"Saved {len(data)} records to {path}")
+        logger.info(f"Saved {len(data)} records to {path}")
 
     def close(self) -> None:
         self.session.close()
@@ -348,10 +352,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     scraper.save_to_json(results, all_output)
     scraper.save_to_json(with_email, with_email_output)
 
-    print("Summary")
-    print(f"  Total active deputies: {len(results)}")
-    print(f"  With public email: {len(with_email)}")
-    print(f"  Without public email: {len(without_email)}")
+    logger.info("Summary")
+    logger.info(f"  Total active deputies: {len(results)}")
+    logger.info(f"  With public email: {len(with_email)}")
+    logger.info(f"  Without public email: {len(without_email)}")
 
     return 0
 

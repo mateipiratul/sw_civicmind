@@ -5,19 +5,28 @@ from apps.search.services import VOTE_BUCKETS
 
 class BillService:
     @staticmethod
-    def get_enriched_bills_queryset(bill_ids: list[int] | None = None):
-        """
-        Returns a queryset of bills with all AI-related data prefetched.
-        If bill_ids is provided, filters the queryset to those IDs.
-        """
+    def get_list_bills_queryset(bill_ids: list[int] | None = None):
+        """Optimized queryset for list views (avoids prefetching heavy text and vote sessions)."""
+        queryset = Bill.objects.select_related('ai_analysis').prefetch_related(
+            'ai_analysis__rel_impact_categories',
+            'ai_analysis__rel_affected_profiles',
+        )
+        if bill_ids is not None:
+            queryset = queryset.filter(pk__in=bill_ids)
+        return queryset
+
+    @staticmethod
+    def get_detail_bills_queryset(bill_ids: list[int] | None = None):
+        """Full queryset for detail views (includes arguments, ideas, and vote sessions)."""
         queryset = Bill.objects.select_related('ai_analysis').prefetch_related(
             'ai_analysis__rel_impact_categories',
             'ai_analysis__rel_affected_profiles',
             'ai_analysis__rel_key_ideas',
             'ai_analysis__rel_arguments',
+            'vote_sessions',
+            'vote_sessions__rel_party_results',
         )
         if bill_ids is not None:
-            # Maintain order if needed, but usually caller handles ordering
             queryset = queryset.filter(pk__in=bill_ids)
         return queryset
 
@@ -25,23 +34,22 @@ class FeedService:
     @staticmethod
     def get_personalized_bills(user_interests: list[str], persona_tags: list[str], queryset=None):
         if queryset is None:
-            queryset = Bill.objects.all()
+            queryset = BillService.get_list_bills_queryset()
 
         if not user_interests and not persona_tags:
-            return queryset.order_by('-registered_at')
+            return queryset.annotate(
+                is_match=Value(0, output_field=IntegerField())
+            ).order_by('-is_match', '-registered_at')
 
         # Use Exists subqueries to avoid joins and distinct()
-        # This is significantly faster for ManyToMany relationships
-        interest_q = Q()
-        for interest in user_interests:
-            interest_q |= Q(analyses__bill=OuterRef('pk'), name__iexact=interest)
+        # Using __in is more efficient than a loop of OR conditions for large interest sets.
+        has_interest = Exists(
+            ImpactCategory.objects.filter(analyses__bill=OuterRef('pk'), name__in=user_interests)
+        ) if user_interests else Value(False)
         
-        persona_q = Q()
-        for persona in persona_tags:
-            persona_q |= Q(analyses__bill=OuterRef('pk'), name__iexact=persona)
-
-        has_interest = Exists(ImpactCategory.objects.filter(interest_q)) if user_interests else Value(False)
-        has_persona = Exists(AffectedProfile.objects.filter(persona_q)) if persona_tags else Value(False)
+        has_persona = Exists(
+            AffectedProfile.objects.filter(analyses__bill=OuterRef('pk'), name__in=persona_tags)
+        ) if persona_tags else Value(False)
 
         return queryset.annotate(
             is_match=Case(
@@ -59,6 +67,7 @@ class FeedService:
         vote_queryset = (
             MPVote.objects
             .select_related('vote_session', 'vote_session__bill', 'vote_session__bill__ai_analysis')
+            .prefetch_related('vote_session__bill__ai_analysis__rel_impact_categories')
             .only(
                 'id', 'vote_session_id', 'parliamentarian_id', 'vote', 'party',
                 'vote_session__date', 'vote_session__type',

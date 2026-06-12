@@ -110,8 +110,15 @@ def run_messenger_interactive(single_file: str) -> None:
     print(f"\n[MESSENGER] Bill: {bill.get('bill_number')}")
     mp_name    = input("Numele deputatului: ").strip() or "Domnule Deputat"
     user_name  = input("Numele tau: ").strip() or "Cetatean"
-    stance_raw = input("Pozitia ta (support/oppose): ").strip().lower()
-    stance     = "support" if stance_raw == "support" else "oppose"
+    while True:
+        stance_raw = input("Pozitia ta (support/oppose): ").strip().lower()
+        if stance_raw in ("support", "s"):
+            stance = "support"
+            break
+        elif stance_raw in ("oppose", "o"):
+            stance = "oppose"
+            break
+        print("Stance invalid. Introdu 'support' (sau 's') sau 'oppose' (sau 'o').")
 
     print("\nGenerez emailul...")
     draft = run_messenger(bill, mp_name, user_name, stance)
@@ -121,6 +128,9 @@ def run_messenger_interactive(single_file: str) -> None:
 
 
 def main() -> None:
+    from env_setup import load_project_env
+    load_project_env()
+    
     parser = argparse.ArgumentParser(description="CivicMind agent runner")
     parser.add_argument("--scout",     action="store_true")
     parser.add_argument("--auditor",   action="store_true")

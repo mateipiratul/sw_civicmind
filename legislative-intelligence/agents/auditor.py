@@ -8,57 +8,63 @@ Graph:
 """
 import json
 import os
+import logging
 import time
+import asyncio
+import httpx
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 
 from agents.state import AuditorState
 from agents.prompts import AUDITOR_NARRATIVE_SYSTEM, AUDITOR_NARRATIVE_USER
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 _MODEL = "mistral-small-latest"
-_MAX_NARRATIVE_BATCH = 20   # MPs per LLM call batch (narratives generated 1-by-1)
+_MAX_NARRATIVE_BATCH = 20   # MPs per LLM call batch
 _NARRATIVE_RETRIES = 1
 _NARRATIVE_RETRY_DELAY = 2
 
 
+from env_setup import get_mistral_api_key
+
+
 def _mistral() -> Mistral:
-    return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
 
-def _generate_narrative(client: Mistral, prompt: str) -> str:
+async def _generate_narrative_async(client: Mistral, prompt: str) -> str:
+    def call():
+        resp = client.chat.complete(
+            model=_MODEL,
+            messages=[
+                {"role": "system", "content": AUDITOR_NARRATIVE_SYSTEM},
+                {"role": "user",   "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.2,
+        )
+        result = json.loads(resp.choices[0].message.content)
+        return result.get("narrative", "")
+
     last_error: Exception | None = None
     for attempt in range(_NARRATIVE_RETRIES + 1):
         try:
-            resp = client.chat.complete(
-                model=_MODEL,
-                messages=[
-                    {"role": "system", "content": AUDITOR_NARRATIVE_SYSTEM},
-                    {"role": "user",   "content": prompt},
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.2,
-            )
-            result = json.loads(resp.choices[0].message.content)
-            return result.get("narrative", "")
-        except Exception as exc:
+            return await asyncio.to_thread(call)
+        except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
             last_error = exc
             if attempt < _NARRATIVE_RETRIES:
-                time.sleep(_NARRATIVE_RETRY_DELAY)
+                await asyncio.sleep(_NARRATIVE_RETRY_DELAY)
 
     raise RuntimeError(f"narrative generation failed after retry: {last_error}")
 
 
 # ── Score formula ─────────────────────────────────────────────────────────────
-# participation (showed up)  → 60% weight
-# decisiveness (for/against) → 40% weight
-# Result: 0–100
 
 def _compute_score(votes: list[dict]) -> dict:
     total = len(votes)
@@ -112,7 +118,7 @@ def load_votes(state: AuditorState) -> dict:
                     "categories": categories,
                 })
 
-    print(f"  Loaded {len(all_votes)} MP-vote records from {data_dir}")
+    logger.info(f"Loaded {len(all_votes)} MP-vote records from {data_dir}")
     return {"all_votes": all_votes, "error": None}
 
 
@@ -120,7 +126,6 @@ def calculate_scores(state: AuditorState) -> dict:
     if state.get("error"):
         return {}
 
-    # Group votes by mp_slug
     by_mp: dict[str, list[dict]] = {}
     mp_meta: dict[str, dict] = {}
 
@@ -149,7 +154,7 @@ def calculate_scores(state: AuditorState) -> dict:
             "calculated_at":    datetime.now(timezone.utc).isoformat(),
         }
 
-    print(f"  Calculated scores for {len(scores)} MPs")
+    logger.info(f"Calculated scores for {len(scores)} MPs")
     return {"scores": scores}
 
 
@@ -159,14 +164,15 @@ def generate_narratives(state: AuditorState) -> dict:
 
     client = _mistral()
     scores = state["scores"]
-    narratives: dict[str, str] = {}
 
     # Only generate narratives for MPs with enough data (min 3 votes)
-    eligible = {s: d for s, d in scores.items() if d["total"] >= 3}
-    print(f"  Generating narratives for {len(eligible)} MPs...")
+    eligible = {k: v for k, v in scores.items() if v["total"] >= 3}
+    logger.info(f"Generating narratives for {len(eligible)} MPs...")
 
-    for slug, data in eligible.items():
-        try:
+    async def run_all():
+        tasks = []
+        slugs = []
+        for slug, data in eligible.items():
             prompt = AUDITOR_NARRATIVE_USER.format(
                 mp_name     = data["mp_name"],
                 party       = data["party"],
@@ -178,17 +184,26 @@ def generate_narratives(state: AuditorState) -> dict:
                 absent_count  = data["absent"],
                 categories  = ", ".join(data["categories_voted"]) or "diverse",
             )
-            narratives[slug] = _generate_narrative(client, prompt)
-        except Exception as exc:
-            narratives[slug] = ""
-            print(f"    [WARN] narrative failed for {slug}: {exc}")
+            tasks.append(_generate_narrative_async(client, prompt))
+            slugs.append(slug)
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        narratives = {}
+        for slug, res in zip(slugs, results):
+            if isinstance(res, Exception):
+                logger.warning(f"narrative failed for {slug}: {res}")
+                narratives[slug] = ""
+            else:
+                narratives[slug] = res
+        return narratives
 
+    narratives = asyncio.run(run_all())
     return {"narratives": narratives}
 
 
 def save(state: AuditorState) -> dict:
     if state.get("error"):
-        print(f"  [AUDITOR ERROR] {state['error']}")
+        logger.error(f"[AUDITOR ERROR] {state['error']}")
         return {}
 
     out_dir = Path(state["data_dir"]).parent / "processed"
@@ -214,12 +229,11 @@ def save(state: AuditorState) -> dict:
             "calculated_at":    data["calculated_at"],
         })
 
-    # Sort by score descending
     output.sort(key=lambda x: x["score"], reverse=True)
 
     out_path = out_dir / "impact_scores.json"
     out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"  [AUDITOR OK] {len(output)} MP scores saved to {out_path}")
+    logger.info(f"[AUDITOR OK] {len(output)} MP scores saved to {out_path}")
     return {}
 
 
@@ -241,8 +255,18 @@ def build_auditor() -> Any:
     return g.compile()
 
 
+_AUDITOR_GRAPH = None
+
+
+def get_auditor_graph() -> Any:
+    global _AUDITOR_GRAPH
+    if _AUDITOR_GRAPH is None:
+        _AUDITOR_GRAPH = build_auditor()
+    return _AUDITOR_GRAPH
+
+
 def run_auditor(data_dir: str = "data/raw") -> list[dict]:
-    graph = build_auditor()
+    graph = get_auditor_graph()
     initial: AuditorState = {
         "data_dir":   data_dir,
         "all_votes":  [],

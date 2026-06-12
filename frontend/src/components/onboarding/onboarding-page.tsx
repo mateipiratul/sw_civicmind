@@ -31,7 +31,7 @@ export function OnboardingPage() {
         updateUser(updated);
       }
     } catch (e) {
-      console.error("[Onboarding] Profile save failed:", e);
+      // Profile save is best-effort during onboarding, can be updated later in Profile
     } finally {
       setIsSaving(false);
       setTimeout(() => navigate({ to: "/" }), 2500);

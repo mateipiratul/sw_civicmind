@@ -21,16 +21,18 @@ export function BillCard({ bill }: BillCardProps) {
           <Badge variant="outline" className="font-medium text-[10px] uppercase tracking-wider text-gray-500 border-gray-200">
             {bill.bill_number}
           </Badge>
-          <Badge
-            className={cn(
-              "font-medium text-[10px] uppercase tracking-wider border-0",
-              bill.status?.toLowerCase().includes("adoptat")
-                ? "bg-green-50 text-green-700"
-                : "bg-gray-100 text-gray-600"
-            )}
-          >
-            {bill.status || "În analiză"}
-          </Badge>
+          {(!bill.status || bill.status.toLowerCase() === "la_comisii" || bill.status.toLowerCase() === "la comisii") ? null : (
+            <Badge
+              className={cn(
+                "font-medium text-[10px] uppercase tracking-wider border-0",
+                bill.status.toLowerCase().includes("adoptat")
+                  ? "bg-green-50 text-green-700"
+                  : "bg-gray-100 text-gray-600"
+              )}
+            >
+              {bill.status}
+            </Badge>
+          )}
         </div>
         <CardTitle className="text-[15px] font-semibold leading-snug text-[#111] group-hover:text-gray-600 transition-colors line-clamp-3">
           {title}

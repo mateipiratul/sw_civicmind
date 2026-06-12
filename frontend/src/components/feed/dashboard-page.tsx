@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
@@ -7,12 +7,25 @@ import { Pagination } from "@/components/ui/pagination";
 import { RefreshCw } from "lucide-react";
 import { FeedBillCard } from "./feed-bill-card";
 import { RightSidebar } from "./right-sidebar";
+import { useSearch, useNavigate } from "@tanstack/react-router";
 
 export function DashboardPage() {
   const { user, isAuthenticated } = useAuth();
-  const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
-  const [page, setPage] = useState(1);
+  const navigate = useNavigate();
+
+  // Read page and category from URL so back-navigation restores them
+  const search = useSearch({ strict: false }) as { page?: string; category?: string };
+  const page = Math.max(1, parseInt(search.page ?? "1", 10) || 1);
+  const activeCategory = search.category || undefined;
   const limit = 10;
+
+  const setPage = useCallback((newPage: number) => {
+    navigate({ to: "/", search: { page: String(newPage), ...(activeCategory ? { category: activeCategory } : {}) }, replace: false });
+  }, [navigate, activeCategory]);
+
+  const handleCategoryChange = useCallback((cat: string | undefined) => {
+    navigate({ to: "/", search: { page: "1", ...(cat ? { category: cat } : {}) }, replace: false });
+  }, [navigate]);
 
   // Bills Query
   const billsQuery = useQuery({
@@ -37,11 +50,6 @@ export function DashboardPage() {
     enabled: !!user?.county,
   });
 
-  const handleCategoryChange = (cat: string | undefined) => {
-    setActiveCategory(cat);
-    setPage(1);
-  };
-
   const data = billsQuery.data;
   const bills = data?.bills && Array.isArray(data.bills) ? data.bills : [];
   const localMPs = localMPsQuery.data?.parliamentarians.slice(0, 5) || [];
@@ -55,10 +63,10 @@ export function DashboardPage() {
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 600, color: "#111", marginBottom: 4, letterSpacing: "-0.02em" }}>
+              <h1 style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", marginBottom: 4, letterSpacing: "-0.02em" }}>
                 {activeCategory ? activeCategory : isAuthenticated ? "Feed Personalizat" : "Legislativ Actual"}
               </h1>
-              <p className="muted" style={{ fontSize: 13.5, color: "#666" }}>
+              <p className="muted" style={{ fontSize: 13.5, color: "var(--text-muted)" }}>
                 {isAuthenticated && !activeCategory
                   ? "Legi relevante pentru interesele și județul tău."
                   : "Ultimele actualizări legislative."}
@@ -67,7 +75,7 @@ export function DashboardPage() {
             <button
               onClick={() => billsQuery.refetch()}
               disabled={isLoading}
-              style={{ background: "none", border: "none", cursor: isLoading ? "default" : "pointer", color: "#aaa", display: "flex", alignItems: "center", padding: 6, borderRadius: 8, marginTop: 4 }}
+              style={{ background: "none", border: "none", cursor: isLoading ? "default" : "pointer", color: "var(--color-input)", display: "flex", alignItems: "center", padding: 6, borderRadius: 8, marginTop: 4 }}
             >
               <RefreshCw size={16} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
             </button>
@@ -83,7 +91,7 @@ export function DashboardPage() {
             {isLoading
               ? [...Array(4)].map((_, i) => <BillCardSkeleton key={i} />)
               : bills.length === 0
-              ? <div style={{ textAlign: "center", padding: "48px 0", color: "#aaa", fontSize: 13 }}>Nu există proiecte în această categorie.</div>
+              ? <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)", fontSize: 13 }}>Nu există proiecte în această categorie.</div>
               : bills.map((bill) => <FeedBillCard key={bill.idp} bill={bill} userInterests={user?.interests || []} />)
             }
           </div>

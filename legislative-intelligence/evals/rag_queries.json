@@ -51,5 +51,230 @@
     "expected_source": "cdep",
     "expected_terms_any": ["oug", "aprobare", "lege", "pl-x"],
     "min_top_similarity": 0.78
+  },
+  {
+    "name": "fiscal_pfa_income_tax",
+    "mode": "search",
+    "query": "impozit pe venit pfa plafoane cas cass",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["impozit", "pfa", "cas", "cass", "contributii"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "fiscal_micro_threshold",
+    "mode": "search",
+    "query": "plafon microintreprinderi impozit pe venit",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["microintreprinderi", "plafon", "impozit", "venit"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "health_spitale_județene",
+    "mode": "search",
+    "query": "spitale judetene finantare ministerul sanatatii",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["spitale", "judetene", "finantare", "sanatatii"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "health_compensation_drugs",
+    "mode": "search",
+    "query": "medicamente compensate retete cnas",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["medicamente", "compensate", "retete", "cnas"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "educatie_statut_profesori",
+    "mode": "search",
+    "query": "statutul personalului didactic salarizare profesori",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["didactic", "salarizare", "profesori", "invatamant"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "educatie_burse_elevi",
+    "mode": "search",
+    "query": "burse de merit elevi criterii acordare",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["burse", "merit", "elevi", "ministerul"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "mediu_taieri_ilegale",
+    "mode": "search",
+    "query": "combaterea taierilor ilegale de paduri sumal",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["paduri", "sumal", "taieri", "ilegale", "silvic"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "mediu_reciclare_garantie",
+    "mode": "search",
+    "query": "sistemul garantie returnare sgr ambalaje",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["sgr", "garantie", "returnare", "ambalaje", "reciclare"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "admin_digitalizare_primarii",
+    "mode": "search",
+    "query": "digitalizarea administratiei publice locale primarii",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["digitalizare", "informatizare", "administratie", "primarie", "locala"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "admin_functionari_statut",
+    "mode": "search",
+    "query": "statutul functionarilor publici codul administrativ",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["functionari", "publici", "codul", "administrativ"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "munca_salariu_minim",
+    "mode": "search",
+    "query": "salariul minim garantat in plata majorare",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["salariul", "minim", "garantat", "plata", "majorare"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "munca_indemnizatie_maternitate",
+    "mode": "search",
+    "query": "concediu de maternitate indemnizatie crestere copil",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["concediu", "maternitate", "indemnizatie", "crestere", "copil"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "justitie_prescripție_răspundere",
+    "mode": "search",
+    "query": "termenul de prescriptie a raspunderii penale decizie ccr",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["prescriptie", "raspundere", "penala", "ccr"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "justitie_csm_organizare",
+    "mode": "search",
+    "query": "organizarea consiliului superior al magistraturii csm",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["csm", "magistraturii", "consiliului", "superior"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "transport_autostrazi_exproprieri",
+    "mode": "search",
+    "query": "exproprieri pentru utilitate publica autostrazi drumuri",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["exproprieri", "utilitate", "publica", "autostrazi", "drumuri"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "transport_permise_suspendare",
+    "mode": "search",
+    "query": "suspendarea dreptului de a conduce permis auto puncte penalizare",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["permis", "conduce", "suspendare", "puncte", "penalizare"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "agricultura_subventii_apia",
+    "mode": "search",
+    "query": "plati directe subventii agricultura apia fermieri",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["plati", "subventii", "apia", "fermieri", "agricultura"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "agricultura_sisteme_irigatii",
+    "mode": "search",
+    "query": "reabilitarea infrastructurii de irigatii apa agricultura",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["irigatii", "apa", "agricultura", "infrastructura"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "turism_vouchere_vacanta",
+    "mode": "search",
+    "query": "acordarea voucherelor de vacanta bugetari sector public",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["vouchere", "vacanta", "bugetari", "sector", "public"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "energie_panouri_fotovoltaice",
+    "mode": "search",
+    "query": "programul casa verde prosumatori panouri fotovoltaice",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["prosumatori", "panouri", "fotovoltaice", "casa verde", "afm"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "energie_plafonare_tarife",
+    "mode": "search",
+    "query": "plafonarea preturilor la energie electrica si gaze naturale",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["plafonare", "energie", "electrica", "gaze", "preturi"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "consumatori_protectia_anpc",
+    "mode": "search",
+    "query": "drepturile consumatorilor protectia impotriva practicilor abuzive anpc",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["consumatorilor", "protectia", "anpc", "abuzive"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "cultura_finantare_monumente",
+    "mode": "search",
+    "query": "protejarea monumentelor istorice finantare patrimoniu cultural",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["monumentelor", "istorice", "patrimoniu", "cultural", "ministerul"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "social_ajutor_incalzire",
+    "mode": "search",
+    "query": "ajutor pentru incalzirea locuintei energie vulnerabili",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["incalzirea", "locuintei", "vulnerabili", "ajutor", "social"],
+    "min_top_similarity": 0.65
+  },
+  {
+    "name": "social_alocatii_copii",
+    "mode": "search",
+    "query": "alocatia de stat pentru copii indexare cu inflatia",
+    "top_k": 5,
+    "threshold": 0.65,
+    "expected_terms_any": ["alocatia", "copii", "indexare", "inflatia", "stat"],
+    "min_top_similarity": 0.65
   }
 ]

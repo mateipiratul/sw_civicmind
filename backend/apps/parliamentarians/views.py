@@ -15,15 +15,8 @@ from .serializers import (
 )
 from apps.core.pagination import ParliamentarianPagination
 from apps.core.services import CacheService
-
-ROMANIAN_COUNTIES = [
-    'Alba', 'Arad', 'Argeș', 'Bacău', 'Bihor', 'Bistrița-Năsăud', 'Botoșani', 'Brăila',
-    'Brașov', 'București', 'Buzău', 'Călărași', 'Caraș-Severin', 'Cluj', 'Constanța',
-    'Covasna', 'Dâmbovița', 'Dolj', 'Galați', 'Giurgiu', 'Gorj', 'Harghita', 'Hunedoara',
-    'Ialomița', 'Iași', 'Ilfov', 'Maramureș', 'Mehedinți', 'Mureș', 'Neamț', 'Olt',
-    'Prahova', 'Sălaj', 'Satu Mare', 'Sibiu', 'Suceava', 'Teleorman', 'Timiș', 'Tulcea',
-    'Vâlcea', 'Vaslui', 'Vrancea',
-]
+from apps.core.constants import ROMANIAN_COUNTIES
+from apps.core.decorators import cache_endpoint
 
 class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -109,10 +102,19 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             return ParliamentarianListSerializer
         return ParliamentarianDetailSerializer
 
+    @cache_endpoint()
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @cache_endpoint()
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def _base_deputies_queryset(self):
         return self.filter_queryset(self.get_queryset()).filter(chamber__icontains='deput').order_by('mp_name')
 
     @action(detail=False, methods=['get'], url_path='directory')
+    @cache_endpoint()
     def directory(self, request):
         queryset = self._base_deputies_queryset()
         page = self.paginate_queryset(queryset)
@@ -123,12 +125,8 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='metadata')
+    @cache_endpoint()
     def metadata(self, request):
-        cache_key = "parliamentarian_metadata_v1"
-        cached = CacheService.get(cache_key)
-        if cached:
-            return Response(cached)
-
         parliamentarians = Parliamentarian.objects.all()
         counties = sorted([
             c for c in parliamentarians.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct() if c
@@ -146,10 +144,10 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             'chambers': chamber_counts,
             'hasCountyData': bool(counties),
         }
-        CacheService.set(cache_key, data, 86400) # Cache for 24h
         return Response(data)
 
     @action(detail=False, methods=['get'], url_path='vote-map')
+    @cache_endpoint()
     def vote_map(self, request):
         vote_limit = self.get_serializer_context().get('vote_limit')
         queryset = self._base_deputies_queryset()
@@ -168,6 +166,7 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
     @action(detail=False, methods=['get'], url_path='my-representatives')
+    @cache_endpoint()
     def my_representatives(self, request):
         profile = getattr(request.user, 'profile', None) if getattr(request.user, 'is_authenticated', False) else None
         county = (request.query_params.get('county') or getattr(profile, 'county', '') or '').strip()

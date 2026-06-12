@@ -12,15 +12,19 @@ import os
 import re
 import time
 import unicodedata
+import logging
+import httpx
 from pathlib import Path
 from typing import Optional
 
 from mistralai.client import Mistral
-from supabase import Client, create_client
+from mistralai.exceptions import SDKError
+from supabase import Client
+from db.client import get_supabase_client
 
-from env_setup import load_project_env
+from env_setup import load_project_env, get_mistral_api_key
 
-load_project_env()
+logger = logging.getLogger(__name__)
 
 EMBED_MODEL = "mistral-embed"
 RAW_DIR = Path("data/raw")
@@ -35,17 +39,12 @@ ROMANIAN_STOPWORDS = {
 
 
 def get_supabase() -> Client:
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    if not url or not key:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
-    return create_client(url, key)
+    return get_supabase_client()
+
 
 
 def embed_query(query: str) -> list[float]:
-    key = os.getenv("MISTRAL_API_KEY")
-    if not key:
-        raise RuntimeError("MISTRAL_API_KEY must be set in .env")
+    key = get_mistral_api_key(raise_error=True)
     client = Mistral(api_key=key)
     delays = [0, 3, 7]
     last_exc: Exception | None = None
@@ -55,7 +54,7 @@ def embed_query(query: str) -> list[float]:
         try:
             response = client.embeddings.create(model=EMBED_MODEL, inputs=[query])
             return response.data[0].embedding
-        except Exception as exc:
+        except (SDKError, httpx.HTTPError) as exc:
             message = str(exc).casefold()
             is_retryable = (
                 "service_tier_capacity_exceeded" in message
@@ -63,10 +62,16 @@ def embed_query(query: str) -> list[float]:
                 or "rate limit" in message
             )
             if not is_retryable:
+                logging.error(f"Non-retryable Mistral error: {exc}", exc_info=True)
                 raise
+            logging.warning(f"Retryable Mistral error (delay={delay}s): {exc}")
             last_exc = exc
-    assert last_exc is not None
-    raise last_exc
+    
+    if last_exc:
+        logging.error(f"Mistral embedding failed after retries: {last_exc}", exc_info=True)
+        raise last_exc
+    
+    raise RuntimeError("Unknown error in embed_query")
 
 
 def _load_bill(idp: int) -> Optional[dict]:
@@ -383,8 +388,9 @@ def _log_rag_query(
                 "model": model,
             }
         ).execute()
-    except Exception:
+    except Exception as e:
         # Query logging must not break retrieval.
+        logger.warning(f"RAG query logging failed: {e}")
         return
 
 

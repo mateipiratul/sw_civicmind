@@ -11,6 +11,19 @@ export type FilterChip = { key: string; label: string };
 export type LawFilterOptions = { statuses: string[]; initiators: string[]; categories: string[] };
 export type MpFilterOptions = { parties: string[]; counties: string[]; chambers: string[] };
 
+export type SearchParams = {
+  q: string;
+  tab: "laws" | "mps" | "all";
+  l_status?: string;
+  l_initiator?: string;
+  l_category?: string;
+  l_dateFrom?: string;
+  l_dateTo?: string;
+  m_party?: string;
+  m_county?: string;
+  m_chamber?: string;
+};
+
 export function buildLawFilterChips(filters: LawFilters) {
   const chips: FilterChip[] = [];
   if (filters.status) chips.push({ key: "status", label: `Status: ${filters.status}` });

@@ -3,13 +3,13 @@ from apps.bills.models import VoteSession
 
 class Parliamentarian(models.Model):
     mp_slug = models.CharField(primary_key=True, max_length=255)
-    mp_name = models.CharField(max_length=255, blank=True, null=True)
-    party = models.CharField(max_length=100, blank=True, null=True)
-    chamber = models.CharField(max_length=100, blank=True, null=True)
+    mp_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    party = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    chamber = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     
     # Enriched fields
     email = models.EmailField(blank=True, null=True)
-    county = models.CharField(max_length=100, blank=True, null=True)
+    county = models.CharField(max_length=100, blank=True, null=True, db_index=True)
 
     class Meta:
         db_table = 'parliamentarians'
@@ -37,8 +37,8 @@ class MPVote(models.Model):
         null=True,
         blank=True
     )
-    party = models.CharField(max_length=100, blank=True, null=True)
-    vote = models.CharField(max_length=50, blank=True, null=True)
+    party = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    vote = models.CharField(max_length=50, blank=True, null=True, db_index=True)
 
     class Meta:
         db_table = 'mp_votes'

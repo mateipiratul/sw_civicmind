@@ -4,10 +4,10 @@ import re
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from typing import Dict
+from typing import Dict, Any
 from rest_framework import serializers
-
-from apps.profiles.models import Profile
+from dj_rest_auth.registration.serializers import RegisterSerializer as BaseRegisterSerializer
+from allauth.account.adapter import get_adapter
 
 
 STRICT_EMAIL_RE = re.compile(
@@ -36,11 +36,12 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
+    avatar_url = serializers.URLField(source='profile.avatar_url', read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role']
-        read_only_fields = ['id', 'role']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'avatar_url']
+        read_only_fields = ['id', 'role', 'avatar_url']
 
     def get_role(self, obj: User) -> str:
         if obj.is_superuser:
@@ -50,14 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
         return "user"
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
-
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'password']
-        read_only_fields = ['id']
-
+class RegisterSerializer(BaseRegisterSerializer):
     def validate_username(self, value: str) -> str:
         normalized = normalize_username(value)
         if not normalized:
@@ -66,9 +60,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Numele de utilizator trebuie să aibă între 3 și 30 de caractere și să conțină doar litere, numere, puncte, underscore-uri sau cratime."
             )
-        if User.objects.filter(username__iexact=normalized).exists():
-            raise serializers.ValidationError("Un utilizator cu acest nume există deja.")
-        return normalized
+        
+        # Call base validation but handle our custom normalization
+        value = super().validate_username(normalized)
+        return value
 
     def validate_email(self, value: str) -> str:
         normalized = normalize_email(value)
@@ -76,11 +71,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Emailul este necesar.")
         if not STRICT_EMAIL_RE.fullmatch(normalized):
             raise serializers.ValidationError("Introduceți o adresă de email validă.")
-        if User.objects.filter(email__iexact=normalized).exists():
-            raise serializers.ValidationError("Un utilizator cu acest email există deja.")
-        return normalized
+        
+        return super().validate_email(normalized)
 
-    def validate_password(self, value: str) -> str:
+    def validate_password1(self, value: str) -> str:
         # Standard custom checks
         if len(value) < 8:
             raise serializers.ValidationError("Parola trebuie să aibă cel puțin 8 caractere.")
@@ -101,18 +95,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         except DjangoValidationError as e:
             raise serializers.ValidationError(list(e.messages))
             
-        return value
+        return super().validate_password1(value)
 
-    def create(self, validated_data: Dict[str, str]) -> User:
-        user: User = User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data["email"],
-            password=validated_data["password"],
-        )
+    def get_cleaned_data(self) -> Dict[str, Any]:
+        cleaned_data = super().get_cleaned_data()
+        cleaned_data['email'] = normalize_email(self.validated_data.get('email', ''))
+        cleaned_data['username'] = normalize_username(self.validated_data.get('username', ''))
+        return cleaned_data
+
+    def save(self, request: Any) -> User:
+        user = super().save(request)
         return user
-
-    def save(self, request):
-        return super().save()
 
 
 class LoginSerializer(serializers.Serializer):

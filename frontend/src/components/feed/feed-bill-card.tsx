@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Calendar, FileText, ChevronRight } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, extractBillTitleAndBody, cleanText } from "@/lib/utils";
 import type { Bill } from "@/lib/api";
 
 interface FeedBillCardProps {
@@ -10,7 +10,7 @@ interface FeedBillCardProps {
 
 export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
   const ai = bill.ai_analysis;
-  const title = ai?.title_short || bill.title;
+  const { title } = extractBillTitleAndBody(ai?.title_short || bill.title);
   const isAdopted = bill.status?.toLowerCase().includes("adoptat");
 
   const allCats = ai?.impact_categories || [];
@@ -21,8 +21,8 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
   return (
     <div
       style={{
-        background: "white",
-        border: "1px solid #e8e8e8",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
         borderRadius: 10,
         padding: "16px 18px",
         display: "flex",
@@ -39,34 +39,36 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
           return (
             <span key={cat} style={{ 
               fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, 
-              background: isMatch ? "#111" : "#f5f5f5", 
-              color: isMatch ? "#fff" : "#555" 
+              background: isMatch ? "var(--primary)" : "var(--color-muted)", 
+              color: isMatch ? "var(--primary-text)" : "var(--text-muted)" 
             }}>
               {cat}
             </span>
           );
         })}
-        <span style={{
-          fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
-          background: isAdopted ? "#dcfce7" : "#f0f0f0",
-          color: isAdopted ? "#16a34a" : "#666",
-        }}>
-          {bill.status || "În analiză"}
-        </span>
-        <span style={{ marginLeft: "auto", fontSize: 11, color: "#aaa" }}>{bill.bill_number}</span>
+        {(!bill.status || bill.status.toLowerCase() === "la_comisii" || bill.status.toLowerCase() === "la comisii") ? null : (
+          <span style={{
+            fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
+            background: isAdopted ? "var(--color-success)" : "var(--color-muted)",
+            color: isAdopted ? "var(--color-primary-foreground)" : "var(--text-muted)",
+          }}>
+            {bill.status}
+          </span>
+        )}
+        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-muted)" }}>{bill.bill_number}</span>
       </div>
 
-      <div style={{ fontSize: 16, fontWeight: 600, color: "#111", lineHeight: 1.45 }}>{title}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", lineHeight: 1.45 }}>{title}</div>
 
       {ai?.key_ideas && ai.key_ideas.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
             AI Rezumat
           </div>
           {ai.key_ideas.slice(0, 2).map((idea, i) => (
-            <div key={i} style={{ display: "flex", gap: 6, fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>
-              <span style={{ color: "#ccc", flexShrink: 0 }}>•</span>
-              <span>{idea}</span>
+            <div key={i} style={{ display: "flex", gap: 6, fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+              <span style={{ color: "var(--color-input)", flexShrink: 0 }}>•</span>
+              <span>{cleanText(idea)}</span>
             </div>
           ))}
         </div>
@@ -74,13 +76,13 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
         {bill.registered_at && (
-          <span style={{ fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
             <Calendar size={13} />
             {formatDate(bill.registered_at)}
           </span>
         )}
         {bill.law_type && (
-          <span style={{ fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
             <FileText size={13} />
             {bill.law_type}
           </span>
@@ -88,7 +90,7 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
         <Link
           to="/bills/$id"
           params={{ id: String(bill.idp) }}
-          style={{ marginLeft: "auto", fontSize: 13.5, fontWeight: 600, color: "#111", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+          style={{ marginLeft: "auto", fontSize: 13.5, fontWeight: 600, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
         >
           Detalii <ChevronRight size={14} />
         </Link>

@@ -9,23 +9,51 @@ interface DetailSectionProps {
 
 export function DetailSection({ eyebrow, title, icon, children }: DetailSectionProps) {
   return (
-    <section className="bg-white border border-gray-200 rounded-xl p-6">
-      <div className="flex justify-between items-start gap-4 mb-4">
-        <div className="flex flex-col gap-1">
+    <section 
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "16px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {eyebrow && (
-            <div className="text-[10.5px] font-semibold tracking-wider uppercase text-gray-400">
+            <div style={{ 
+              fontSize: "11px", 
+              fontWeight: 700, 
+              color: "var(--text-muted)", 
+              textTransform: "uppercase", 
+              letterSpacing: "0.05em" 
+            }}>
               {eyebrow}
             </div>
           )}
-          <h2 className="text-[15px] font-bold leading-tight text-gray-900">{title}</h2>
+          <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--text)", lineHeight: 1.3 }}>{title}</h2>
         </div>
         {icon && (
-          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 flex-shrink-0">
+          <div style={{ 
+            width: "32px", 
+            height: "32px", 
+            borderRadius: "50%", 
+            background: "var(--color-muted)", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            color: "var(--text)",
+            flexShrink: 0
+          }}>
             {icon}
           </div>
         )}
       </div>
-      {children}
+      <div>
+        {children}
+      </div>
     </section>
   );
 }

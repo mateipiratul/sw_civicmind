@@ -24,11 +24,11 @@ load_dotenv(BASE_DIR / '.env')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-=)2bhjejkunxb_llyldnhn^u8o6drldvp*5wl1oi01q9&5&d7#')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-development-only-key')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -114,38 +114,54 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+import sys
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+# Clean sys.path to avoid importing local apps under "backend.apps.*" namespace
+if TESTING:
+    parent_dir = str(BASE_DIR.parent)
+    if parent_dir in sys.path:
+        sys.path.remove(parent_dir)
+
+    # Override CACHES for tests to avoid Redis module dependencies
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+    # Connect to local PostgreSQL on 127.0.0.1:5433 for testing
+    DATABASES = {
+        'default': dj_database_url.config(
+            env='TEST_DATABASE_URL',
+            default='postgresql://postgres:postgres@127.0.0.1:5433/civicmind_test',
+            conn_max_age=600,
+        )
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 
 # CORS settings
-# For production, set CORS_ALLOW_ALL_ORIGINS=False and provide a
-# comma-separated list in CORS_ALLOWED_ORIGINS. For local development
-# the defaults allow the Vite dev server.
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'False'
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174').split(',')
-# Allow cookies to be included in cross-origin requests when True.
 CORS_ALLOW_CREDENTIALS = os.getenv('CORS_ALLOW_CREDENTIALS', 'True') == 'True'
 
-# CSRF trusted origins for local development. Include the Vite dev server
-# (http://localhost:5173) and 127.0.0.1 variant. Can be overridden by
-# setting the CSRF_TRUSTED_ORIGINS environment variable (comma-separated).
+# CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = os.getenv(
-    'CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174'
+    'CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.1:5173,http://localhost:5174,http://127.0.1:5174'
 ).split(',')
 
-# Cookie / CSRF security defaults. For cross-site cookie-based auth in
-# production you will typically set SAMESITE=None and SECURE=True.
+# Cookie / CSRF security defaults
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
 CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
 SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
-# Leave CSRF cookie readable by JS (default Django behavior); only set to
-# True if you use a different mechanism for providing the token to clients.
 CSRF_COOKIE_HTTPONLY = os.getenv('CSRF_COOKIE_HTTPONLY', 'False') == 'True'
 
 
@@ -187,11 +203,15 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Cache settings
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+
+if not TESTING:
+    # We use upstash-redis directly in apps/core/services.py
+    # Fallback to DummyCache for Django's internal components to avoid connection errors
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
     }
-}
 
 STORAGES = {
     "default": {
@@ -201,6 +221,7 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -216,6 +237,45 @@ REST_AUTH = {
     'REGISTER_SERIALIZER': 'apps.authentication.serializers.RegisterSerializer',
     'USER_DETAILS_SERIALIZER': 'apps.authentication.serializers.UserSerializer',
     'SESSION_LOGIN': True,
+}
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'apps': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
 }
 
 # allauth settings
@@ -245,3 +305,7 @@ DEFAULT_FROM_EMAIL = 'noreply@civicmind.ro'
 # URL to which the user will be directed from the password reset email
 # dj-rest-auth replaces {uid} and {token} dynamically
 PASSWORD_RESET_URL = 'http://localhost:5173/auth/reset-password?uid={uid}&token={token}'
+
+# Environment variables centralized for services
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+GOOGLE_OAUTH_CALLBACK_URL = os.getenv('GOOGLE_OAUTH_CALLBACK_URL', 'http://localhost:5173/auth/callback')

@@ -1,18 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 import type { MPVote } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, extractBillTitleAndBody } from "@/lib/utils";
 
 const VOTE_COLORS: Record<string, string> = {
-  for: "#16a34a",
-  against: "#dc2626",
-  abstain: "#888",
-  absent: "#bbb",
-  Pentru: "#16a34a",
-  Contra: "#dc2626",
-  Abtinere: "#888",
-  "Abținere": "#888",
-  Absent: "#bbb",
+  for: "var(--color-success)",
+  against: "var(--color-destructive)",
+  abstain: "var(--color-muted-foreground)",
+  absent: "var(--color-input)",
+  Pentru: "var(--color-success)",
+  Contra: "var(--color-destructive)",
+  Abtinere: "var(--color-muted-foreground)",
+  "Abținere": "var(--color-muted-foreground)",
+  Absent: "var(--color-input)",
 };
 
 const VOTE_LABELS: Record<string, string> = {
@@ -34,7 +34,7 @@ export function VoteRow({ vote }: { vote: MPVote }) {
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: 12,
-      padding: "12px 0", borderBottom: "1px solid #f0f0f0",
+      padding: "12px 0", borderBottom: "1px solid var(--border)",
     }}>
       <span style={{
         fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
@@ -45,8 +45,8 @@ export function VoteRow({ vote }: { vote: MPVote }) {
         {voteLabel}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 500, color: "#111", lineHeight: 1.4, marginBottom: 4 }}>
-          {vote.title_short || vote.bill_title}
+        <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text)", lineHeight: 1.45, marginBottom: 4 }}>
+          {extractBillTitleAndBody(vote.title_short || vote.bill_title).title || vote.bill_number}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {vote.vote_date && (
@@ -55,15 +55,15 @@ export function VoteRow({ vote }: { vote: MPVote }) {
             </span>
           )}
           {vote.vote_type && (
-            <span style={{ fontSize: 11, color: "#bbb" }}>{vote.vote_type}</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{vote.vote_type}</span>
           )}
           {vote.impact_categories?.slice(0, 2).map(cat => (
-            <span key={cat} style={{ fontSize: 11, color: "#666", background: "#f0f0f0", padding: "1px 7px", borderRadius: 4 }}>
+            <span key={cat} style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--color-muted)", padding: "1px 7px", borderRadius: 4 }}>
               {cat}
             </span>
           ))}
           {vote.controversy_score != null && vote.controversy_score > 0.6 && (
-            <span style={{ fontSize: 11, color: "#d97706", background: "#fef3c7", padding: "1px 7px", borderRadius: 4 }}>
+            <span style={{ fontSize: 11, color: "var(--color-warning)", background: "color-mix(in srgb, var(--color-warning) 12%, white)", padding: "1px 7px", borderRadius: 4 }}>
               controversat
             </span>
           )}

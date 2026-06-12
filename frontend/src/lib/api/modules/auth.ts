@@ -31,10 +31,15 @@ export class AuthModule extends BaseApiClient {
     return this.getProfile();
   };
 
-  googleLoginWithCode = async (code: string): Promise<User> => {
+  googleLoginWithCode = async (code: string, redirectUri?: string): Promise<User> => {
+    // Ensure CSRF cookie is present before performing POST
+    await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
+    const body: Record<string, unknown> = { code };
+    if (redirectUri) body.redirect_uri = redirectUri;
+
     const response = await this.request<AuthKeyResponse>("/api/auth/google/", {
       method: "POST",
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(body),
     });
     localStorage.setItem("auth_token", response.key);
     return this.getProfile();
@@ -68,7 +73,7 @@ export class AuthModule extends BaseApiClient {
     return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
   };
 
-  getQuestionnaireMetadata = async (): Promise<any> => {
+  getQuestionnaireMetadata = async (): Promise<{ impact_categories: string[], counties: string[] }> => {
     return this.request("/api/profiles/questionnaire/");
   };
 

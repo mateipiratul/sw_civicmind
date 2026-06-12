@@ -38,7 +38,7 @@ class Command(BaseCommand):
                     if email:
                         email_map[name] = email
                         self.stdout.write(f"  {name} → {email}")
-            except Exception as e:
+            except (json.JSONDecodeError, OSError) as e:
                 self.stdout.write(self.style.ERROR(f"Error reading {json_file}: {e}"))
                 continue
 

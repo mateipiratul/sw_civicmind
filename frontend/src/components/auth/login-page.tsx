@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -41,11 +41,81 @@ export function LoginPage() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
+  const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+
+  // Redirect-based variant for fallback (navigates away)
+  const googleLoginRedirect = useGoogleLogin({
     flow: "auth-code",
     ux_mode: "redirect",
-    redirect_uri: `${window.location.origin}/auth/callback`,
+    redirect_uri: redirectUri,
   });
+
+  const popupRef = useRef<Window | null>(null);
+
+  useEffect(() => {
+    const handler = async (event: MessageEvent) => {
+      if (!event.data || event.origin !== window.location.origin) return;
+      const payload = event.data as { type?: string; code?: string; error?: string };
+      if (payload.type !== "civic:google_oauth") return;
+
+      if (payload.error) {
+        setError(payload.error);
+        return;
+      }
+
+      const code = payload.code;
+      if (!code) {
+        setError("Nu am primit codul de la Google.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const user = await api.googleLoginWithCode(code, redirectUri);
+        login(user);
+        navigate({ to: "/" });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Autentificarea a eșuat");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [login, navigate, redirectUri]);
+
+  const openGooglePopup = () => {
+    setError(null);
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setError("Google client id not configured.");
+      return;
+    }
+
+    const scope = encodeURIComponent("openid email profile");
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+      clientId,
+    )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=online&include_granted_scopes=true&prompt=select_account`;
+
+    // Centered popup
+    const width = 500;
+    const height = 650;
+    const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+    const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+
+    try {
+      const popup = window.open(authUrl, "civic_google_oauth", `width=${width},height=${height},left=${left},top=${top}`);
+      popupRef.current = popup;
+      // If popup blocked, fallback to redirect
+      if (!popup) {
+        googleLoginRedirect();
+      }
+    } catch (err) {
+      console.warn("Popup open failed, falling back to redirect", err);
+      googleLoginRedirect();
+    }
+  };
 
   return (
     <div className="card-centered">
@@ -140,7 +210,7 @@ export function LoginPage() {
         <button
           type="button"
           disabled={isLoading}
-          onClick={() => googleLogin()}
+          onClick={() => openGooglePopup()}
           className="oauth-button"
         >
           <GoogleIcon />

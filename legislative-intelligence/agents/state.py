@@ -27,7 +27,6 @@ class QAState(TypedDict):
     bill: dict             # full bill JSON
     question: str
     context: str           # assembled context string passed to LLM
-    intent: str            # classified: impact|vote_info|arguments|general
     answer: str
     error: Optional[str]
 

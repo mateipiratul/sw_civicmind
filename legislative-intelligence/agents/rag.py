@@ -25,8 +25,6 @@ from agents.rag_tools import (
     search_legislation_chunks,
 )
 
-load_project_env()
-
 CHAT_MODEL = "mistral-small-latest"
 DEFAULT_TOP_K = 8
 DEFAULT_THRESHOLD = 0.72
@@ -337,5 +335,11 @@ def build_react_rag_agent():
     )
 
 
+_REACT_RAG_AGENT = None
+
+
 def get_react_rag_agent():
-    return build_react_rag_agent()
+    global _REACT_RAG_AGENT
+    if _REACT_RAG_AGENT is None:
+        _REACT_RAG_AGENT = build_react_rag_agent()
+    return _REACT_RAG_AGENT

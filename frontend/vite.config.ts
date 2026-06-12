@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
-import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import babel from '@rolldown/plugin-babel'
+import react from '@vitejs/plugin-react'
 import path from 'path'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
@@ -14,8 +13,14 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       tailwindcss(),
-      react(),
-      babel({ presets: [reactCompilerPreset()] }),
+      react({
+        // @ts-ignore - TS thinks babel doesn't exist but it does for the react compiler plugin
+        babel: {
+          plugins: [
+            ['babel-plugin-react-compiler', {}],
+          ],
+        },
+      }),
       TanStackRouterVite(),
     ],
     server: {

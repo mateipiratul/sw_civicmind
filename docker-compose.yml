@@ -37,6 +37,17 @@ services:
     networks:
       - civicmind-network
 
+  test-db:
+    image: postgres:latest
+    container_name: civicmind-test-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: civicmind_test
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - civicmind-network
+
 networks:
   civicmind-network:
     driver: bridge

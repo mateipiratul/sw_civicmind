@@ -1,10 +1,11 @@
 import type { ParliamentarianDetail } from "@/lib/api";
+import { cleanText } from "@/lib/utils";
 
 function scoreColor(score?: number | null) {
-  if (score == null) return "#aaa";
-  if (score >= 80) return "#16a34a";
-  if (score >= 60) return "#d97706";
-  return "#dc2626";
+  if (score == null) return "var(--text-muted)";
+  if (score >= 80) return "var(--color-success)";
+  if (score >= 60) return "var(--color-warning)";
+  return "var(--color-destructive)";
 }
 
 interface MPProfileHeaderProps {
@@ -17,10 +18,10 @@ export function MPProfileHeader({ mp }: MPProfileHeaderProps) {
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
 
   return (
-    <div style={{ background: "white", border: "1px solid #e8e8e8", borderRadius: 12, padding: "24px 28px", marginBottom: 16 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "24px 28px", marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 10 }}>{mp.mp_name}</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>{cleanText(mp.mp_name)}</h1>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {mp.party && (
               <span className="span-partycounty">{mp.party}</span>
@@ -54,30 +55,30 @@ export function MPProfileHeader({ mp }: MPProfileHeaderProps) {
       {total > 0 && (
         <div style={{ marginBottom: s?.narrative ? 16 : 0 }}>
           <div style={{ display: "flex", height: 8, borderRadius: 99, overflow: "hidden", gap: 1, marginBottom: 8 }}>
-            <div style={{ width: `${pct(s!.for_count)}%`, background: "#16a34a" }} />
-            <div style={{ width: `${pct(s!.against_count)}%`, background: "#dc2626" }} />
-            <div style={{ width: `${pct(s!.abstain_count)}%`, background: "#888" }} />
-            <div style={{ width: `${pct(s!.absent_count)}%`, background: "#ddd" }} />
+            <div style={{ width: `${pct(s!.for_count)}%`, background: "var(--color-success)" }} />
+            <div style={{ width: `${pct(s!.against_count)}%`, background: "var(--color-destructive)" }} />
+            <div style={{ width: `${pct(s!.abstain_count)}%`, background: "var(--color-muted-foreground)" }} />
+            <div style={{ width: `${pct(s!.absent_count)}%`, background: "var(--color-input)" }} />
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {[
-              { label: "Pentru", n: s!.for_count, color: "#16a34a" },
-              { label: "Contra", n: s!.against_count, color: "#dc2626" },
-              { label: "Abținere", n: s!.abstain_count, color: "#888" },
-              { label: "Absent", n: s!.absent_count, color: "#bbb" },
+              { label: "Pentru", n: s!.for_count, color: "var(--color-success)" },
+              { label: "Contra", n: s!.against_count, color: "var(--color-destructive)" },
+              { label: "Abținere", n: s!.abstain_count, color: "var(--color-muted-foreground)" },
+              { label: "Absent", n: s!.absent_count, color: "var(--color-input)" },
             ].map(({ label, n, color }) => (
               <span key={label} style={{ fontSize: 12.5 }}>
                 <span style={{ color, fontWeight: 700 }}>{pct(n)}%</span>
                 <span className="muted" style={{ marginLeft: 4 }}>{label} ({n})</span>
               </span>
             ))}
-            <span style={{ fontSize: 12, color: "#bbb", marginLeft: "auto" }}>{total} voturi total</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>{total} voturi total</span>
           </div>
         </div>
       )}
 
       {s?.narrative && (
-        <p style={{ fontSize: 13.5, color: "#555", lineHeight: 1.65, margin: 0, paddingTop: total > 0 ? 0 : 4 }}>
+        <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.65, margin: 0, paddingTop: total > 0 ? 0 : 4 }}>
           {s.narrative}
         </p>
       )}
