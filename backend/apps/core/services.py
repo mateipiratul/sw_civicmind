@@ -6,11 +6,6 @@ logger = logging.getLogger(__name__)
 class CacheService:
     @staticmethod
     def get(key: str, default=None, raise_exception: bool = False):
-        """
-        Retrieves a value from the cache.
-        If raise_exception is True, propagates cache-related errors.
-        Otherwise, logs the error and returns the default value.
-        """
         try:
             return cache.get(key, default=default)
         except Exception as e:
@@ -21,10 +16,6 @@ class CacheService:
 
     @staticmethod
     def set(key: str, value, ex: int = 3600, raise_exception: bool = False) -> bool:
-        """
-        Sets a value in the cache. Returns True on success, False on failure.
-        If raise_exception is True, propagates cache-related errors.
-        """
         try:
             cache.set(key, value, timeout=ex)
             return True
@@ -36,10 +27,6 @@ class CacheService:
 
     @staticmethod
     def delete(key: str, raise_exception: bool = False) -> bool:
-        """
-        Deletes a key from the cache. Returns True on success, False on failure.
-        If raise_exception is True, propagates cache-related errors.
-        """
         try:
             cache.delete(key)
             return True

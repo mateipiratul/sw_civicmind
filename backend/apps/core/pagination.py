@@ -8,11 +8,16 @@ class StandardPagination(PageNumberPagination):
     results_key = 'results'
 
     def get_paginated_response(self, data):
+        page_number = self.page.number if getattr(self, 'page', None) else 1
+        per_page = self.page.paginator.per_page if getattr(self, 'page', None) else self.page_size
+        total_count = self.page.paginator.count if getattr(self, 'page', None) else len(data)
+        num_pages = self.page.paginator.num_pages if getattr(self, 'page', None) else 1
+
         return Response({
-            'page': self.page.number,
-            'limit': self.page.paginator.per_page,
-            'total': self.page.paginator.count,
-            'totalPages': self.page.paginator.num_pages,
+            'page': page_number,
+            'limit': per_page,
+            'total': total_count,
+            'totalPages': num_pages,
             self.results_key: data
         })
 
@@ -30,5 +35,4 @@ class StandardCursorPagination(CursorPagination):
     max_page_size = 100
     ordering = '-registered_at' # Default ordering
 
-class PersonalizedFeedPagination(BillPagination):
-    pass
+

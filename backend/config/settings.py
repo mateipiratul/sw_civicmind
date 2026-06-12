@@ -312,3 +312,7 @@ DEFAULT_FROM_EMAIL = 'noreply@civicmind.ro'
 # URL to which the user will be directed from the password reset email
 # dj-rest-auth replaces {uid} and {token} dynamically
 PASSWORD_RESET_URL = 'http://localhost:5173/auth/reset-password?uid={uid}&token={token}'
+
+# Environment variables centralized for services
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+GOOGLE_OAUTH_CALLBACK_URL = os.getenv('GOOGLE_OAUTH_CALLBACK_URL', 'http://localhost:5173/auth/callback')

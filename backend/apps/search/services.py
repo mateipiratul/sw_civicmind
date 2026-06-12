@@ -4,6 +4,7 @@ import os
 import time
 import hashlib
 import logging
+from django.conf import settings
 from apps.core.services import CacheService
 from django.db import connection, DatabaseError
 from django.db.models import Q, Value, TextField, F, IntegerField, Case, When
@@ -31,7 +32,7 @@ VOTE_BUCKETS = {
 class SearchService:
     @staticmethod
     def _get_mistral_client():
-        api_key = os.getenv("MISTRAL_API_KEY")
+        api_key = settings.MISTRAL_API_KEY
         if not api_key or Mistral is None:
             return None
         return Mistral(api_key=api_key)

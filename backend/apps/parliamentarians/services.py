@@ -1,5 +1,4 @@
 import logging
-from django.db.utils import OperationalError, ProgrammingError
 from .models import Parliamentarian
 from apps.core.services import CacheService
 
@@ -28,7 +27,7 @@ class ParliamentarianService:
             options = [{"value": party, "label": party} for party in sorted(parties)]
             CacheService.set(cache_key, options, 86400, raise_exception=raise_exception)
             return options
-        except (OperationalError, ProgrammingError, Exception) as e:
+        except Exception as e:
             logger.error(f"Error fetching party options: {e}", exc_info=True)
             if raise_exception:
                 raise
