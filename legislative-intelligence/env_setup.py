@@ -30,3 +30,13 @@ def get_mistral_api_key(raise_error: bool = True) -> str | None:
     if not key and raise_error:
         raise RuntimeError("MISTRAL_API_KEY is not set in the environment or .env file")
     return key
+
+
+try:
+    from mistralai.exceptions import SDKError
+except (ImportError, ModuleNotFoundError):
+    try:
+        from mistralai.exceptions import MistralException as SDKError  # type: ignore
+    except (ImportError, ModuleNotFoundError):
+        class SDKError(Exception):  # type: ignore
+            pass

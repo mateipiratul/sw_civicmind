@@ -15,7 +15,6 @@ from typing import Any
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
-from mistralai.exceptions import SDKError
 
 from agents.state import MessengerState
 from agents.prompts import MESSENGER_SYSTEM, MESSENGER_USER
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 _MODEL = "open-mistral-nemo"   # cheaper model — email writing doesn't need reasoning
 
 
-from env_setup import get_mistral_api_key
+from env_setup import get_mistral_api_key, SDKError
 
 
 def _mistral() -> Mistral:
@@ -87,7 +86,7 @@ def generate_email(state: MessengerState) -> dict:
             )
             draft = json.loads(resp.choices[0].message.content)
             return {"email_draft": draft}
-        except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
+        except Exception as exc:
             last_exc = exc
             if attempt < _MESSENGER_RETRIES:
                 logger.warning(f"generate_email failed: {exc}. Retrying in {_MESSENGER_RETRY_DELAY * (attempt + 1)}s...")

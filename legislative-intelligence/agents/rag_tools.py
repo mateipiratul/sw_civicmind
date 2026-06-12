@@ -18,11 +18,10 @@ from pathlib import Path
 from typing import Optional
 
 from mistralai.client import Mistral
-from mistralai.exceptions import SDKError
 from supabase import Client
 from db.client import get_supabase_client
 
-from env_setup import load_project_env, get_mistral_api_key
+from env_setup import load_project_env, get_mistral_api_key, SDKError
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +53,15 @@ def embed_query(query: str) -> list[float]:
         try:
             response = client.embeddings.create(model=EMBED_MODEL, inputs=[query])
             return response.data[0].embedding
-        except (SDKError, httpx.HTTPError) as exc:
+        except Exception as exc:
             message = str(exc).casefold()
             is_retryable = (
                 "service_tier_capacity_exceeded" in message
                 or "status 429" in message
                 or "rate limit" in message
+                or "rate_limited" in message
+                or "1300" in message
+                or "too many requests" in message
             )
             if not is_retryable:
                 logging.error(f"Non-retryable Mistral error: {exc}", exc_info=True)

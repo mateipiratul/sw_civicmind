@@ -18,7 +18,6 @@ from typing import Any
 
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
-from mistralai.exceptions import SDKError
 
 from agents.state import AuditorState
 from agents.prompts import AUDITOR_NARRATIVE_SYSTEM, AUDITOR_NARRATIVE_USER
@@ -27,18 +26,17 @@ logger = logging.getLogger(__name__)
 
 _MODEL = "mistral-small-latest"
 _MAX_NARRATIVE_BATCH = 20   # MPs per LLM call batch
-_NARRATIVE_RETRIES = 1
-_NARRATIVE_RETRY_DELAY = 2
+_NARRATIVE_RETRIES = 8
 
 
-from env_setup import get_mistral_api_key
+from env_setup import get_mistral_api_key, SDKError
 
 
 def _mistral() -> Mistral:
     return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
 
-async def _generate_narrative_async(client: Mistral, prompt: str) -> str:
+async def _generate_narrative_async(client: Mistral, prompt: str, sem: asyncio.Semaphore) -> str:
     def call():
         resp = client.chat.complete(
             model=_MODEL,
@@ -55,11 +53,30 @@ async def _generate_narrative_async(client: Mistral, prompt: str) -> str:
     last_error: Exception | None = None
     for attempt in range(_NARRATIVE_RETRIES + 1):
         try:
-            return await asyncio.to_thread(call)
-        except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
+            async with sem:
+                await asyncio.sleep(1.5)
+                return await asyncio.to_thread(call)
+        except Exception as exc:
+            message = str(exc).casefold()
+            is_retryable = (
+                "rate limit" in message
+                or "status 429" in message
+                or "1300" in message
+                or "rate_limited" in message
+                or "too many requests" in message
+            )
+            if not is_retryable:
+                raise
             last_error = exc
             if attempt < _NARRATIVE_RETRIES:
-                await asyncio.sleep(_NARRATIVE_RETRY_DELAY)
+                import random
+                base_delay = 2.0 * (1.8 ** attempt)
+                sleep_time = base_delay + random.uniform(0.5, 2.5)
+                logger.warning(
+                    f"Mistral narrative completion rate limited (attempt {attempt + 1}/{_NARRATIVE_RETRIES + 1}). "
+                    f"Retrying in {sleep_time:.2f}s... Error: {exc}"
+                )
+                await asyncio.sleep(sleep_time)
 
     raise RuntimeError(f"narrative generation failed after retry: {last_error}")
 
@@ -170,6 +187,7 @@ def generate_narratives(state: AuditorState) -> dict:
     logger.info(f"Generating narratives for {len(eligible)} MPs...")
 
     async def run_all():
+        sem = asyncio.Semaphore(1)  # Limit to max 1 concurrent API call to avoid concurrent rate limits on free tier
         tasks = []
         slugs = []
         for slug, data in eligible.items():
@@ -184,7 +202,7 @@ def generate_narratives(state: AuditorState) -> dict:
                 absent_count  = data["absent"],
                 categories  = ", ".join(data["categories_voted"]) or "diverse",
             )
-            tasks.append(_generate_narrative_async(client, prompt))
+            tasks.append(_generate_narrative_async(client, prompt, sem))
             slugs.append(slug)
         
         results = await asyncio.gather(*tasks, return_exceptions=True)

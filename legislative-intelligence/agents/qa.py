@@ -16,7 +16,6 @@ from typing import Any
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
-from mistralai.exceptions import SDKError
 
 from agents.state import QAState
 from agents.prompts import QA_SYSTEM, QA_USER
@@ -27,7 +26,7 @@ _MODEL = "mistral-small-latest"
 _MAX_OCR_CHARS = 6_000
 
 
-from env_setup import get_mistral_api_key
+from env_setup import get_mistral_api_key, SDKError
 
 
 def _mistral() -> Mistral:
@@ -81,7 +80,7 @@ def answer(state: QAState) -> dict:
                 max_tokens=400,
             )
             return {"answer": resp.choices[0].message.content.strip()}
-        except (SDKError, httpx.HTTPError) as exc:
+        except Exception as exc:
             last_exc = exc
             if attempt < _QA_RETRIES:
                 logger.warning(f"answer failed: {exc}. Retrying in {_QA_RETRY_DELAY * (attempt + 1)}s...")
