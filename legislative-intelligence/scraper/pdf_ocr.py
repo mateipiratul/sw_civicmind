@@ -10,13 +10,18 @@ Returns plain markdown text — ready to feed into LangGraph agents.
 import os
 import time
 import logging
+import requests
+import httpx
 from typing import Optional
 
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 
 from .http_client import _SESSION, _HEADERS
 
 logger = logging.getLogger(__name__)
+
+from env_setup import get_mistral_api_key
 
 _client: Optional[Mistral] = None
 
@@ -24,9 +29,7 @@ _client: Optional[Mistral] = None
 def _get_client() -> Mistral:
     global _client
     if _client is None:
-        api_key = os.getenv("MISTRAL_API_KEY")
-        if not api_key:
-            raise RuntimeError("MISTRAL_API_KEY not set in environment")
+        api_key = get_mistral_api_key(raise_error=True)
         _client = Mistral(api_key=api_key)
     return _client
 
@@ -48,7 +51,7 @@ def ocr_pdf_url(pdf_url: str, retries: int = 2) -> Optional[str]:
             )
             pages = [page.markdown for page in response.pages if page.markdown]
             return "\n\n---\n\n".join(pages)
-        except Exception as exc:
+        except (SDKError, httpx.HTTPError) as exc:
             if attempt == retries - 1:
                 logger.error(f"[OCR FAIL] {pdf_url}: {exc}", exc_info=True)
                 return None
@@ -85,7 +88,7 @@ def ocr_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf", retries: int
             )
             pages = [page.markdown for page in response.pages if page.markdown]
             return "\n\n---\n\n".join(pages)
-        except Exception as exc:
+        except (SDKError, httpx.HTTPError) as exc:
             if attempt == retries - 1:
                 logger.error(f"[OCR FAIL] {filename}: {exc}", exc_info=True)
                 return None
@@ -95,7 +98,7 @@ def ocr_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf", retries: int
                 try:
                     client.files.delete(file_id=file_id)
                     logger.info(f"Deleted temporary OCR file: {file_id}")
-                except Exception as clean_exc:
+                except (SDKError, httpx.HTTPError) as clean_exc:
                     logger.warning(f"Failed to delete temporary OCR file {file_id}: {clean_exc}")
     return None
 
@@ -106,7 +109,7 @@ def _download_pdf(url: str) -> Optional[bytes]:
         resp = _SESSION.get(url, headers=_HEADERS, timeout=30)
         if resp.status_code == 200 and resp.content:
             return resp.content
-    except Exception as exc:
+    except requests.RequestException as exc:
         logger.warning(f"[DL FAIL] {url}: {exc}")
     return None
 
@@ -123,9 +126,9 @@ def extract_bill_documents(documents: dict) -> dict[str, Optional[str]]:
     results: dict[str, Optional[str]] = {}
     priority = ["expunere_de_motive", "aviz_ces", "aviz_cl", "forma_initiatorului"]
 
-    api_key = os.getenv("MISTRAL_API_KEY")
+    api_key = get_mistral_api_key(raise_error=False)
     if not api_key:
-        logger.warning("MISTRAL_API_KEY not set in environment. Skipping OCR extraction.")
+        logger.warning("MISTRAL_API_KEY is not set in environment or .env. Skipping OCR extraction.")
         return {doc_type: None for doc_type in priority if doc_type in documents}
 
     for doc_type in priority:

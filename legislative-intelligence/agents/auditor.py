@@ -11,12 +11,14 @@ import os
 import logging
 import time
 import asyncio
+import httpx
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 
 from agents.state import AuditorState
 from agents.prompts import AUDITOR_NARRATIVE_SYSTEM, AUDITOR_NARRATIVE_USER
@@ -29,8 +31,11 @@ _NARRATIVE_RETRIES = 1
 _NARRATIVE_RETRY_DELAY = 2
 
 
+from env_setup import get_mistral_api_key
+
+
 def _mistral() -> Mistral:
-    return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
 
 async def _generate_narrative_async(client: Mistral, prompt: str) -> str:
@@ -51,7 +56,7 @@ async def _generate_narrative_async(client: Mistral, prompt: str) -> str:
     for attempt in range(_NARRATIVE_RETRIES + 1):
         try:
             return await asyncio.to_thread(call)
-        except Exception as exc:
+        except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
             last_error = exc
             if attempt < _NARRATIVE_RETRIES:
                 await asyncio.sleep(_NARRATIVE_RETRY_DELAY)

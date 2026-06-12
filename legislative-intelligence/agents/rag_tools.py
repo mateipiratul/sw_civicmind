@@ -13,14 +13,16 @@ import re
 import time
 import unicodedata
 import logging
+import httpx
 from pathlib import Path
 from typing import Optional
 
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 from supabase import Client
 from db.client import get_supabase_client
 
-from env_setup import load_project_env
+from env_setup import load_project_env, get_mistral_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +44,7 @@ def get_supabase() -> Client:
 
 
 def embed_query(query: str) -> list[float]:
-    key = os.getenv("MISTRAL_API_KEY")
-    if not key:
-        raise RuntimeError("MISTRAL_API_KEY must be set in .env")
+    key = get_mistral_api_key(raise_error=True)
     client = Mistral(api_key=key)
     delays = [0, 3, 7]
     last_exc: Exception | None = None
@@ -54,7 +54,7 @@ def embed_query(query: str) -> list[float]:
         try:
             response = client.embeddings.create(model=EMBED_MODEL, inputs=[query])
             return response.data[0].embedding
-        except Exception as exc:
+        except (SDKError, httpx.HTTPError) as exc:
             message = str(exc).casefold()
             is_retryable = (
                 "service_tier_capacity_exceeded" in message

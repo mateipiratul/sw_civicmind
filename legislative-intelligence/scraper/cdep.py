@@ -32,10 +32,15 @@ from .utils import extract_bill_number
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://www.cdep.ro/ords"
+import os
+
+BASE_URL = os.getenv("CDEP_BASE_URL", "https://www.cdep.ro/ords")
 
 # Seconds to wait between requests — be polite to the government server
-_DELAY = 0.8
+try:
+    _DELAY = float(os.getenv("CDEP_SCRAPE_DELAY", "0.8"))
+except ValueError:
+    _DELAY = 0.8
 
 
 # ---------------------------------------------------------------------------

@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from mistralai.client import Mistral
+from env_setup import get_mistral_api_key
 
 from agents.scout import run_scout
 from agents.auditor import run_auditor
@@ -30,9 +31,7 @@ JUDGE_MODEL = "mistral-small-latest"
 
 
 def _mistral() -> Mistral:
-    api_key = os.getenv("MISTRAL_API_KEY")
-    if not api_key:
-        raise ValueError("MISTRAL_API_KEY environment variable is not set.")
+    api_key = get_mistral_api_key(raise_error=True)
     return Mistral(api_key=api_key)
 
 

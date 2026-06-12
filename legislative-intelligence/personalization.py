@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import logging
 from pathlib import Path
 from typing import Any, Optional
 
@@ -9,6 +10,8 @@ from supabase import Client
 from db.client import get_supabase_client
 
 from env_setup import load_project_env
+
+logger = logging.getLogger(__name__)
 
 DATA_RAW = Path("data/raw")
 PROFILE_LIST_FIELDS = {
@@ -51,8 +54,8 @@ def _load_bills(clear_cache: bool = False) -> list[dict]:
         for path in sorted(DATA_RAW.glob("bill_*.json")):
             try:
                 bills.append(json.loads(path.read_text(encoding="utf-8")))
-            except Exception:
-                pass
+            except (OSError, json.JSONDecodeError) as exc:
+                logger.warning(f"Failed to load bill JSON {path.name}: {exc}")
         _BILLS_CACHE = bills
     return _BILLS_CACHE
 

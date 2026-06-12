@@ -10,12 +10,14 @@ Graph:
 import json
 import os
 import logging
+import httpx
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
+from mistralai.exceptions import SDKError
 
 from agents.state import ScoutState
 from agents.prompts import (
@@ -30,8 +32,11 @@ _MAX_EXPUNERE_CHARS = 8_000
 _MAX_AVIZ_CHARS = 4_000
 
 
+from env_setup import get_mistral_api_key
+
+
 def _mistral() -> Mistral:
-    return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
 
 def _llm_json(system: str, user: str) -> dict:
@@ -85,7 +90,7 @@ def extract_structure(state: ScoutState) -> dict:
             SCOUT_STRUCTURE_USER.format(text=state["expunere_text"]),
         )
         return {"structure": result}
-    except Exception as exc:
+    except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
         return {"error": f"extract_structure failed: {exc}"}
 
 
@@ -101,7 +106,7 @@ def extract_opposition(state: ScoutState) -> dict:
             SCOUT_OPPOSITION_USER.format(text=aviz),
         )
         return {"opposition": result}
-    except Exception as exc:
+    except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
         return {"error": f"extract_opposition failed: {exc}"}
 
 

@@ -21,10 +21,12 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from mistralai.client import Mistral
+import httpx
+from mistralai.exceptions import SDKError
 from supabase import Client
 from db.client import get_supabase_client
 
-from env_setup import load_project_env
+from env_setup import load_project_env, get_mistral_api_key
 from scraper.legislatie_just import LegislativeAct, LegislatieJustClient
 
 
@@ -71,9 +73,7 @@ def _supabase() -> Client:
 
 
 def _mistral() -> Mistral:
-    key = os.getenv("MISTRAL_API_KEY")
-    if not key:
-        raise RuntimeError("MISTRAL_API_KEY must be set in .env")
+    key = get_mistral_api_key(raise_error=True)
     return Mistral(api_key=key)
 
 
@@ -245,7 +245,7 @@ def _embed_texts_resilient(texts: list[str], attempt: int = 0) -> list[list[floa
         return []
     try:
         return _embed_texts(texts)
-    except Exception as exc:
+    except (SDKError, httpx.HTTPError) as exc:
         message = str(exc)
         if len(texts) == 1:
             if "service_tier_capacity_exceeded" in message and attempt < 6:
