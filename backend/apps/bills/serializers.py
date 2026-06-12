@@ -54,18 +54,27 @@ class AIAnalysisSerializer(serializers.ModelSerializer):
     def get_key_ideas(self, obj):
         return [idea.text for idea in obj.rel_key_ideas.all()]
 
+    def _get_categorized_arguments(self, obj):
+        if not hasattr(obj, '_categorized_arguments'):
+            categorized = {'general': {}, 'pro': [], 'con': []}
+            for arg in obj.rel_arguments.all():
+                if arg.type == 'general':
+                    categorized['general'][f"arg_{arg.order}"] = arg.text
+                elif arg.type == 'pro':
+                    categorized['pro'].append(arg.text)
+                elif arg.type == 'con':
+                    categorized['con'].append(arg.text)
+            obj._categorized_arguments = categorized
+        return obj._categorized_arguments
+
     def get_arguments(self, obj):
-        args = {}
-        for arg in obj.rel_arguments.all():
-            if arg.type == 'general':
-                args[f"arg_{arg.order}"] = arg.text
-        return args
+        return self._get_categorized_arguments(obj)['general']
 
     def get_pro_arguments(self, obj):
-        return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'pro']
+        return self._get_categorized_arguments(obj)['pro']
 
     def get_con_arguments(self, obj):
-        return [arg.text for arg in obj.rel_arguments.all() if arg.type == 'con']
+        return self._get_categorized_arguments(obj)['con']
 
 class PartyVoteResultSerializer(serializers.ModelSerializer):
     # Use 'for' as the output key by defining it with a different variable name

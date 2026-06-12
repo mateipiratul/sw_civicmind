@@ -16,7 +16,7 @@ from .services import FeedService, VoteAnalyticsService, BillService
 from apps.parliamentarians.models import Parliamentarian
 from apps.parliamentarians.serializers import ParliamentarianVoteMapSerializer
 from apps.profiles.models import Profile
-from apps.core.pagination import BillPagination, PersonalizedFeedPagination
+from apps.core.pagination import BillPagination
 from apps.core.constants import DEFAULT_TRENDING_TOPICS
 
 from django.db.models import Count, Case, When, IntegerField
@@ -81,7 +81,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
     def personalized(self, request):
         logger = logging.getLogger(__name__)
         try:
-            self.pagination_class = PersonalizedFeedPagination
+            self.pagination_class = BillPagination
             profile, _ = Profile.objects.get_or_create(user=request.user)
             user_interests = list(getattr(profile, 'interests', []) or [])
             persona_tags = list(getattr(profile, 'persona_tags', []) or [])
@@ -111,18 +111,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
             # If user has no preferences, show a larger general feed
             general_limit = page_limit * 2 if not user_interests and not persona_tags else page_limit
 
-            # Instantiate paginator and set ordering dynamically so CursorPagination
-            # respects `is_match` when present on the queryset.
-            paginator = PersonalizedFeedPagination()
-            try:
-                annotations = getattr(getattr(queryset, 'query', None), 'annotations', {}) or {}
-                if 'is_match' in annotations:
-                    paginator.ordering = ('-is_match', '-registered_at')
-                else:
-                    paginator.ordering = '-registered_at'
-            except Exception:
-                paginator.ordering = '-registered_at'
-
+            paginator = BillPagination()
             self._paginator = paginator
             page = paginator.paginate_queryset(queryset, request, view=self)
             if page is not None:
