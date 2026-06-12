@@ -30,8 +30,5 @@ class StandardCursorPagination(CursorPagination):
     max_page_size = 100
     ordering = '-registered_at' # Default ordering
 
-class PersonalizedFeedPagination(StandardCursorPagination):
-    # Keep cursor ordering on a real model field to avoid FieldError when
-    # the queryset doesn't have the `is_match` annotation yet.
-    # `FeedService.get_personalized_bills` still orders by `-is_match` where applicable.
-    ordering = '-registered_at'
+class PersonalizedFeedPagination(BillPagination):
+    pass
