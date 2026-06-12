@@ -5,7 +5,19 @@ from apps.search.services import VOTE_BUCKETS
 
 class BillService:
     @staticmethod
-    def get_enriched_bills_queryset(bill_ids: list[int] | None = None):
+    def get_list_bills_queryset(bill_ids: list[int] | None = None):
+        """Optimized queryset for list views (avoids prefetching heavy text and vote sessions)."""
+        queryset = Bill.objects.select_related('ai_analysis').prefetch_related(
+            'ai_analysis__rel_impact_categories',
+            'ai_analysis__rel_affected_profiles',
+        )
+        if bill_ids is not None:
+            queryset = queryset.filter(pk__in=bill_ids)
+        return queryset
+
+    @staticmethod
+    def get_detail_bills_queryset(bill_ids: list[int] | None = None):
+        """Full queryset for detail views (includes arguments, ideas, and vote sessions)."""
         queryset = Bill.objects.select_related('ai_analysis').prefetch_related(
             'ai_analysis__rel_impact_categories',
             'ai_analysis__rel_affected_profiles',
@@ -22,7 +34,7 @@ class FeedService:
     @staticmethod
     def get_personalized_bills(user_interests: list[str], persona_tags: list[str], queryset=None):
         if queryset is None:
-            queryset = BillService.get_enriched_bills_queryset()
+            queryset = BillService.get_list_bills_queryset()
 
         if not user_interests and not persona_tags:
             return queryset.annotate(

@@ -203,17 +203,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Cache settings
-UPSTASH_REDIS_REST_URL = os.getenv("UPSTASH_REDIS_REST_URL")
-UPSTASH_REDIS_REST_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN")
 
-if not TESTING and UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': UPSTASH_REDIS_REST_URL.replace('https://', 'rediss://') + f'?token={UPSTASH_REDIS_REST_TOKEN}',
-        }
-    }
-elif not TESTING:
+if not TESTING:
+    # We use upstash-redis directly in apps/core/services.py
+    # Fallback to DummyCache for Django's internal components to avoid connection errors
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',

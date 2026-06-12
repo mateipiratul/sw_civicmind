@@ -48,13 +48,15 @@ export function LawResultCard({ bill }: LawResultCardProps) {
             Analiză în curs
           </span>
         )}
-        <span style={{
-          fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
-          background: isAdopted ? "var(--color-success)" : "var(--color-muted)",
-          color: isAdopted ? "var(--color-primary-foreground)" : "var(--text-muted)",
-        }}>
-          {bill.status || "În analiză"}
-        </span>
+        {(!bill.status || bill.status.toLowerCase() === "la_comisii" || bill.status.toLowerCase() === "la comisii") ? null : (
+          <span style={{
+            fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
+            background: isAdopted ? "var(--color-success)" : "var(--color-muted)",
+            color: isAdopted ? "var(--color-primary-foreground)" : "var(--text-muted)",
+          }}>
+            {bill.status}
+          </span>
+        )}
         <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-muted)" }}>{bill.bill_number}</span>
       </div>
 

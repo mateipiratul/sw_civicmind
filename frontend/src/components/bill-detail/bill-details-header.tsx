@@ -38,16 +38,18 @@ export function BillDetailsHeader({ bill }: BillDetailsHeaderProps) {
         }}>
           {bill.bill_number}
         </span>
-        <span style={{
-          fontSize: "11px", 
-          fontWeight: 700, 
-          padding: "4px 10px", 
-          borderRadius: "6px",
-          background: isAdopted ? "var(--color-success)" : "var(--color-muted)",
-          color: isAdopted ? "var(--color-primary-foreground)" : "var(--text-muted)",
-        }}>
-          {bill.status || "În analiză"}
-        </span>
+        {(!bill.status || bill.status.toLowerCase() === "la_comisii" || bill.status.toLowerCase() === "la comisii") ? null : (
+          <span style={{
+            fontSize: "11px", 
+            fontWeight: 700, 
+            padding: "4px 10px", 
+            borderRadius: "6px",
+            background: isAdopted ? "var(--color-success)" : "var(--color-muted)",
+            color: isAdopted ? "var(--color-primary-foreground)" : "var(--text-muted)",
+          }}>
+            {bill.status}
+          </span>
+        )}
         {bill.procedure && (
           <span style={{ 
             fontSize: "11px", 
