@@ -1,12 +1,65 @@
 import { BaseApiClient } from '../base';
-import type { User, AuthKeyResponse } from '../types/auth';
+import type { User, AuthKeyResponse, QuestionnaireMetadata, QuestionnaireOption } from '../types/auth';
+
+const ROMANIAN_COUNTIES = [
+  "Alba",
+  "Arad",
+  "Arges",
+  "Bacau",
+  "Bihor",
+  "Bistrita-Nasaud",
+  "Botosani",
+  "Brasov",
+  "Braila",
+  "Bucuresti",
+  "Buzau",
+  "Caras-Severin",
+  "Calarasi",
+  "Cluj",
+  "Constanta",
+  "Covasna",
+  "Dambovita",
+  "Dolj",
+  "Galati",
+  "Giurgiu",
+  "Gorj",
+  "Harghita",
+  "Hunedoara",
+  "Ialomita",
+  "Iasi",
+  "Ilfov",
+  "Maramures",
+  "Mehedinti",
+  "Mures",
+  "Neamt",
+  "Olt",
+  "Prahova",
+  "Satu Mare",
+  "Salaj",
+  "Sibiu",
+  "Suceava",
+  "Teleorman",
+  "Timis",
+  "Tulcea",
+  "Vaslui",
+  "Valcea",
+  "Vrancea",
+  "Diaspora",
+];
+
+const optionLabels = (options: QuestionnaireOption[] | string[] | undefined): string[] => {
+  if (!Array.isArray(options)) return [];
+  return options
+    .map((option) => (typeof option === "string" ? option : option.label || option.value))
+    .filter((label): label is string => Boolean(label));
+};
 
 export class AuthModule extends BaseApiClient {
   register = async (username: string, email: string, password: string): Promise<User> => {
     await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
     const response = await this.request<AuthKeyResponse>("/api/auth/register/", {
       method: "POST",
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password1: password, password2: password }),
     });
     localStorage.setItem("auth_token", response.key);
     return this.getProfile();
@@ -73,8 +126,16 @@ export class AuthModule extends BaseApiClient {
     return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
   };
 
-  getQuestionnaireMetadata = async (): Promise<{ impact_categories: string[], counties: string[] }> => {
-    return this.request("/api/profiles/questionnaire/");
+  getQuestionnaireMetadata = async (): Promise<QuestionnaireMetadata> => {
+    const metadata = await this.request<QuestionnaireMetadata>("/api/profiles/questionnaire/");
+
+    return {
+      ...metadata,
+      impact_categories: metadata.impact_categories?.length
+        ? metadata.impact_categories
+        : optionLabels(metadata.personal_interest_areas),
+      counties: metadata.counties?.length ? metadata.counties : ROMANIAN_COUNTIES,
+    };
   };
 
   deleteAccount = async (password: string): Promise<void> => {

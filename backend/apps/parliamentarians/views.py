@@ -1,11 +1,12 @@
 import math
+import hashlib
 from collections import Counter
 
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch, Q
 from .models import Parliamentarian, MPVote
 from .filters import ParliamentarianFilterSet
 from .serializers import (
@@ -17,6 +18,53 @@ from apps.core.pagination import ParliamentarianPagination
 from apps.core.services import CacheService
 from apps.core.constants import ROMANIAN_COUNTIES
 from apps.core.decorators import cache_endpoint
+from .text_utils import dedupe_parliamentarians, repair_text
+
+
+def _with_vote_score_annotations(queryset):
+    return queryset.annotate(
+        fallback_total_votes=Count("votes", distinct=True),
+        fallback_for_count=Count(
+            "votes",
+            filter=Q(votes__vote__iexact="for") | Q(votes__vote__iexact="pentru"),
+            distinct=True,
+        ),
+        fallback_against_count=Count(
+            "votes",
+            filter=Q(votes__vote__iexact="against") | Q(votes__vote__iexact="contra"),
+            distinct=True,
+        ),
+        fallback_abstain_count=Count(
+            "votes",
+            filter=(
+                Q(votes__vote__iexact="abstain")
+                | Q(votes__vote__iexact="abtinere")
+                | Q(votes__vote__iexact="abținere")
+            ),
+            distinct=True,
+        ),
+        fallback_absent_count=Count(
+            "votes",
+            filter=Q(votes__vote__iexact="absent") | Q(votes__vote__iexact="absentat"),
+            distinct=True,
+        ),
+    )
+
+
+def _parliamentarian_cache_key(view_instance, request, *args, **kwargs):
+    query_string = request.META.get("QUERY_STRING", "")
+    user_id = request.user.id if request.user.is_authenticated else "anon"
+    lookup_value = kwargs.get(view_instance.lookup_field or "pk", "")
+    raw_key = (
+        f"parliamentarians_v4:"
+        f"{getattr(view_instance, 'action', '')}:"
+        f"{request.path}:"
+        f"{lookup_value}:"
+        f"{query_string}:"
+        f"{user_id}"
+    )
+    return f"endpoint_{hashlib.md5(raw_key.encode('utf-8')).hexdigest()}"
+
 
 class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -86,14 +134,16 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
                 vote_queryset = vote_queryset.filter(vote_session__bill__bill_number__in=bill_numbers)
 
         if self.action in {'vote_map', 'my_representatives', 'retrieve'}:
-            return (
+            return _with_vote_score_annotations(
                 Parliamentarian.objects
                 .select_related('impact_score')
                 .prefetch_related(Prefetch('votes', queryset=vote_queryset, to_attr='prefetched_votes'))
                 .order_by('mp_name')
             )
         
-        return Parliamentarian.objects.select_related('impact_score').order_by('mp_name')
+        return _with_vote_score_annotations(
+            Parliamentarian.objects.select_related('impact_score').order_by('mp_name')
+        )
 
     def get_serializer_class(self):
         if self.action in {'vote_map', 'my_representatives'}:
@@ -102,40 +152,47 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             return ParliamentarianListSerializer
         return ParliamentarianDetailSerializer
 
-    @cache_endpoint()
+    @cache_endpoint(key_func=_parliamentarian_cache_key)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
-    @cache_endpoint()
+    @cache_endpoint(key_func=_parliamentarian_cache_key)
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        items = dedupe_parliamentarians(queryset)
+        page = self.paginate_queryset(items)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(items, many=True)
+        return Response(serializer.data)
 
     def _base_deputies_queryset(self):
         return self.filter_queryset(self.get_queryset()).filter(chamber__icontains='deput').order_by('mp_name')
 
     @action(detail=False, methods=['get'], url_path='directory')
-    @cache_endpoint()
+    @cache_endpoint(key_func=_parliamentarian_cache_key)
     def directory(self, request):
-        queryset = self._base_deputies_queryset()
-        page = self.paginate_queryset(queryset)
+        items = dedupe_parliamentarians(self._base_deputies_queryset())
+        page = self.paginate_queryset(items)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(items, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='metadata')
-    @cache_endpoint()
+    @cache_endpoint(key_func=_parliamentarian_cache_key)
     def metadata(self, request):
-        parliamentarians = Parliamentarian.objects.all()
-        counties = sorted([
-            c for c in parliamentarians.exclude(county__isnull=True).exclude(county='').values_list('county', flat=True).distinct() if c
-        ])
-        parties = sorted([
-            p for p in parliamentarians.exclude(party__isnull=True).exclude(party='').values_list('party', flat=True).distinct() if p
-        ])
+        parliamentarians = dedupe_parliamentarians(Parliamentarian.objects.all())
+        counties = sorted({
+            repair_text(mp.county) for mp in parliamentarians if mp.county
+        })
+        parties = sorted({
+            repair_text(mp.party) for mp in parliamentarians if mp.party
+        })
         chamber_counts = dict(Counter(
-            parliamentarians.values_list('chamber', flat=True)
+            repair_text(mp.chamber) or "unknown" for mp in parliamentarians
         ))
 
         data = {
@@ -147,26 +204,26 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(data)
 
     @action(detail=False, methods=['get'], url_path='vote-map')
-    @cache_endpoint()
+    @cache_endpoint(key_func=_parliamentarian_cache_key)
     def vote_map(self, request):
         vote_limit = self.get_serializer_context().get('vote_limit')
-        queryset = self._base_deputies_queryset()
+        items = dedupe_parliamentarians(self._base_deputies_queryset())
         
-        page = self.paginate_queryset(queryset)
+        page = self.paginate_queryset(items)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
             response.data['voteLimit'] = vote_limit
             return response
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(items, many=True)
         return Response({
             'parliamentarians': serializer.data,
             'voteLimit': vote_limit
         })
 
     @action(detail=False, methods=['get'], url_path='my-representatives')
-    @cache_endpoint()
+    @cache_endpoint(key_func=_parliamentarian_cache_key)
     def my_representatives(self, request):
         profile = getattr(request.user, 'profile', None) if getattr(request.user, 'is_authenticated', False) else None
         county = (request.query_params.get('county') or getattr(profile, 'county', '') or '').strip()
@@ -186,11 +243,11 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             
         filterset = ParliamentarianFilterSet(data=filter_data, queryset=base_queryset, request=request)
         if filterset.is_valid():
-            queryset = filterset.qs
+            items = dedupe_parliamentarians(filterset.qs)
         else:
             return Response(filterset.errors, status=400)
 
-        page = self.paginate_queryset(queryset)
+        page = self.paginate_queryset(items)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
@@ -204,7 +261,7 @@ class ParliamentarianViewSet(viewsets.ReadOnlyModelViewSet):
             })
             return response
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(items, many=True)
         return Response({
             'parliamentarians': serializer.data,
             'voteLimit': vote_limit,

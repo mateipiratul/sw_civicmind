@@ -10,7 +10,7 @@ export interface ImpactScore {
   absent_count: number;
   categories_voted: string[];
   narrative: string;
-  calculated_at: string;
+  calculated_at: string | null;
 }
 
 export interface Parliamentarian {

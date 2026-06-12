@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from datetime import date, timedelta
 
 from apps.profiles.models import Profile
-from .models import Bill, AIAnalysis, ImpactCategory, AffectedProfile
+from .models import Bill, AIAnalysis, ImpactCategory, AffectedProfile, VoteSession
 from apps.parliamentarians.models import Parliamentarian, MPVote
 from .filters import BillFilterSet
 from .views import BillViewSet
@@ -97,3 +97,44 @@ class BillFilterSetTests(APITestCase):
 
     def test_viewset_uses_bill_filterset(self):
         self.assertIs(BillViewSet.filterset_class, BillFilterSet)
+
+
+class BillVotesTests(APITestCase):
+    def test_votes_endpoint_repairs_and_dedupes_mp_names(self):
+        bill = Bill.objects.create(idp=23131, bill_number="PL-x 23131/2026", title="Test Bill")
+        vote_session = VoteSession.objects.create(
+            idv=23131,
+            bill=bill,
+            type="final",
+            present=2,
+            for_votes=2,
+        )
+        bad_mp = Parliamentarian.objects.create(
+            mp_slug="neaclu-andreea-firula",
+            mp_name="Neac\u0139\u009fu Andreea-Firu\u0139\u0141a",
+            party="PNL(afiliat)",
+        )
+        good_mp = Parliamentarian.objects.create(
+            mp_slug="neacsu-andreea-firuta",
+            mp_name="Neac\u015fu Andreea-Firu\u0163a",
+            party="PNL(afiliat)",
+        )
+        MPVote.objects.create(
+            vote_session=vote_session,
+            parliamentarian=bad_mp,
+            vote="for",
+            party="PNL(afiliat)",
+        )
+        MPVote.objects.create(
+            vote_session=vote_session,
+            parliamentarian=good_mp,
+            vote="for",
+            party="PNL(afiliat)",
+        )
+
+        response = self.client.get(reverse("bill-votes", kwargs={"pk": bill.idp}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["votes"]["for"]), 1)
+        self.assertEqual(response.data["votes"]["for"][0]["mp_name"], "Neac\u0219u Andreea-Firu\u021ba")
+        self.assertEqual(response.data["votes"]["for"][0]["party"], "PNL(afiliat)")

@@ -26,7 +26,7 @@ export function AiMode({ onComplete, onBack }: AiModeProps) {
     if (step === "input") {
       textareaRef.current?.focus();
     }
-    api.getMetadata().then(m => setAllCategories(m.impact_categories)).catch(() => {});
+    api.getQuestionnaireMetadata().then(m => setAllCategories(m.impact_categories)).catch(() => {});
   }, [step]);
 
   const handleSend = async () => {
