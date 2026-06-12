@@ -6,6 +6,7 @@ import { MPRow } from "./mp-row";
 import { MPRowSkeleton } from "./mp-row-skeleton";
 import { MPFilters } from "./mp-filters";
 import { RightSidebar } from "@/components/feed/right-sidebar";
+import { Pagination } from "@/components/ui/pagination";
 
 export function MPsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -119,18 +120,8 @@ export function MPsPage() {
           </div>
 
           {totalPages > 1 && (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 24 }}>
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                style={{ padding: "5px 12px", fontSize: 12.5, border: "1px solid var(--border)", borderRadius: 6, background: "var(--surface)", cursor: page === 1 ? "default" : "pointer", color: page === 1 ? "var(--color-input)" : "var(--text)", fontFamily: "inherit" }}
-              >←</button>
-              <span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{page} / {totalPages}</span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                style={{ padding: "5px 12px", fontSize: 12.5, border: "1px solid var(--border)", borderRadius: 6, background: "var(--surface)", cursor: page === totalPages ? "default" : "pointer", color: page === totalPages ? "var(--color-input)" : "var(--text)", fontFamily: "inherit" }}
-              >→</button>
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           )}
         </div>

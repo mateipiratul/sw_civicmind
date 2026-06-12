@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import type { Bill, Parliamentarian, User } from "@/lib/api";
 import { MPSidebarCard } from "./mp-sidebar-card";
+import { extractBillTitleAndBody } from "@/lib/utils";
 
 interface RightSidebarProps {
   isAuthenticated: boolean;
@@ -49,9 +50,12 @@ export function RightSidebar({ isAuthenticated, user, localMPs, trendingBills }:
             <Link key={bill.idp} to="/bills/$id" params={{ id: String(bill.idp) }} style={{ textDecoration: "none" }}>
               <div style={{ padding: "10px 0", borderBottom: i < 3 ? "1px solid var(--border)" : "none", cursor: "pointer" }}>
                 <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 3 }}>Acum {i + 1} zi{i === 0 ? "" : "le"}</div>
-                <div style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>
-                  {(bill.ai_analysis?.title_short || bill.title).substring(0, 60)}
-                  {(bill.ai_analysis?.title_short || bill.title).length > 60 ? "…" : ""}
+              <div style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.4, fontWeight: 500 }}>
+                  {(() => {
+                    const raw = bill.ai_analysis?.title_short || bill.title;
+                    const { title } = extractBillTitleAndBody(raw);
+                    return title.length > 64 ? title.substring(0, 64) + "…" : title;
+                  })()}
                 </div>
               </div>
             </Link>

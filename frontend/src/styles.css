@@ -237,12 +237,12 @@ a      { color: var(--text); text-decoration: none; }
 .avatar-btn { padding: 0; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; }
 .avatar-size { width: 28px; height: 28px; }
 
-.dropdown-content { min-width: 240px; padding: 20px; background-color: #fff; opacity: 1; }
-.dropdown-label { font-weight: 500; font-size: 13px; padding: 12px 0; }
-.dropdown-user-info { display: flex; flex-direction: column; }
-.dropdown-username { font-size: 16px; font-weight: 600; color: #000; }
-.dropdown-email { font-size: 14px; color: #666; font-weight: 400; margin-top: 4px; }
-.dropdown-item { font-size: 16px; padding: 12px 8px; font-weight: 500; }
+.dropdown-content { min-width: 220px; padding: 8px; background-color: var(--surface); opacity: 1; border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.dropdown-label { font-weight: 500; font-size: 13px; padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.dropdown-user-info { display: flex; flex-direction: column; gap: 2px; }
+.dropdown-username { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.dropdown-email { font-size: 12.5px; color: var(--text-muted); font-weight: 400; }
+.dropdown-item { font-size: 13.5px; padding: 9px 10px; font-weight: 500; border-radius: 8px; color: var(--text); cursor: pointer; }
 
 .btn-outline { font-size: 12px; height: 28px; padding: 0 12px; }
 

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { Parliamentarian } from "@/lib/api";
+import { cleanText } from "@/lib/utils";
 
 interface MPSidebarCardProps {
   mp: Parliamentarian;
@@ -15,7 +16,7 @@ export function MPSidebarCard({ mp }: MPSidebarCardProps) {
     <Link to="/mps/$slug" params={{ slug: mp.mp_slug }} style={{ textDecoration: "none" }}>
       <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid var(--border)", cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 4 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{mp.mp_name}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{cleanText(mp.mp_name)}</div>
           {s?.score != null && (
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", flexShrink: 0 }}>{s.score.toFixed(0)}</div>
           )}
