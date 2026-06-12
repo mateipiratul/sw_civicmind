@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       tailwindcss(),
       react({
+        // @ts-ignore - TS thinks babel doesn't exist but it does for the react compiler plugin
         babel: {
           plugins: [
             ['babel-plugin-react-compiler', {}],

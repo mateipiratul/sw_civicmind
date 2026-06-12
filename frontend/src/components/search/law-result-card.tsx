@@ -1,66 +1,100 @@
 import { Link } from "@tanstack/react-router";
+import { Calendar, FileText, ChevronRight } from "lucide-react";
+import { formatDate, extractBillTitleAndBody, cleanText } from "@/lib/utils";
 import type { Bill } from "@/lib/api";
-import { ChevronRight } from "lucide-react";
-import { formatDate } from "@/lib/utils";
 
-type LawResultCardProps = {
+interface LawResultCardProps {
   bill: Bill;
-};
+}
 
 export function LawResultCard({ bill }: LawResultCardProps) {
-  const analysis = bill.ai_analysis;
-  const title = analysis?.title_short || bill.title;
+  const ai = bill.ai_analysis;
+  const { title } = extractBillTitleAndBody(ai?.title_short || bill.title);
   const isAdopted = bill.status?.toLowerCase().includes("adoptat");
-  const statusClass = isAdopted ? "adoptat" : "pending";
+
+  const displayCats = ai?.impact_categories?.slice(0, 2) || [];
 
   return (
-    <div className="search-law-card">
-      <div className="search-law-header">
-        <div>
-          <div className="search-law-number">{bill.bill_number}</div>
-          <div className="search-law-title" title={bill.title}>{title}</div>
-        </div>
-        <div className={`search-law-status ${statusClass}`}>
-          {bill.status || "În analiză"}
-        </div>
-      </div>
-
-      <div className="search-law-meta">
-        <span>{formatDate(bill.registered_at)}</span>
-        {bill.law_type && (
-          <span> · {bill.law_type}</span>
-        )}
-      </div>
-      <div className="search-law-categories">
-        {analysis?.impact_categories?.slice(0, 3).map((cat) => (
-          <span key={cat} className="search-law-category">
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 10,
+        padding: "16px 18px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        transition: "box-shadow 0.15s",
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        {displayCats.map((cat) => (
+          <span key={cat} style={{ 
+            fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, 
+            background: "var(--color-muted)", 
+            color: "var(--text-muted)" 
+          }}>
             {cat}
           </span>
         ))}
-        {(!analysis?.impact_categories || analysis.impact_categories.length === 0) && (
-          <span className="search-law-category">Analiză în curs</span>
+        {displayCats.length === 0 && (
+          <span style={{ 
+            fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, 
+            background: "var(--color-muted)", 
+            color: "var(--text-muted)" 
+          }}>
+            Analiză în curs
+          </span>
         )}
+        <span style={{
+          fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 4,
+          background: isAdopted ? "var(--color-success)" : "var(--color-muted)",
+          color: isAdopted ? "var(--color-primary-foreground)" : "var(--text-muted)",
+        }}>
+          {bill.status || "În analiză"}
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-muted)" }}>{bill.bill_number}</span>
       </div>
 
-      {analysis?.controversy_score !== undefined && analysis?.controversy_score !== null && (
-        <div className="search-law-impact">
-          <div className="search-law-impact-bar">
-            <div
-              className="search-law-impact-fill"
-              style={{ width: `${(analysis.controversy_score || 0) * 10}%` }}
-            />
+      <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", lineHeight: 1.45 }}>{title}</div>
+
+      {ai?.key_ideas && ai.key_ideas.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+            AI Rezumat
           </div>
-          <span className="search-law-impact-label">Impact</span>
+          {ai.key_ideas.slice(0, 2).map((idea, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+              <span style={{ color: "var(--color-input)", flexShrink: 0 }}>•</span>
+              <span>{cleanText(idea)}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      <Link
-        to="/bills/$id"
-        params={{ id: String(bill.idp) }}
-        className="search-law-link"
-      >
-        Vezi detalii <ChevronRight size={14} />
-      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+        {bill.registered_at && (
+          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
+            <Calendar size={13} />
+            {formatDate(bill.registered_at)}
+          </span>
+        )}
+        {bill.law_type && (
+          <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
+            <FileText size={13} />
+            {bill.law_type}
+          </span>
+        )}
+        <Link
+          to="/bills/$id"
+          params={{ id: String(bill.idp) }}
+          style={{ marginLeft: "auto", fontSize: 13.5, fontWeight: 600, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+        >
+          Detalii <ChevronRight size={14} />
+        </Link>
+      </div>
     </div>
   );
 }

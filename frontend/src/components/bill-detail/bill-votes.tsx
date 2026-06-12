@@ -37,9 +37,19 @@ export function BillVotes({ votes }: BillVotesProps) {
 
   if (!votes || !votes.vote_session) {
     return (
-      <section className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="text-[10.5px] font-bold tracking-wider uppercase text-gray-400 mb-4">Voturi</div>
-        <div className="text-sm text-gray-400 text-center py-3">Nu există date de vot pentru acest proiect.</div>
+      <section 
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          padding: "24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Voturi</div>
+        <div style={{ fontSize: "13px", color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>Nu există date de vot pentru acest proiect.</div>
       </section>
     );
   }
@@ -47,39 +57,64 @@ export function BillVotes({ votes }: BillVotesProps) {
   const s = votes.vote_session.summary;
   const total = s.present || (s.for + s.against + s.abstain + s.absent);
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
-  const bars = [
+
+  // Fix for bars map
+  const voteBars = [
     { label: "Pentru", count: s.for, color: "var(--color-success)" },
     { label: "Contra", count: s.against, color: "var(--color-destructive)" },
-    { label: "Abținere", count: s.abstain, color: "var(--color-muted-foreground)" },
+    { label: "Abținere", count: s.abstain, color: "var(--text-muted)" },
     { label: "Absent", count: s.absent, color: "var(--color-input)" },
   ];
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl p-6">
+    <section 
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+      }}
+    >
       <button
         onClick={() => setVotesExpanded(v => !v)}
-        className="flex items-center justify-between w-full bg-none border-none cursor-pointer p-0 mb-4 group"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+          outline: "none"
+        }}
       >
-        <div className="text-[10.5px] font-bold tracking-wider uppercase text-gray-400 group-hover:text-gray-600 transition-colors">
+        <div style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
           Voturi
         </div>
         <ChevronDown
           size={16}
-          className={`text-gray-300 transition-transform duration-200 ${votesExpanded ? "rotate-180" : ""}`}
+          style={{ 
+            color: "var(--text-muted)", 
+            transition: "transform 0.2s", 
+            transform: votesExpanded ? "rotate(180deg)" : "rotate(0deg)" 
+          }}
         />
       </button>
 
-      <div className="flex flex-col gap-3">
-        {bars.map(({ label, count, color }) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {voteBars.map(({ label, count, color }) => (
           <div key={label}>
-            <div className="flex justify-between text-[13px] mb-1.5">
-              <span className="text-gray-600 font-medium">{label}</span>
-              <span className="text-gray-900 font-bold">{count} ({pct(count)}%)</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
+              <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{label}</span>
+              <span style={{ color: "var(--text)", fontWeight: 700 }}>{count} ({pct(count)}%)</span>
             </div>
-            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+            <div style={{ borderRadius: "999px", background: "var(--bg)", overflow: "hidden", height: "6px" }}>
               <div
-                className="h-full rounded-full"
-                style={{ width: `${pct(count)}%`, backgroundColor: color }}
+                style={{ height: "100%", borderRadius: "999px", width: `${pct(count)}%`, backgroundColor: color }}
               />
             </div>
           </div>
@@ -87,17 +122,22 @@ export function BillVotes({ votes }: BillVotesProps) {
       </div>
 
       {votesExpanded && (
-        <div className="mt-5 pt-5 border-t border-gray-100">
-          <div className="flex gap-2 flex-wrap mb-4">
+        <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
             {(["Toți", "Pentru", "Contra", "Abținere", "Absent"] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setVoteFilter(tab)}
-                className={`text-[11.5px] px-2.5 py-1 rounded-md cursor-pointer transition-colors ${
-                  voteFilter === tab
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-500 border border-gray-200 hover:border-gray-300"
-                }`}
+                style={{
+                  fontSize: "11.5px",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  border: "1px solid var(--border)",
+                  background: voteFilter === tab ? "var(--primary)" : "var(--surface)",
+                  color: voteFilter === tab ? "var(--primary-text)" : "var(--text-muted)",
+                }}
               >
                 {tab}
               </button>
@@ -108,39 +148,54 @@ export function BillVotes({ votes }: BillVotesProps) {
             <select
               value={partyFilter}
               onChange={e => setPartyFilter(e.target.value)}
-              className="w-full p-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 mb-4 focus:outline-none focus:ring-1 focus:ring-gray-900"
+              style={{
+                width: "100%",
+                padding: "8px",
+                fontSize: "13px",
+                border: "1px solid var(--border)",
+                borderRadius: "8px",
+                background: "var(--surface)",
+                color: "var(--text)",
+                marginBottom: "16px",
+                outline: "none"
+              }}
             >
               <option>Toate Partidele</option>
               {uniqueParties.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           )}
 
-          <div className="max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+          <div style={{ maxHeight: "320px", overflowY: "auto", paddingRight: "4px" }}>
             {filteredMPs.length === 0 ? (
-              <div className="text-[13px] text-gray-400 text-center py-4">Nicio înregistrare.</div>
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", textAlign: "center", padding: "16px 0" }}>Nicio înregistrare.</div>
             ) : (
-              <div className="flex flex-col">
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {filteredMPs.map(mp => (
                   <div
                     key={`${mp.mp_slug}-${mp.bucket}`}
-                    className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 gap-3"
+                    style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "space-between", 
+                      padding: "8px 0", 
+                      borderBottom: "1px solid var(--bg)",
+                      gap: "12px"
+                    }}
                   >
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-semibold text-gray-900 truncate">{mp.mp_name}</div>
-                      <div className="text-[11.5px] text-gray-400">{mp.party}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mp.mp_name}</div>
+                      <div style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>{mp.party}</div>
                     </div>
                     <span style={{ 
-                      fontSize: "11px", 
-                      fontWeight: "bold", 
+                      fontSize: "10px", 
+                      fontWeight: 700, 
                       flexShrink: 0, 
                       padding: "2px 8px", 
                       borderRadius: "4px",
                       color: mp.bucket === "Pentru" ? "var(--color-success)" : 
                              mp.bucket === "Contra" ? "var(--color-destructive)" : 
                              "var(--text-muted)",
-                      backgroundColor: mp.bucket === "Pentru" ? "color-mix(in srgb, var(--color-success) 10%, white)" : 
-                                       mp.bucket === "Contra" ? "color-mix(in srgb, var(--color-destructive) 10%, white)" : 
-                                       "var(--color-muted)"
+                      backgroundColor: "var(--bg)"
                     }}>
                       {mp.bucket}
                     </span>
@@ -149,7 +204,7 @@ export function BillVotes({ votes }: BillVotesProps) {
               </div>
             )}
           </div>
-          <div className="text-[11px] text-gray-300 mt-3 font-medium">
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "12px", fontWeight: 500 }}>
             {filteredMPs.length} / {allVotedMPs.length} voturi
           </div>
         </div>

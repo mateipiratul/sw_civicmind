@@ -15,43 +15,80 @@ export function BillImpact({ bill }: BillImpactProps) {
       title="Categorii și Grupuri Afectate"
       icon={<Scale size={20} />}
     >
-      <div className="flex flex-col gap-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         <div>
-          <div className="text-[10.5px] font-bold tracking-wider uppercase text-gray-400 mb-3">
+          <div style={{ 
+            fontSize: "10.5px", 
+            fontWeight: 700, 
+            color: "var(--text-muted)", 
+            textTransform: "uppercase", 
+            letterSpacing: "0.05em", 
+            marginBottom: "12px" 
+          }}>
             Domenii de impact
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             {ai?.impact_categories?.length ? (
               ai.impact_categories.map((category) => (
                 <span
                   key={category}
-                  className="inline-flex items-center px-3.5 py-2 rounded-full bg-gray-900 text-white text-[13px] font-semibold"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "6px 14px",
+                    borderRadius: "999px",
+                    background: "var(--primary)",
+                    color: "var(--primary-text)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
                 >
                   {category}
                 </span>
               ))
             ) : (
-              <span className="text-sm text-gray-400 italic">Fără categorii de impact identificate.</span>
+              <span style={{ fontSize: "14px", color: "var(--text-muted)", fontStyle: "italic" }}>
+                Fără categorii de impact identificate.
+              </span>
             )}
           </div>
         </div>
 
         <div>
-          <div className="text-[10.5px] font-bold tracking-wider uppercase text-gray-400 mb-3">
+          <div style={{ 
+            fontSize: "10.5px", 
+            fontWeight: 700, 
+            color: "var(--text-muted)", 
+            textTransform: "uppercase", 
+            letterSpacing: "0.05em", 
+            marginBottom: "12px" 
+          }}>
             Profiluri vizate
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             {ai?.affected_profiles?.length ? (
               ai.affected_profiles.map((profile) => (
                 <span
                   key={profile}
-                  className="inline-flex items-center px-3.5 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-700 text-[13px] font-semibold"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "6px 14px",
+                    borderRadius: "999px",
+                    background: "var(--color-muted)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
                 >
                   {profile}
                 </span>
               ))
             ) : (
-              <span className="text-sm text-gray-400 italic">Nu au fost extrase profiluri specifice.</span>
+              <span style={{ fontSize: "14px", color: "var(--text-muted)", fontStyle: "italic" }}>
+                Nu au fost extrase profiluri specifice.
+              </span>
             )}
           </div>
         </div>
