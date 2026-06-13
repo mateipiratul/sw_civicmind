@@ -96,6 +96,7 @@ CivicMind integrates a multi-agent architecture (using selfhosted Qwen 3.5 & Lan
 * **As a new user**, I want to create a citizen profile by selecting my county and specific interests (like IT, Education, or Freelance) so that my feed is tailored strictly to the topics that matter to me.
 * **As a busy professional**, I want to receive relevant Push alerts only when projects affecting my selected impact categories are being voted on so that I don't get overwhelmed by political noise.
 * **As an engaged constituent who wants their voice heard**, I want to send an official email to my local deputy with a single click using AI templates so that I can easily express my polite support or protest without spending time writing a formal letter.
+* **As an administrator maintaining trust**, I want automated checks to run before changes are merged so that broken builds, regressions, and unsafe agent changes are caught early.
 
 ---
 
@@ -172,6 +173,7 @@ The Django backend has recently undergone a major refactor to improve performanc
 - [x] Agent 1 (Scout) Configuration: Enable processing of explanatory memorandum PDFs for AI summaries.
 - [x] Impact Score Algorithm: Refine the calculation logic based on auditor metadata.
 - [x] Add high-fidelity system diagrams (UML schemas, component boundaries, and agent workflows) to [ARCHITECTURE.md](ARCHITECTURE.md).
+- [x] Add CI pipeline for frontend lint/test/build, backend checks/tests, and non-scraper AI service health checks.
 
 ### 🟡 Short-Term Backlog
 *(No active items in the short-term backlog. Current roadmap milestones completed.)*
