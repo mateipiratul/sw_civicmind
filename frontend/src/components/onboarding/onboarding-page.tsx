@@ -30,7 +30,7 @@ export function OnboardingPage() {
         const updated = await api.updateProfile(patch);
         updateUser(updated);
       }
-    } catch (e) {
+    } catch {
       // Profile save is best-effort during onboarding, can be updated later in Profile
     } finally {
       setIsSaving(false);

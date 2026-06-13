@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
@@ -19,13 +18,9 @@ export function DashboardPage() {
   const activeCategory = search.category || undefined;
   const limit = 10;
 
-  const setPage = useCallback((newPage: number) => {
-    navigate({ to: "/", search: { page: String(newPage), ...(activeCategory ? { category: activeCategory } : {}) }, replace: false });
-  }, [navigate, activeCategory]);
-
-  const handleCategoryChange = useCallback((cat: string | undefined) => {
-    navigate({ to: "/", search: { page: "1", ...(cat ? { category: cat } : {}) }, replace: false });
-  }, [navigate]);
+  const setPage = (newPage: number) => {
+    navigate({ to: "/", search: { page: String(newPage), category: activeCategory }, replace: false });
+  };
 
   // Bills Query
   const billsQuery = useQuery({

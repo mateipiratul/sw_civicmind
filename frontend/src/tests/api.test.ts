@@ -124,4 +124,23 @@ describe("API client", () => {
       expect(req.headers.get("Authorization")).toBe("Token test-token");
     });
   });
+
+  describe("streamRagChat", () => {
+    it("should reject when the stream emits an error event", async () => {
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"type":"error","error":"Bad context"}\n'));
+          controller.close();
+        },
+      });
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        body,
+      });
+
+      await expect(api.streamRagChat("test question")).rejects.toThrow("Bad context");
+    });
+  });
 });

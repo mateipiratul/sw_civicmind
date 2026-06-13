@@ -1,5 +1,4 @@
 import { JSDOM } from "jsdom";
-import React from "react";
 
 // Initialize DOM environment immediately
 if (typeof document === "undefined") {

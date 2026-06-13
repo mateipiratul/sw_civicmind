@@ -60,7 +60,8 @@ export function cleanText(text?: string | null): string {
     .replace(/ĂŁ/g, 'ă');
     
   // Strip control characters that cause squares
-  result = result.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F\u00AD\u200B-\u200F\u2028-\u202F\uFEFF]/g, '');
+  // eslint-disable-next-line no-control-regex
+  result = result.replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u2028-\u202F\uFEFF]/g, '');
 
   // Handle remaining single characters that are part of Mojibake
   result = result

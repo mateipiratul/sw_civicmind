@@ -14,7 +14,7 @@ export const handlers = [
       const body = (await request.json()) as any;
       const updatedUser = db.updateUser(body);
       return HttpResponse.json(updatedUser);
-    } catch (error) {
+    } catch {
       return HttpResponse.json({ error: "Failed to update profile" }, { status: 400 });
     }
   }),
@@ -25,7 +25,7 @@ export const handlers = [
       const body = (await request.json()) as any;
       const updatedUser = db.updateUser(body);
       return HttpResponse.json(updatedUser);
-    } catch (error) {
+    } catch {
       return HttpResponse.json({ error: "Failed to update profile" }, { status: 400 });
     }
   }),

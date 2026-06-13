@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import type { Parliamentarian } from "@/lib/api";
-import { cleanText, extractBillTitleAndBody } from "@/lib/utils";
+import { cleanText } from "@/lib/utils";
 
 function scoreColor(score?: number | null) {
   if (score == null) return "var(--text-muted)";

@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { Route as AdminStatsRoute } from "../routes/admin/stats";
 import { Route as AdminUsersRoute } from "../routes/admin/users";
-import { api, AdminStats, PaginatedUsers } from "@/lib/api";
+import { api, PaginatedUsers } from "@/lib/api";
 
 // Mock api
 vi.mock("@/lib/api", () => ({
