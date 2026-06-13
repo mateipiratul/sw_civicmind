@@ -5,6 +5,7 @@ from .models import (
     KeyIdea, BillArgument, PartyVoteResult
 )
 from apps.parliamentarians.models import MPVote
+from apps.parliamentarians.text_utils import repair_text
 
 class MPVoteInBillSerializer(serializers.ModelSerializer):
     mp_slug = serializers.CharField(source='parliamentarian.mp_slug', read_only=True)
@@ -13,6 +14,13 @@ class MPVoteInBillSerializer(serializers.ModelSerializer):
     class Meta:
         model = MPVote
         fields = ['mp_slug', 'mp_name', 'party', 'vote']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['mp_name'] = repair_text(data.get('mp_name'))
+        data['party'] = repair_text(data.get('party'))
+        data['vote'] = repair_text(data.get('vote'))
+        return data
 
 class ImpactCategorySerializer(serializers.ModelSerializer):
     class Meta:

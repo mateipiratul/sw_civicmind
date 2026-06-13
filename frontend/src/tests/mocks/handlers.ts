@@ -30,8 +30,8 @@ export const handlers = [
     }
   }),
 
-  // GET bills metadata
-  http.get("http://localhost:4001/api/bills/metadata/", () => {
+  // GET questionnaire metadata
+  http.get("http://localhost:4001/api/profiles/questionnaire/", () => {
     return HttpResponse.json({
       impact_categories: ["Justiție", "Sănătate", "Educație"],
       counties: ["București", "Cluj", "Timiș"],

@@ -272,8 +272,8 @@ export function ProfilePage() {
   const navigate = useNavigate();
 
   const { data: metadata } = useQuery({
-    queryKey: ["metadata"],
-    queryFn: () => api.getMetadata(),
+    queryKey: ["questionnaire-metadata"],
+    queryFn: () => api.getQuestionnaireMetadata(),
   });
 
   useEffect(() => {

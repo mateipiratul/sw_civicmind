@@ -52,7 +52,12 @@ describe("API client", () => {
       const regReq = fetchMock.mock.calls[1][0];
       expect(regReq.url).toBe("http://localhost:4001/api/auth/register/");
       expect(regReq.method).toBe("POST");
-      expect(await regReq.json()).toEqual({ username: "testuser", email: "test@example.com", password: "password" });
+      expect(await regReq.json()).toEqual({
+        username: "testuser",
+        email: "test@example.com",
+        password1: "password",
+        password2: "password",
+      });
 
       // The returned result should be the profile from MSW / db.ts
       expect(result).toEqual(db.getUser());
@@ -90,6 +95,29 @@ describe("API client", () => {
       expect(await loginReq.json()).toEqual({ username: "testuser", password: "password" });
 
       expect(result).toEqual(db.getUser());
+    });
+  });
+
+  describe("getQuestionnaireMetadata", () => {
+    it("should normalize questionnaire options for onboarding", async () => {
+      const { server } = await import("./setup");
+      const { http, HttpResponse } = await import("msw");
+
+      server.use(
+        http.get("http://localhost:4001/api/profiles/questionnaire/", () => {
+          return HttpResponse.json({
+            personal_interest_areas: [
+              { value: "health", label: "Sanatate" },
+              { value: "education", label: "Educatie" },
+            ],
+          });
+        })
+      );
+
+      const result = await api.getQuestionnaireMetadata();
+
+      expect(result.impact_categories).toEqual(["Sanatate", "Educatie"]);
+      expect(result.counties).toContain("Cluj");
     });
   });
 

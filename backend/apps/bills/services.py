@@ -1,6 +1,7 @@
 from django.db.models import Q, Case, When, Value, IntegerField, Prefetch, Exists, OuterRef
 from .models import Bill, ImpactCategory, AffectedProfile
 from apps.parliamentarians.models import Parliamentarian, MPVote
+from apps.parliamentarians.text_utils import normalized_text_key
 from apps.search.services import VOTE_BUCKETS
 
 class BillService:
@@ -113,4 +114,19 @@ class VoteAnalyticsService:
             bucket_key = VOTE_BUCKETS.get((row['vote'] or "").casefold(), 'abstain')
             buckets[bucket_key].append(row)
             
-        return buckets
+        return {
+            bucket: VoteAnalyticsService._dedupe_vote_rows(rows)
+            for bucket, rows in buckets.items()
+        }
+
+    @staticmethod
+    def _dedupe_vote_rows(rows):
+        deduped = {}
+        for row in rows:
+            key = (
+                normalized_text_key(row.get('mp_name')),
+                normalized_text_key(row.get('party')),
+                normalized_text_key(row.get('vote')),
+            )
+            deduped.setdefault(key, row)
+        return list(deduped.values())

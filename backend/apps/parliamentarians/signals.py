@@ -4,6 +4,7 @@ from django.db.models import Count, Q
 from .models import MPVote, ImpactScore, Parliamentarian
 from django.utils import timezone
 from apps.core.services import CacheService
+from .score_utils import compute_score
 
 @receiver([post_save, post_delete], sender=MPVote)
 def update_impact_score_on_vote(sender, instance, **kwargs):
@@ -36,6 +37,11 @@ def update_impact_score_on_vote(sender, instance, **kwargs):
     ImpactScore.objects.update_or_create(
         parliamentarian_id=mp_slug,
         defaults={
+            'score': compute_score(
+                vote_stats['total'] or 0,
+                vote_stats['absent_count'] or 0,
+                (vote_stats['for_count'] or 0) + (vote_stats['against_count'] or 0),
+            ),
             'total_votes': vote_stats['total'] or 0,
             'for_count': vote_stats['for_count'] or 0,
             'against_count': vote_stats['against_count'] or 0,

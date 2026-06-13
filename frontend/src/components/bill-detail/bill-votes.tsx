@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { BillVotesResponse } from "@/lib/api";
+import { cleanText } from "@/lib/utils";
 
 interface BillVotesProps {
   votes: BillVotesResponse | null;
@@ -14,10 +15,10 @@ export function BillVotes({ votes }: BillVotesProps) {
   const allVotedMPs = useMemo(() => {
     if (!votes) return [];
     return [
-      ...votes.votes.for.map(v => ({ ...v, bucket: "Pentru" as const })),
-      ...votes.votes.against.map(v => ({ ...v, bucket: "Contra" as const })),
-      ...votes.votes.abstain.map(v => ({ ...v, bucket: "Abținere" as const })),
-      ...votes.votes.absent.map(v => ({ ...v, bucket: "Absent" as const })),
+      ...votes.votes.for.map(v => ({ ...v, mp_name: cleanText(v.mp_name), party: cleanText(v.party), bucket: "Pentru" as const })),
+      ...votes.votes.against.map(v => ({ ...v, mp_name: cleanText(v.mp_name), party: cleanText(v.party), bucket: "Contra" as const })),
+      ...votes.votes.abstain.map(v => ({ ...v, mp_name: cleanText(v.mp_name), party: cleanText(v.party), bucket: "Abținere" as const })),
+      ...votes.votes.absent.map(v => ({ ...v, mp_name: cleanText(v.mp_name), party: cleanText(v.party), bucket: "Absent" as const })),
     ];
   }, [votes]);
 

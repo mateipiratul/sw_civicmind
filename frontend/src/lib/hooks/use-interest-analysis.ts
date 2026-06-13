@@ -17,7 +17,7 @@ export function useInterestAnalysis() {
     setIsAnalyzing(true);
     setError(null);
     try {
-      const metadata = await api.getMetadata();
+      const metadata = await api.getQuestionnaireMetadata();
       const analysis = await api.analyzeOnboardingProfile(
         trimmedText,
         metadata.counties,
