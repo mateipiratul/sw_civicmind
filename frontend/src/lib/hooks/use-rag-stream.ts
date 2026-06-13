@@ -13,13 +13,7 @@ const createId = () =>
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 function buildErrorMessage(error: unknown) {
-  if (error instanceof ApiError) {
-    return `Conversația nu a reușit: ${error.message}`;
-  }
-  if (error instanceof Error && error.message) {
-    return `Conversația nu a reușit: ${error.message}`;
-  }
-  return "Conversația nu a reușit. Verifică conexiunea și încearcă din nou.";
+  return "Ne pare rău, a apărut o problemă la conectarea cu asistentul AI. Te rugăm să încerci din nou mai târziu.";
 }
 
 export function useRagStream(initialMessages: ChatMessage[] = []) {
@@ -100,6 +94,7 @@ export function useRagStream(initialMessages: ChatMessage[] = []) {
       setResolvedSource(result.resolved_source ?? null);
 
     } catch (error) {
+      console.error("RAG Chat Stream Error:", error);
       const errorMessage = buildErrorMessage(error);
       setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: errorMessage }]);
       setSources([]);

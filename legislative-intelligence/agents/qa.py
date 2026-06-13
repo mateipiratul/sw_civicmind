@@ -10,6 +10,8 @@ import os
 import logging
 import time
 import httpx
+import random
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,25 @@ _MAX_OCR_CHARS = 6_000
 from env_setup import get_mistral_api_key, SDKError
 
 
+class ThreadSafeRateLimiter:
+    def __init__(self, min_interval_seconds: float = 1.5):
+        self.min_interval = min_interval_seconds
+        self.last_request_time = 0.0
+        self.lock = threading.Lock()
+
+    def wait(self):
+        with self.lock:
+            now = time.time()
+            elapsed = now - self.last_request_time
+            if elapsed < self.min_interval:
+                sleep_needed = self.min_interval - elapsed
+                time.sleep(sleep_needed)
+            self.last_request_time = time.time()
+
+
+_RATE_LIMITER = ThreadSafeRateLimiter(min_interval_seconds=1.5)
+
+
 def _mistral() -> Mistral:
     return Mistral(api_key=get_mistral_api_key(raise_error=True))
 
@@ -36,57 +57,89 @@ def _mistral() -> Mistral:
 # ── Nodes ─────────────────────────────────────────────────────────────────────
 
 def load_context(state: QAState) -> dict:
-    bill = state["bill"]
-    ai   = bill.get("ai_analysis") or {}
-    ocr  = bill.get("ocr_content") or {}
+    try:
+        bill = state["bill"]
+        ai   = bill.get("ai_analysis") or {}
+        ocr  = bill.get("ocr_content") or {}
 
-    # Build context string
-    key_ideas = "\n".join(f"- {k}" for k in ai.get("key_ideas", []))
-    pro_args  = "\n".join(f"- {a}" for a in (ai.get("arguments") or {}).get("pro", []))
-    con_args  = "\n".join(f"- {a}" for a in (ai.get("arguments") or {}).get("con", []))
+        # Build context string
+        key_ideas = "\n".join(f"- {k}" for k in ai.get("key_ideas", []))
+        
+        # Safe extraction of pro/con arguments
+        args = ai.get("arguments") or {}
+        if not isinstance(args, dict):
+            args = {}
+        
+        pro_args  = "\n".join(f"- {a}" for a in args.get("pro", []))
+        con_args  = "\n".join(f"- {a}" for a in args.get("con", []))
 
-    # Use expunere as primary OCR context
-    ocr_text = (ocr.get("expunere_de_motive") or "")[:_MAX_OCR_CHARS]
+        # Use expunere as primary OCR context
+        ocr_text = (ocr.get("expunere_de_motive") or "")[:_MAX_OCR_CHARS]
 
-    context = QA_USER.format(
-        title     = bill.get("title", bill.get("bill_number", "")),
-        key_ideas = key_ideas or "Rezumatul nu este disponibil.",
-        pro_args  = pro_args  or "—",
-        con_args  = con_args  or "—",
-        ocr_text  = ocr_text  or "Textul legii nu este disponibil.",
-        question  = state["question"],
-    )
-    return {"context": context, "error": None}
+        context = QA_USER.format(
+            title     = bill.get("title", bill.get("bill_number", "")),
+            key_ideas = key_ideas or "Rezumatul nu este disponibil.",
+            pro_args  = pro_args  or "—",
+            con_args  = con_args  or "—",
+            ocr_text  = ocr_text  or "Textul legii nu este disponibil.",
+            question  = state["question"],
+        )
+        return {"context": context, "error": None}
+    except Exception as exc:
+        logger.error(f"load_context failed: {exc}")
+        return {"context": "", "error": f"Eroare la procesarea contextului legii: {exc}"}
 
 
 def answer(state: QAState) -> dict:
     if state.get("error"):
-        return {"answer": "Ne pare rău, a apărut o eroare la procesarea întrebării."}
+        return {"answer": f"Ne pare rău, a apărut o eroare la procesarea întrebării: {state['error']}"}
 
-    _QA_RETRIES = 2
-    _QA_RETRY_DELAY = 3
-
-    client = _mistral()
-    last_exc = None
-    for attempt in range(_QA_RETRIES + 1):
-        try:
-            resp = client.chat.complete(
-                model=_MODEL,
-                messages=[
-                    {"role": "system", "content": QA_SYSTEM},
-                    {"role": "user",   "content": state["context"]},
-                ],
-                temperature=0.3,
-                max_tokens=400,
-            )
-            return {"answer": resp.choices[0].message.content.strip()}
-        except Exception as exc:
-            last_exc = exc
-            if attempt < _QA_RETRIES:
-                logger.warning(f"answer failed: {exc}. Retrying in {_QA_RETRY_DELAY * (attempt + 1)}s...")
-                time.sleep(_QA_RETRY_DELAY * (attempt + 1))
-            else:
-                return {"answer": f"Eroare: {exc}", "error": str(exc)}
+    try:
+        _QA_RETRIES = 8
+        client = _mistral()
+        last_exc = None
+        
+        for attempt in range(_QA_RETRIES):
+            _RATE_LIMITER.wait()
+            try:
+                resp = client.chat.complete(
+                    model=_MODEL,
+                    messages=[
+                        {"role": "system", "content": QA_SYSTEM},
+                        {"role": "user",   "content": state["context"]},
+                    ],
+                    temperature=0.3,
+                    max_tokens=400,
+                )
+                return {"answer": resp.choices[0].message.content.strip()}
+            except Exception as exc:
+                message = str(exc).casefold()
+                is_retryable = (
+                    "rate limit" in message
+                    or "status 429" in message
+                    or "1300" in message
+                    or "rate_limited" in message
+                    or "too many requests" in message
+                )
+                if not is_retryable:
+                    return {"answer": f"Eroare la comunicarea cu AI: {exc}", "error": str(exc)}
+                
+                last_exc = exc
+                if attempt < _QA_RETRIES - 1:
+                    base_delay = 1.5 * (1.8 ** attempt)
+                    sleep_time = base_delay + random.uniform(0.5, 2.5)
+                    logger.warning(
+                        f"Mistral chat complete (QA) rate limited (attempt {attempt + 1}/{_QA_RETRIES}). "
+                        f"Retrying in {sleep_time:.2f}s... Error: {exc}"
+                    )
+                    time.sleep(sleep_time)
+                else:
+                    return {"answer": f"Eroare (rate limit depășit): {exc}", "error": str(exc)}
+        
+        return {"answer": f"Eroare: {last_exc}", "error": str(last_exc)}
+    except Exception as exc:
+        logger.error(f"answer failed: {exc}")
+        return {"answer": f"Eroare generală la procesarea răspunsului: {exc}", "error": str(exc)}
 
 
 # ── Graph ─────────────────────────────────────────────────────────────────────
@@ -129,3 +182,4 @@ def run_qa(bill: dict, question: str) -> str:
     }
     result = graph.invoke(initial)
     return result.get("answer", "")
+
