@@ -214,6 +214,52 @@ npm test -- --run src/tests/api.test.ts src/tests/profile.test.tsx src/tests/bil
 
 Rezultat dupa repararea debifarii intereselor: `13 tests`, `OK`.
 
+## Refactor UI/UX onboarding
+
+- Transformat onboarding-ul dintr-un card cu header duplicat intr-o pagina de setup care respecta flow-ul aplicatiei: header-ul global ramane contextul principal, iar cardul intern are stepper si workspace dedicat.
+- Adaugat panou contextual in stanga cu explicatii scurte despre ce face personalizarea feed-ului si cum pot fi schimbate preferintele ulterior.
+- Ecranul initial are acum doua alegeri clare, cu copy scurt si CTA-uri consecvente: AI rapid sau selectie manuala.
+- Modurile AI si manual folosesc acelasi limbaj vizual: back button, intro clar, carduri de camp, chip-uri de interese, actiune primara si note de ajutor.
+- Salvarea preferintelor nu mai avanseaza optimist catre ecranul final inainte de raspunsul API; daca salvarea esueaza, utilizatorul vede eroare si ramane in pasul curent.
+- Butoanele de continuare sunt dezactivate in timp ce se salveaza si, in manual mode, pana exista cel putin un judet sau un interes selectat.
+- Ecranul final de onboarding a fost simplificat cu confirmare clara si rezumat al preferintelor salvate.
+
+```powershell
+npm test -- --run src/tests/api.test.ts src/tests/profile.test.tsx src/tests/bill-card.test.tsx
+```
+
+Rezultat dupa refactorul onboarding: `13 tests`, `OK`.
+
+```powershell
+npm run build
+```
+
+Rezultat: esuat in continuare pe aceleasi erori TypeScript existente in TanStack Router, unde alte componente navigheaza catre `/` fara parametrul `search`. Refactorul onboarding nu introduce erori noi de tipuri.
+
+## Aliniere onboarding cu stilul Feed
+
+- Eliminat panoul lateral inchis din onboarding ca pagina sa nu mai arate ca un landing page separat.
+- Redus layout-ul la un container central de tip preferences/settings, cu max-width similar feed-ului si card alb cu border subtil.
+- Pasul curent este afisat ca label compact (`Pasul 1 din 2`), iar progress bar-ul ramane foarte subtire si discret.
+- Titlul si subtitlurile au fost reduse la scara vizuala a aplicatiei: mai apropiate de Feed, fara hero typography supradimensionat.
+- Optiunile AI/manual si interesele au fost restilizate ca elemente neutre de aplicatie: fundal alb, borduri fine, hover calm, radius 12-16px.
+- Starea selectata pentru interese foloseste accent verde subtil: border verde, fundal verde foarte deschis si text verde inchis, nu blocuri puternic colorate.
+- Butonul principal foloseste accentul verde CivicMind, iar actiunile secundare raman ghost/border, compacte.
+- Fundalul onboarding foloseste acelasi limbaj luminos cu pattern discret de puncte, fara radial/marketing treatment dominant.
+- Nu a fost schimbata logica sau ordinea flow-ului; modificarile sunt strict de layout, styling, spacing si ierarhie vizuala.
+
+```powershell
+npm test -- --run src/tests/api.test.ts src/tests/profile.test.tsx src/tests/bill-card.test.tsx
+```
+
+Rezultat dupa alinierea onboarding cu Feed: `13 tests`, `OK`.
+
+```powershell
+npm run build
+```
+
+Rezultat: esuat in continuare pe aceleasi erori TypeScript existente in TanStack Router, unde alte componente navigheaza catre `/` fara parametrul `search`. Onboarding-ul nu apare in erori.
+
 ## Observatii
 
 - `frontend/src/routeTree.gen.ts` apare uneori modificat din cauza generatorului TanStack/Vite si a line endings. Nu este o schimbare functionala facuta manual.

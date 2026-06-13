@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface DoneScreenProps {
@@ -30,23 +31,25 @@ export function DoneScreen({ county, interests }: DoneScreenProps) {
   }, []);
 
   return (
-    <div className="text-center py-8 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
-      <div className="text-5xl mb-6 scale-110">🎉</div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">Profil configurat!</h2>
-      <p className="text-[15px] text-gray-500 leading-relaxed max-w-sm mb-8">
+    <div className="onboarding-done-screen">
+      <div className="onboarding-done-icon">
+        <CheckCircle2 size={34} />
+      </div>
+      <h2>Profil configurat</h2>
+      <p>
         {county || interests.length > 0 ? (
           <>
-            Am salvat preferințele tale: <strong className="text-gray-900">{summary}</strong>
+            Am salvat preferințele tale: <strong>{summary}</strong>
             {hasMore && <span> și altele</span>}.
           </>
         ) : (
           "Poți seta preferințele oricând din pagina de Profil."
         )}
       </p>
-      
-      <div className="flex items-center gap-3 text-sm text-gray-400 font-medium bg-gray-50 px-4 py-2 rounded-full">
-        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />
-        Ești redirecționat către feed...
+
+      <div className="onboarding-redirect-note">
+        <span />
+        Te trimitem către feed-ul personalizat...
       </div>
     </div>
   );
