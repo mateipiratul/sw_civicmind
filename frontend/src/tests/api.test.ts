@@ -117,6 +117,10 @@ describe("API client", () => {
       const result = await api.getQuestionnaireMetadata();
 
       expect(result.impact_categories).toEqual(["Sanatate", "Educatie"]);
+      expect(result.impact_category_options).toEqual([
+        { value: "health", label: "Sanatate" },
+        { value: "education", label: "Educatie" },
+      ]);
       expect(result.counties).toContain("Cluj");
     });
   });

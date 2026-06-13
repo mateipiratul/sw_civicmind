@@ -1,11 +1,33 @@
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
 interface DoneScreenProps {
   county: string | null;
   interests: string[];
 }
 
 export function DoneScreen({ county, interests }: DoneScreenProps) {
-  const summary = [county, ...interests.slice(0, 2)].filter(Boolean).join(", ");
+  const [interestLabels, setInterestLabels] = useState<Record<string, string>>({});
+  const displayInterests = interests.map((interest) => interestLabels[interest] ?? interest);
+  const summary = [county, ...displayInterests.slice(0, 2)].filter(Boolean).join(", ");
   const hasMore = interests.length > 2;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api.getQuestionnaireMetadata()
+      .then((metadata) => {
+        if (cancelled) return;
+        setInterestLabels(
+          Object.fromEntries(metadata.impact_category_options.map((option) => [option.value, option.label]))
+        );
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="text-center py-8 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">

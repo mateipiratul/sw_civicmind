@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, RefreshCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import type { QuestionnaireMetadata, QuestionnaireOption } from "@/lib/api";
 
 interface ManualModeProps {
   onComplete: (county: string | null, interests: string[]) => void;
@@ -9,11 +10,18 @@ interface ManualModeProps {
 }
 
 export function ManualMode({ onComplete, onBack }: ManualModeProps) {
-  const [metadata, setMetadata] = useState<{ impact_categories: string[]; counties: string[] } | null>(null);
+  const [metadata, setMetadata] = useState<QuestionnaireMetadata | null>(null);
   const [metadataError, setMetadataError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [county, setCounty] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+
+  const interestOptions: QuestionnaireOption[] =
+    metadata?.impact_category_options?.length
+      ? metadata.impact_category_options
+      : metadata?.personal_interest_areas?.length
+        ? metadata.personal_interest_areas
+        : (metadata?.impact_categories || []).map((category) => ({ value: category, label: category }));
 
   useEffect(() => {
     let cancelled = false;
@@ -111,13 +119,13 @@ export function ManualMode({ onComplete, onBack }: ManualModeProps) {
           </div>
         ) : metadata ? (
           <div className="flex flex-wrap gap-2">
-            {metadata.impact_categories.map((cat) => {
-              const active = selected.includes(cat);
+            {interestOptions.map((option) => {
+              const active = selected.includes(option.value);
               return (
                 <button
-                  key={cat}
+                  key={option.value}
                   type="button"
-                  onClick={() => toggle(cat)}
+                  onClick={() => toggle(option.value)}
                   className={`flex items-center gap-2 rounded-full border-2 px-4 py-2 text-[13px] font-black shadow-sm transition-all ${
                     active
                       ? "border-gray-950 bg-gray-950 text-white shadow-gray-100"
@@ -125,7 +133,7 @@ export function ManualMode({ onComplete, onBack }: ManualModeProps) {
                   }`}
                 >
                   {active && <Check size={14} />}
-                  {cat}
+                  {option.label}
                 </button>
               );
             })}

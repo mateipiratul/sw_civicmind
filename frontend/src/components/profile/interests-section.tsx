@@ -1,17 +1,18 @@
 import { useState, useRef } from "react";
 import { Sparkles, Check, Send, RotateCcw } from "lucide-react";
 import { useInterestAnalysis } from "@/lib/hooks/use-interest-analysis";
+import type { QuestionnaireOption } from "@/lib/api";
 
 interface InterestsSectionProps {
   selectedInterests: string[];
-  allCategories: string[];
+  interestOptions: QuestionnaireOption[];
   onToggle: (interest: string) => void;
   onAiComplete: (county: string | null, interests: string[]) => void;
 }
 
 export function InterestsSection({
   selectedInterests,
-  allCategories,
+  interestOptions,
   onToggle,
   onAiComplete,
 }: InterestsSectionProps) {
@@ -22,11 +23,18 @@ export function InterestsSection({
   const { analyze, isAnalyzing, error } = useInterestAnalysis();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const toInterestValue = (interest: string) =>
+    interestOptions.find((option) => option.value === interest || option.label === interest)?.value ?? interest;
+
+  const toInterestLabel = (interest: string) =>
+    interestOptions.find((option) => option.value === interest || option.label === interest)?.label ?? interest;
+
   const handleAiAnalyze = async () => {
     const result = await analyze(aiInput);
     if (result) {
-      setAiSuggested(result.interests);
-      onAiComplete(result.county, result.interests);
+      const normalizedInterests = Array.from(new Set(result.interests.map(toInterestValue)));
+      setAiSuggested(normalizedInterests);
+      onAiComplete(result.county, normalizedInterests);
       setAiStep("confirm");
     }
   };
@@ -90,16 +98,16 @@ export function InterestsSection({
       {/* Manual mode: pill grid */}
       {mode === "manual" && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 2 }}>
-          {allCategories.length === 0 && (
+          {interestOptions.length === 0 && (
             <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Se încarcă categoriile...</span>
           )}
-          {allCategories.map(cat => {
-            const active = selectedInterests.includes(cat);
+          {interestOptions.map((option) => {
+            const active = selectedInterests.includes(option.value);
             return (
               <button
-                key={cat}
+                key={option.value}
                 type="button"
-                onClick={() => onToggle(cat)}
+                onClick={() => onToggle(option.value)}
                 style={{
                   padding: "6px 14px",
                   borderRadius: 999,
@@ -115,7 +123,7 @@ export function InterestsSection({
                 onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.borderColor = "var(--text-muted)"; (e.currentTarget as HTMLElement).style.color = "var(--text)"; } }}
                 onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; } }}
               >
-                {cat}
+                {option.label}
               </button>
             );
           })}
@@ -189,14 +197,14 @@ export function InterestsSection({
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {allCategories.map(cat => {
-              const active = selectedInterests.includes(cat);
-              const wasSuggested = aiSuggested.includes(cat);
+            {interestOptions.map((option) => {
+              const active = selectedInterests.includes(option.value);
+              const wasSuggested = aiSuggested.includes(option.value);
               return (
                 <button
-                  key={cat}
+                  key={option.value}
                   type="button"
-                  onClick={() => onToggle(cat)}
+                  onClick={() => onToggle(option.value)}
                   style={{
                     padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 600,
                     border: active
@@ -212,7 +220,7 @@ export function InterestsSection({
                   }}
                 >
                   {active && <Check size={11} />}
-                  {cat}
+                  {toInterestLabel(option.value)}
                   {wasSuggested && !active && <span style={{ fontSize: 9, opacity: 0.5 }}>✦</span>}
                 </button>
               );

@@ -54,6 +54,13 @@ const optionLabels = (options: QuestionnaireOption[] | string[] | undefined): st
     .filter((label): label is string => Boolean(label));
 };
 
+const optionList = (options: QuestionnaireOption[] | string[] | undefined): QuestionnaireOption[] => {
+  if (!Array.isArray(options)) return [];
+  return options
+    .map((option) => (typeof option === "string" ? { value: option, label: option } : option))
+    .filter((option) => Boolean(option.value && option.label));
+};
+
 export class AuthModule extends BaseApiClient {
   register = async (username: string, email: string, password: string): Promise<User> => {
     await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
@@ -128,12 +135,14 @@ export class AuthModule extends BaseApiClient {
 
   getQuestionnaireMetadata = async (): Promise<QuestionnaireMetadata> => {
     const metadata = await this.request<QuestionnaireMetadata>("/api/profiles/questionnaire/");
+    const interestOptions = optionList(
+      metadata.personal_interest_areas?.length ? metadata.personal_interest_areas : metadata.impact_categories
+    );
 
     return {
       ...metadata,
-      impact_categories: metadata.impact_categories?.length
-        ? metadata.impact_categories
-        : optionLabels(metadata.personal_interest_areas),
+      impact_category_options: interestOptions,
+      impact_categories: optionLabels(interestOptions),
       counties: metadata.counties?.length ? metadata.counties : ROMANIAN_COUNTIES,
     };
   };

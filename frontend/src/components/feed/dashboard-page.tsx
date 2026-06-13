@@ -18,18 +18,20 @@ export function DashboardPage() {
   const page = Math.max(1, parseInt(search.page ?? "1", 10) || 1);
   const activeCategory = search.category || undefined;
   const limit = 10;
+  const userInterestKey = (user?.interests || []).slice().sort().join("|");
+  const userPersonaKey = (user?.persona_tags || []).slice().sort().join("|");
 
   const setPage = useCallback((newPage: number) => {
-    navigate({ to: "/", search: { page: String(newPage), ...(activeCategory ? { category: activeCategory } : {}) }, replace: false });
+    navigate({ to: "/", search: { page: String(newPage), category: activeCategory }, replace: false });
   }, [navigate, activeCategory]);
 
   const handleCategoryChange = useCallback((cat: string | undefined) => {
-    navigate({ to: "/", search: { page: "1", ...(cat ? { category: cat } : {}) }, replace: false });
+    navigate({ to: "/", search: { page: "1", category: cat }, replace: false });
   }, [navigate]);
 
   // Bills Query
   const billsQuery = useQuery({
-    queryKey: ["bills-feed", page, activeCategory, isAuthenticated],
+    queryKey: ["bills-feed", page, activeCategory, isAuthenticated, userInterestKey, userPersonaKey],
     queryFn: async () => {
       if (isAuthenticated && activeCategory === undefined) {
         try {

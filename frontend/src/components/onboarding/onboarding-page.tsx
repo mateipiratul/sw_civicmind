@@ -34,9 +34,9 @@ export function OnboardingPage() {
     setSavedInterests(interests);
     setMode("done");
     try {
-      const patch: { county?: string; interests?: string[] } = {};
+      const patch: { county?: string; personal_interest_areas?: string[] } = {};
       if (county) patch.county = county;
-      if (interests.length > 0) patch.interests = interests;
+      if (interests.length > 0) patch.personal_interest_areas = interests;
       if (Object.keys(patch).length > 0) {
         const updated = await api.updateProfile(patch);
         updateUser(updated);

@@ -3,6 +3,7 @@ import { Send, Sparkles, X, Check, RotateCcw, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { useInterestAnalysis } from "@/lib/hooks/use-interest-analysis";
 import { Button } from "@/components/ui/button";
+import type { QuestionnaireOption } from "@/lib/api";
 
 type AiStep = "input" | "confirm";
 
@@ -19,22 +20,36 @@ export function AiMode({ onComplete, onBack }: AiModeProps) {
   const [suggestion, setSuggestion] = useState<{ county: string | null; interests: string[] } | null>(null);
   const [confirmedInterests, setConfirmedInterests] = useState<string[]>([]);
   const [confirmedCounty, setConfirmedCounty] = useState<string | null>(null);
-  const [allCategories, setAllCategories] = useState<string[]>([]);
+  const [interestOptions, setInterestOptions] = useState<QuestionnaireOption[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const toInterestValue = (interest: string) =>
+    interestOptions.find((option) => option.value === interest || option.label === interest)?.value ?? interest;
+
+  const toInterestLabel = (interest: string) =>
+    interestOptions.find((option) => option.value === interest || option.label === interest)?.label ?? interest;
 
   useEffect(() => {
     if (step === "input") {
       textareaRef.current?.focus();
     }
-    api.getQuestionnaireMetadata().then(m => setAllCategories(m.impact_categories)).catch(() => {});
+    api.getQuestionnaireMetadata()
+      .then((metadata) => {
+        const options = metadata.impact_category_options?.length
+          ? metadata.impact_category_options
+          : metadata.impact_categories.map((category) => ({ value: category, label: category }));
+        setInterestOptions(options);
+      })
+      .catch(() => {});
   }, [step]);
 
   const handleSend = async () => {
     const analysis = await analyze(input);
     if (analysis) {
-      setSuggestion(analysis);
+      const normalizedInterests = Array.from(new Set(analysis.interests.map(toInterestValue)));
+      setSuggestion({ county: analysis.county, interests: normalizedInterests });
       setConfirmedCounty(analysis.county);
-      setConfirmedInterests(analysis.interests);
+      setConfirmedInterests(normalizedInterests);
       setStep("confirm");
     }
   };
@@ -123,7 +138,7 @@ export function AiMode({ onComplete, onBack }: AiModeProps) {
             <span>Te interesează </span>
           )}
           {suggestion?.interests && suggestion.interests.length > 0 ? (
-            <strong className="font-bold">{suggestion.interests.join(", ")}.</strong>
+            <strong className="font-bold">{suggestion.interests.map(toInterestLabel).join(", ")}.</strong>
           ) : (
             <span>câteva domenii pe care le-am identificat mai jos.</span>
           )}
@@ -152,13 +167,13 @@ export function AiMode({ onComplete, onBack }: AiModeProps) {
           Domenii de interes <span className="text-gray-400 font-medium">— apasă pentru a modifica</span>
         </label>
         <div className="flex flex-wrap gap-2">
-          {allCategories.map(cat => {
-            const active = confirmedInterests.includes(cat);
-            const wasSuggested = suggestion?.interests?.includes(cat);
+          {interestOptions.map((option) => {
+            const active = confirmedInterests.includes(option.value);
+            const wasSuggested = suggestion?.interests?.includes(option.value);
             return (
               <button
-                key={cat}
-                onClick={() => toggleInterest(cat)}
+                key={option.value}
+                onClick={() => toggleInterest(option.value)}
                 className={`px-4 py-2 rounded-full border-2 text-[13px] font-bold transition-all flex items-center gap-2 shadow-sm ${
                   active
                     ? wasSuggested
@@ -168,7 +183,7 @@ export function AiMode({ onComplete, onBack }: AiModeProps) {
                 }`}
               >
                 {active && <Check size={14} />}
-                {cat}
+                {option.label}
                 {wasSuggested && !active && (
                   <span className="text-[10px] opacity-40">✦</span>
                 )}
