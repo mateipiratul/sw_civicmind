@@ -29,6 +29,7 @@ class QAState(TypedDict):
     context: str           # assembled context string passed to LLM
     answer: str
     error: Optional[str]
+    guardrail_status: Optional[dict]  # {"input_passed": bool, "output_passed": bool, "flag_reason": str}
 
 
 class MessengerState(TypedDict):
