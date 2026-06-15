@@ -76,6 +76,35 @@ class ProfileViewSetTests(APITestCase):
         self.assertIn("it", response.data["persona_tags"])
         self.assertTrue(response.data["questionnaire_completed"])
 
+    def test_me_patch_replaces_derived_interests_when_options_change(self):
+        profile = self.user.profile
+        profile.personal_interest_areas = ["taxes", "health"]
+        profile.save()
+
+        self.assertIn("fiscal", profile.interests)
+        self.assertIn("sanatate", profile.interests)
+
+        response = self.client.patch(
+            reverse("profile-me"),
+            {"personal_interest_areas": ["health"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["personal_interest_areas"], ["health"])
+        self.assertIn("sanatate", response.data["interests"])
+        self.assertNotIn("fiscal", response.data["interests"])
+
+    def test_derived_interests_do_not_keep_stale_legacy_values(self):
+        profile = self.user.profile
+        profile.interests = ["fiscal", "educatie"]
+        profile.personal_interest_areas = ["health"]
+        profile.save()
+
+        profile.refresh_from_db()
+        self.assertEqual(profile.personal_interest_areas, ["health"])
+        self.assertEqual(profile.interests, ["sanatate"])
+
     def test_questionnaire_metadata_endpoint_returns_form_options(self):
         from django.core.cache import cache
         from apps.parliamentarians.models import Parliamentarian

@@ -65,6 +65,15 @@ class MockDatabase {
       interests.add("it");
       interests.add("fiscal");
     }
+    if (this.user.personal_interest_areas?.includes("health")) {
+      interests.add("sanatate");
+    }
+    if (this.user.personal_interest_areas?.includes("education")) {
+      interests.add("educatie");
+    }
+    if (this.user.personal_interest_areas?.includes("justice")) {
+      interests.add("justitie");
+    }
 
     this.user.interests = Array.from(interests);
     this.user.persona_tags = Array.from(personaTags);

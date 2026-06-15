@@ -44,6 +44,7 @@ export interface QuestionnaireOption {
 
 export interface QuestionnaireMetadata {
   impact_categories: string[];
+  impact_category_options: QuestionnaireOption[];
   counties: string[];
   affected_profiles?: string[];
   county_label?: string;
