@@ -12,7 +12,7 @@ const createId = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-function buildErrorMessage(_error: unknown) {
+function buildErrorMessage() {
   return "Ne pare rău, a apărut o problemă la conectarea cu asistentul AI. Te rugăm să încerci din nou mai târziu.";
 }
 
@@ -95,7 +95,7 @@ export function useRagStream(initialMessages: ChatMessage[] = []) {
 
     } catch (_error) {
       console.error("RAG Chat Stream Error:", _error);
-      const errorMessage = buildErrorMessage(_error);
+      const errorMessage = buildErrorMessage();
       setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: errorMessage }]);
       setSources([]);
     } finally {
