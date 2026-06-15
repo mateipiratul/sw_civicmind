@@ -13,7 +13,7 @@ from typing import Any, AsyncIterator, Optional
 
 from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
 
-from env_setup import load_project_env
+from env_setup import get_mistral_api_key, load_project_env
 from agents.rag_tools import (
     compare_bill_to_corpus,
     explain_chunk_match,
@@ -126,6 +126,13 @@ def _extract_final_answer(messages: list[BaseMessage]) -> str:
         if isinstance(content, str) and content.strip():
             return content.strip()
     return ""
+
+
+def _tool_error(message: str) -> dict:
+    return {
+        "ok": False,
+        "error": message,
+    }
 
 
 async def arun_rag_chat(
@@ -275,20 +282,26 @@ def build_react_rag_agent():
         exclude_bill_idp: Optional[int] = None,
     ) -> list[dict]:
         """Search Romanian legislation chunks by semantic similarity."""
-        return search_legislation_chunks(
-            query,
-            top_k=top_k,
-            threshold=threshold,
-            source=source,
-            bill_idp=bill_idp,
-            document_type=document_type,
-            exclude_bill_idp=exclude_bill_idp,
-        )
+        try:
+            return search_legislation_chunks(
+                query,
+                top_k=top_k,
+                threshold=threshold,
+                source=source,
+                bill_idp=bill_idp,
+                document_type=document_type,
+                exclude_bill_idp=exclude_bill_idp,
+            )
+        except Exception as exc:
+            return [_tool_error(str(exc))]
 
     @tool
     def bill_context(idp: int) -> dict:
-        """Get structured context for one local Chamber bill by idp."""
-        return get_bill_context(idp)
+        """Get structured context for one local Chamber bill by idp; use only when an idp is explicitly provided."""
+        try:
+            return get_bill_context(idp)
+        except Exception as exc:
+            return _tool_error(str(exc))
 
     @tool
     def compare_bill(
@@ -297,30 +310,49 @@ def build_react_rag_agent():
         top_k: int = DEFAULT_TOP_K,
         threshold: float = DEFAULT_THRESHOLD,
     ) -> dict:
-        """Find similar legislative chunks for a local Chamber bill."""
-        return compare_bill_to_corpus(idp, top_k=top_k, threshold=threshold, source=source)
+        """Find similar legislative chunks for a local Chamber bill; use only when an idp is explicitly provided."""
+        try:
+            return compare_bill_to_corpus(idp, top_k=top_k, threshold=threshold, source=source)
+        except Exception as exc:
+            return _tool_error(str(exc))
 
     @tool
     def document_detail(document_id: str) -> dict:
         """Fetch one indexed legislation document by document_id."""
-        return get_document_by_id(document_id)
+        try:
+            return get_document_by_id(document_id)
+        except Exception as exc:
+            return _tool_error(str(exc))
 
     @tool
     def chunk_detail(chunk_id: str) -> dict:
         """Fetch one indexed chunk and its parent document by chunk_id."""
-        return get_chunk_by_id(chunk_id)
+        try:
+            return get_chunk_by_id(chunk_id)
+        except Exception as exc:
+            return _tool_error(str(exc))
 
     @tool
     def chunk_excerpt(chunk_id: str, query: str = "") -> dict:
         """Show the most relevant excerpt inside one indexed chunk."""
-        return get_chunk_excerpt(chunk_id, query=query or None, max_sentences=3, max_chars=900)
+        try:
+            return get_chunk_excerpt(chunk_id, query=query or None, max_sentences=3, max_chars=900)
+        except Exception as exc:
+            return _tool_error(str(exc))
 
     @tool
     def explain_match(query: str, chunk_id: str) -> dict:
         """Explain why a given chunk matched a semantic search query."""
-        return explain_chunk_match(query, chunk_id)
+        try:
+            return explain_chunk_match(query, chunk_id)
+        except Exception as exc:
+            return _tool_error(str(exc))
 
-    model = ChatMistralAI(model=CHAT_MODEL, temperature=0.2)
+    model = ChatMistralAI(
+        model=CHAT_MODEL,
+        temperature=0.2,
+        api_key=get_mistral_api_key(raise_error=True),
+    )
     return create_react_agent(
         model,
         tools=[

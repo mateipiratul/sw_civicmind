@@ -11,7 +11,7 @@ export function SearchSectionHeader({ title, actionLabel, onAction }: SearchSect
     <div className="search-section-header">
       <h2>{title}</h2>
       {actionLabel && onAction && (
-        <Button variant="outline" size="sm" onClick={onAction}>
+        <Button variant="outline" size="sm" className="search-section-action" onClick={onAction}>
           {actionLabel}
         </Button>
       )}

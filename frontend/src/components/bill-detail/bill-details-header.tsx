@@ -105,24 +105,24 @@ export function BillDetailsHeader({ bill }: BillDetailsHeaderProps) {
         </div>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         <MetaCard
-          icon={<User size={18} />}
+          icon={<User size={20} />}
           label="Inițiator"
           value={bill.initiator_name || bill.initiator_type || "Necunoscut"}
         />
         <MetaCard
-          icon={<Calendar size={18} />}
+          icon={<Calendar size={20} />}
           label="Înregistrat"
           value={registeredDate}
         />
         <MetaCard
-          icon={<FileText size={18} />}
+          icon={<FileText size={20} />}
           label="Tip Lege"
           value={bill.law_type || "Proiect de lege"}
         />
         <MetaCard
-          icon={<Scale size={18} />}
+          icon={<Scale size={20} />}
           label="Adoptat"
           value={adoptedDate}
         />

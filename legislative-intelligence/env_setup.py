@@ -14,8 +14,8 @@ def load_project_env() -> None:
     and Supabase/Django secrets in backend/.env, so the RAG tooling needs both.
     """
     root = Path(__file__).resolve().parent
-    load_dotenv(root / ".env")
-    load_dotenv(root.parent / "backend" / ".env")
+    load_dotenv(root / ".env", override=True)
+    load_dotenv(root.parent / "backend" / ".env", override=False)
 
     if not os.getenv("SUPABASE_KEY") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"):
         os.environ["SUPABASE_KEY"] = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -26,10 +26,10 @@ def get_mistral_api_key(raise_error: bool = True) -> str | None:
     Centralized getter and validator for MISTRAL_API_KEY.
     """
     load_project_env()
-    key = os.getenv("MISTRAL_API_KEY")
+    key = (os.getenv("MISTRAL_API_KEY") or "").strip()
     if not key and raise_error:
         raise RuntimeError("MISTRAL_API_KEY is not set in the environment or .env file")
-    return key
+    return key or None
 
 
 try:
