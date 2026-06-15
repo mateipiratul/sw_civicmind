@@ -1,6 +1,8 @@
-from django.db.models import Q, Case, When, Value, IntegerField, Prefetch, Exists, OuterRef
-from .models import Bill, ImpactCategory, AffectedProfile
+from django.db.models import Q, Case, When, Value, IntegerField, Prefetch, Count
+from django.utils.text import slugify
+from .models import Bill
 from apps.parliamentarians.models import Parliamentarian, MPVote
+from apps.parliamentarians.text_utils import normalized_text_key, repair_text
 from apps.search.services import VOTE_BUCKETS
 
 class BillService:
@@ -36,28 +38,64 @@ class FeedService:
         if queryset is None:
             queryset = BillService.get_list_bills_queryset()
 
-        if not user_interests and not persona_tags:
-            return queryset.annotate(
-                is_match=Value(0, output_field=IntegerField())
-            ).order_by('-is_match', '-registered_at')
+        interest_terms = FeedService._matching_terms(user_interests)
+        persona_terms = FeedService._matching_terms(persona_tags)
 
-        # Use Exists subqueries to avoid joins and distinct()
-        # Using __in is more efficient than a loop of OR conditions for large interest sets.
-        has_interest = Exists(
-            ImpactCategory.objects.filter(analyses__bill=OuterRef('pk'), name__in=user_interests)
-        ) if user_interests else Value(False)
-        
-        has_persona = Exists(
-            AffectedProfile.objects.filter(analyses__bill=OuterRef('pk'), name__in=persona_tags)
-        ) if persona_tags else Value(False)
+        if not interest_terms and not persona_terms:
+            return queryset.annotate(
+                is_match=Value(0, output_field=IntegerField()),
+                interest_match_count=Value(0, output_field=IntegerField()),
+                persona_match_count=Value(0, output_field=IntegerField()),
+                relevance_score=Value(0, output_field=IntegerField()),
+            ).order_by('-registered_at')
+
+        interest_filter = (
+            Q(ai_analysis__rel_impact_categories__name__in=interest_terms)
+            | Q(ai_analysis__rel_impact_categories__slug__in=interest_terms)
+        )
+        persona_filter = (
+            Q(ai_analysis__rel_affected_profiles__name__in=persona_terms)
+            | Q(ai_analysis__rel_affected_profiles__slug__in=persona_terms)
+        )
+        interest_match_count = Count(
+            'ai_analysis__rel_impact_categories',
+            filter=interest_filter,
+            distinct=True,
+        )
+        persona_match_count = Count(
+            'ai_analysis__rel_affected_profiles',
+            filter=persona_filter,
+            distinct=True,
+        )
 
         return queryset.annotate(
+            interest_match_count=interest_match_count,
+            persona_match_count=persona_match_count,
+        ).annotate(
             is_match=Case(
-                When(has_interest | has_persona, then=Value(1)),
+                When(interest_match_count__gt=0, then=Value(1)),
+                When(persona_match_count__gt=0, then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField()
             )
-        ).order_by('-is_match', '-registered_at')
+        ).order_by('-interest_match_count', '-persona_match_count', '-registered_at')
+
+    @staticmethod
+    def _matching_terms(values: list[str]) -> list[str]:
+        terms: set[str] = set()
+        for value in values:
+            if not value:
+                continue
+
+            repaired = repair_text(str(value))
+            normalized = normalized_text_key(repaired)
+            slug = slugify(repaired)
+
+            for term in (repaired.strip().casefold(), normalized, normalized.replace(" ", "-"), slug):
+                if term:
+                    terms.add(term)
+
+        return sorted(terms)
 
     @staticmethod
     def get_representatives(county: str | None = None, preferred_party: str | None = None, limit: int = 6):
@@ -113,4 +151,19 @@ class VoteAnalyticsService:
             bucket_key = VOTE_BUCKETS.get((row['vote'] or "").casefold(), 'abstain')
             buckets[bucket_key].append(row)
             
-        return buckets
+        return {
+            bucket: VoteAnalyticsService._dedupe_vote_rows(rows)
+            for bucket, rows in buckets.items()
+        }
+
+    @staticmethod
+    def _dedupe_vote_rows(rows):
+        deduped = {}
+        for row in rows:
+            key = (
+                normalized_text_key(row.get('mp_name')),
+                normalized_text_key(row.get('party')),
+                normalized_text_key(row.get('vote')),
+            )
+            deduped.setdefault(key, row)
+        return list(deduped.values())

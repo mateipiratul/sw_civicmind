@@ -22,11 +22,10 @@ from typing import Iterable, Optional
 
 from mistralai.client import Mistral
 import httpx
-from mistralai.exceptions import SDKError
 from supabase import Client
 from db.client import get_supabase_client
 
-from env_setup import load_project_env, get_mistral_api_key
+from env_setup import load_project_env, get_mistral_api_key, SDKError
 from scraper.legislatie_just import LegislativeAct, LegislatieJustClient
 
 
@@ -386,6 +385,7 @@ def build_documents(args: argparse.Namespace) -> list[SourceDocument]:
 
 
 def main() -> None:
+    load_project_env()
     parser = argparse.ArgumentParser(description="Index legislation into Supabase pgvector")
     parser.add_argument("--source", choices=["bills", "legislatie-just"], default="bills")
     parser.add_argument("--all", action="store_true", help="Index all local bills for --source bills")

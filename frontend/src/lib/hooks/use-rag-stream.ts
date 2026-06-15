@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, type RagSource, type RagChatOptions, type RagStreamEvent, ApiError } from "@/lib/api";
+import { api, type RagSource, type RagChatOptions, type RagStreamEvent } from "@/lib/api";
 
 export interface ChatMessage {
   id: string;
@@ -12,14 +12,8 @@ const createId = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-function buildErrorMessage(error: unknown) {
-  if (error instanceof ApiError) {
-    return `Conversația nu a reușit: ${error.message}`;
-  }
-  if (error instanceof Error && error.message) {
-    return `Conversația nu a reușit: ${error.message}`;
-  }
-  return "Conversația nu a reușit. Verifică conexiunea și încearcă din nou.";
+function buildErrorMessage(_error: unknown) {
+  return "Ne pare rău, a apărut o problemă la conectarea cu asistentul AI. Te rugăm să încerci din nou mai târziu.";
 }
 
 export function useRagStream(initialMessages: ChatMessage[] = []) {
@@ -99,8 +93,9 @@ export function useRagStream(initialMessages: ChatMessage[] = []) {
       setSources(result.sources || []);
       setResolvedSource(result.resolved_source ?? null);
 
-    } catch (error) {
-      const errorMessage = buildErrorMessage(error);
+    } catch (_error) {
+      console.error("RAG Chat Stream Error:", _error);
+      const errorMessage = buildErrorMessage(_error);
       setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: errorMessage }]);
       setSources([]);
     } finally {

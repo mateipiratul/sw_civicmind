@@ -1,0 +1,1 @@
+# Temporary signature file (emptied)

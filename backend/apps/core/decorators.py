@@ -3,6 +3,7 @@ import threading
 import logging
 from functools import wraps
 from rest_framework.response import Response
+from django.conf import settings
 from apps.core.services import CacheService
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,9 @@ def cache_endpoint(timeout=86400, key_func=None):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(view_instance, request, *args, **kwargs):
+            if getattr(settings, "TESTING", False):
+                return view_func(view_instance, request, *args, **kwargs)
+
             if key_func:
                 cache_key = key_func(view_instance, request, *args, **kwargs)
             else:

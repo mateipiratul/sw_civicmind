@@ -17,7 +17,6 @@ from typing import Any
 
 from langgraph.graph import StateGraph, END
 from mistralai.client import Mistral
-from mistralai.exceptions import SDKError
 
 from agents.state import ScoutState
 from agents.prompts import (
@@ -32,7 +31,31 @@ _MAX_EXPUNERE_CHARS = 8_000
 _MAX_AVIZ_CHARS = 4_000
 
 
-from env_setup import get_mistral_api_key
+import time
+import threading
+import random
+from env_setup import get_mistral_api_key, SDKError
+
+
+class ThreadSafeRateLimiter:
+    def __init__(self, min_interval_seconds: float = 1.5):
+        self.min_interval = min_interval_seconds
+        self.last_request_time = 0.0
+        self.lock = threading.Lock()
+
+    def wait(self):
+        with self.lock:
+            now = time.time()
+            elapsed = now - self.last_request_time
+            if elapsed < self.min_interval:
+                sleep_needed = self.min_interval - elapsed
+                time.sleep(sleep_needed)
+            self.last_request_time = time.time()
+
+
+# Global rate limiter to space out requests to Mistral API across threads
+_RATE_LIMITER = ThreadSafeRateLimiter(min_interval_seconds=1.5)
+
 
 
 def _mistral() -> Mistral:
@@ -41,16 +64,46 @@ def _mistral() -> Mistral:
 
 def _llm_json(system: str, user: str) -> dict:
     client = _mistral()
-    resp = client.chat.complete(
-        model=_MODEL_STRUCTURED,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user",   "content": user},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.1,
-    )
-    return json.loads(resp.choices[0].message.content)
+    max_retries = 8
+    last_exc = None
+    for attempt in range(max_retries):
+        _RATE_LIMITER.wait()
+        try:
+            resp = client.chat.complete(
+                model=_MODEL_STRUCTURED,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user",   "content": user},
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.1,
+            )
+            return json.loads(resp.choices[0].message.content)
+        except Exception as exc:
+            message = str(exc).casefold()
+            is_retryable = (
+                "rate limit" in message
+                or "status 429" in message
+                or "1300" in message
+                or "rate_limited" in message
+                or "too many requests" in message
+            )
+            if not is_retryable:
+                raise
+            last_exc = exc
+            
+            # Exponential backoff with jitter
+            base_delay = 1.5 * (1.8 ** attempt)
+            sleep_time = base_delay + random.uniform(0.5, 2.5)
+            logger.warning(
+                f"Mistral chat complete rate limited (attempt {attempt + 1}/{max_retries}). "
+                f"Retrying in {sleep_time:.2f}s... Error: {exc}"
+            )
+            time.sleep(sleep_time)
+    
+    if last_exc:
+        raise last_exc
+    raise RuntimeError("Unknown error in _llm_json")
 
 
 # ── Nodes ─────────────────────────────────────────────────────────────────────
@@ -90,7 +143,7 @@ def extract_structure(state: ScoutState) -> dict:
             SCOUT_STRUCTURE_USER.format(text=state["expunere_text"]),
         )
         return {"structure": result}
-    except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
+    except Exception as exc:
         return {"error": f"extract_structure failed: {exc}"}
 
 
@@ -106,7 +159,7 @@ def extract_opposition(state: ScoutState) -> dict:
             SCOUT_OPPOSITION_USER.format(text=aviz),
         )
         return {"opposition": result}
-    except (SDKError, httpx.HTTPError, json.JSONDecodeError) as exc:
+    except Exception as exc:
         return {"error": f"extract_opposition failed: {exc}"}
 
 

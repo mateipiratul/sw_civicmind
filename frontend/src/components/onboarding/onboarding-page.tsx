@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Sparkles, CheckSquare, X } from "lucide-react";
+import { ArrowRight, ListChecks, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
 import { AiMode } from "./ai-mode";
@@ -9,147 +9,171 @@ import { DoneScreen } from "./done-screen";
 
 type Mode = "choose" | "ai" | "manual" | "done";
 
+const progressByMode: Record<Mode, string> = {
+  choose: "34%",
+  ai: "68%",
+  manual: "68%",
+  done: "100%",
+};
+
+const stepLabelByMode: Record<Mode, string> = {
+  choose: "Pasul 1 din 2",
+  ai: "Pasul 2 din 2",
+  manual: "Pasul 2 din 2",
+  done: "Gata",
+};
+
+const stepTitleByMode: Record<Mode, string> = {
+  choose: "Alege metoda",
+  ai: "Descrie preferințele",
+  manual: "Selectează preferințele",
+  done: "Feed pregătit",
+};
+
 export function OnboardingPage() {
   const navigate = useNavigate();
   const { updateUser } = useAuth();
   const [mode, setMode] = useState<Mode>("choose");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedCounty, setSavedCounty] = useState<string | null>(null);
   const [savedInterests, setSavedInterests] = useState<string[]>([]);
 
+  const goToFeed = () => {
+    navigate({ to: "/", search: { page: undefined, category: undefined } });
+  };
+
   const handleComplete = async (county: string | null, interests: string[]) => {
     setIsSaving(true);
+    setSaveError(null);
     setSavedCounty(county);
     setSavedInterests(interests);
-    setMode("done");
+
     try {
-      const patch: { county?: string; interests?: string[] } = {};
-      if (county) patch.county = county;
-      if (interests.length > 0) patch.interests = interests;
-      if (Object.keys(patch).length > 0) {
-        const updated = await api.updateProfile(patch);
-        updateUser(updated);
-      }
+      const updated = await api.updateProfile({
+        ...(county ? { county } : {}),
+        personal_interest_areas: interests,
+      });
+      updateUser(updated);
+      setMode("done");
+      setTimeout(goToFeed, 1800);
     } catch {
-      // Profile save is best-effort during onboarding, can be updated later in Profile
+      setSaveError("Nu am putut salva preferințele. Încearcă din nou sau sari peste pentru moment.");
     } finally {
       setIsSaving(false);
-      setTimeout(() => navigate({ to: "/" }), 2500);
     }
   };
 
-  const handleSkip = () => {
-    navigate({ to: "/" });
-  };
+  const renderProgress = () => (
+    <div className="onboarding-progress-track" aria-hidden="true">
+      <div className="onboarding-progress-fill" style={{ width: progressByMode[mode] }} />
+    </div>
+  );
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 lg:p-10">
-      <div className="w-full max-w-[560px] bg-white border border-gray-100 rounded-[28px] shadow-2xl shadow-gray-200/50 p-8 lg:p-10 relative overflow-hidden">
-        {/* Progress Background Decoration */}
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-50">
-          <div 
-            className="h-full bg-gray-900 transition-all duration-500 ease-out" 
-            style={{ width: mode === "choose" ? "33%" : mode === "done" ? "100%" : "66%" }} 
-          />
+  const renderShell = (content: ReactNode) => (
+    <main className="onboarding-page">
+      <section className="onboarding-shell" aria-labelledby="onboarding-title">
+        <section className="onboarding-workspace">
+          <header className="onboarding-workspace-header">
+            <div>
+              <div className="onboarding-step-label">{stepLabelByMode[mode]}</div>
+              <div className="onboarding-step-title">{stepTitleByMode[mode]}</div>
+            </div>
+            {mode !== "done" && (
+              <button type="button" onClick={goToFeed} className="onboarding-skip-button">
+                Sari peste
+              </button>
+            )}
+          </header>
+
+          {renderProgress()}
+
+          <div className="onboarding-workspace-body">
+            {saveError && (
+              <div className="onboarding-save-error" role="alert">
+                {saveError}
+              </div>
+            )}
+            {content}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+
+  if (mode === "choose") {
+    return renderShell(
+      <>
+        <div className="onboarding-modal-body">
+          <div className="onboarding-status-pill">Cont creat</div>
+          <h1 id="onboarding-title" className="onboarding-title">
+            Alege ce domenii te interesează
+          </h1>
+          <p className="onboarding-subtitle">
+            Îți personalizăm feed-ul legislativ după județ și domeniile care contează pentru tine. Durează sub un minut.
+          </p>
         </div>
 
-        {/* Header */}
-        <div className="flex justify-between items-center mb-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gray-900 flex items-center justify-center shadow-lg shadow-gray-200">
-              <img src="/favicon.png" alt="" className="w-5 h-5 invert brightness-0" />
+        <div className="onboarding-choice-list">
+          <button type="button" onClick={() => setMode("ai")} className="onboarding-choice-card">
+            <div className="onboarding-choice-icon onboarding-choice-icon-dark">
+              <Sparkles size={20} />
             </div>
-            <span className="text-[15px] font-black tracking-tight text-gray-900">CivicMind</span>
-          </div>
-          {mode !== "done" && (
-            <button
-              onClick={handleSkip}
-              className="flex items-center gap-1.5 text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-colors"
-            >
-              <X size={14} /> Sari peste
-            </button>
-          )}
+            <div className="onboarding-choice-copy">
+              <div className="onboarding-choice-title-row">
+                <span className="onboarding-choice-title">Descrie-te asistentului AI</span>
+                <span className="onboarding-rapid-pill">Rapid</span>
+              </div>
+              <p className="onboarding-choice-description">
+                Scrii câteva cuvinte, iar AI-ul propune automat județul și interesele.
+              </p>
+            </div>
+            <ArrowRight size={18} className="onboarding-choice-arrow" />
+          </button>
+
+          <button type="button" onClick={() => setMode("manual")} className="onboarding-choice-card">
+            <div className="onboarding-choice-icon onboarding-choice-icon-green">
+              <ListChecks size={20} />
+            </div>
+            <div className="onboarding-choice-copy">
+              <div className="onboarding-choice-title">Selectează manual</div>
+              <p className="onboarding-choice-description">
+                Alegi tu județul și domeniile civice dintr-o listă clară.
+              </p>
+            </div>
+            <ArrowRight size={18} className="onboarding-choice-arrow" />
+          </button>
         </div>
 
-        {/* Choose mode */}
-        {mode === "choose" && (
-          <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                Salutare! 👋
-              </h1>
-              <p className="text-[15px] text-gray-500 leading-relaxed">
-                Contul tău e gata. Spune-ne ce te interesează ca să-ți pregătim un feed legislativ personalizat.
-              </p>
-            </div>
+        <p className="onboarding-footer-note">
+          Poți modifica preferințele oricând din{" "}
+          <button type="button" onClick={() => navigate({ to: "/profile" })} className="onboarding-footer-link">
+            Profil
+          </button>
+          .
+        </p>
+      </>
+    );
+  }
 
-            <div className="flex flex-col gap-4">
-              {/* AI option */}
-              <button
-                onClick={() => setMode("ai")}
-                className="group flex items-start gap-5 p-5 border-2 border-gray-50 rounded-2xl bg-white hover:border-gray-900 hover:shadow-xl hover:shadow-gray-100 transition-all text-left relative overflow-hidden"
-              >
-                <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
-                  <Sparkles size={22} className="text-white" />
-                </div>
-                <div>
-                  <div className="text-[16px] font-bold text-gray-900 mb-1">Descrie-te asistentului AI</div>
-                  <div className="text-[13.5px] text-gray-500 leading-snug">
-                    Scrie câteva cuvinte despre tine, iar AI-ul va extrage automat interesele și județul.
-                  </div>
-                </div>
-              </button>
+  return renderShell(
+    <div className="onboarding-form-body">
+      {mode === "ai" && (
+        <AiMode onComplete={handleComplete} onBack={() => setMode("choose")} isSaving={isSaving} />
+      )}
 
-              {/* Manual option */}
-              <button
-                onClick={() => setMode("manual")}
-                className="group flex items-start gap-5 p-5 border-2 border-gray-50 rounded-2xl bg-white hover:border-gray-900 hover:shadow-xl hover:shadow-gray-100 transition-all text-left"
-              >
-                <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-100 group-hover:scale-110 transition-transform">
-                  <CheckSquare size={22} className="text-white" />
-                </div>
-                <div>
-                  <div className="text-[16px] font-bold text-gray-900 mb-1">Selectează manual</div>
-                  <div className="text-[13.5px] text-gray-500 leading-snug">
-                    Alege județul și domeniile de interes direct dintr-o listă completă.
-                  </div>
-                </div>
-              </button>
-            </div>
+      {mode === "manual" && (
+        <ManualMode onComplete={handleComplete} onBack={() => setMode("choose")} isSaving={isSaving} />
+      )}
 
-            <div className="text-center pt-2">
-              <p className="text-xs font-medium text-gray-400">
-                Poți modifica oricând preferințele din pagina de{" "}
-                <button 
-                  onClick={() => navigate({ to: "/profile" })} 
-                  className="text-gray-900 underline underline-offset-2 hover:text-black transition-colors font-bold"
-                >
-                  Profil
-                </button>
-              </p>
-            </div>
-          </div>
-        )}
+      {isSaving && mode !== "done" && (
+        <div className="onboarding-saving-state">
+          <div className="onboarding-spinner" />
+          <div>Se salvează preferințele...</div>
+        </div>
+      )}
 
-        {mode === "ai" && (
-          <AiMode onComplete={handleComplete} onBack={() => setMode("choose")} />
-        )}
-
-        {mode === "manual" && (
-          <ManualMode onComplete={handleComplete} onBack={() => setMode("choose")} />
-        )}
-
-        {mode === "done" && isSaving && (
-          <div className="text-center py-12 flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-gray-100 border-t-gray-900 rounded-full animate-spin" />
-            <div className="text-[15px] font-bold text-gray-400">Se salvează profilul tău...</div>
-          </div>
-        )}
-
-        {mode === "done" && !isSaving && (
-          <DoneScreen county={savedCounty} interests={savedInterests} />
-        )}
-      </div>
+      {mode === "done" && <DoneScreen county={savedCounty} interests={savedInterests} />}
     </div>
   );
 }

@@ -41,3 +41,6 @@ legislative-intelligence/data/processed/
 
 # ignore frontend mockups
 figma*/
+
+# local run logs
+run-logs/

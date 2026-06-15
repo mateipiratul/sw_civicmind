@@ -52,7 +52,12 @@ describe("API client", () => {
       const regReq = fetchMock.mock.calls[1][0];
       expect(regReq.url).toBe("http://localhost:4001/api/auth/register/");
       expect(regReq.method).toBe("POST");
-      expect(await regReq.json()).toEqual({ username: "testuser", email: "test@example.com", password: "password" });
+      expect(await regReq.json()).toEqual({
+        username: "testuser",
+        email: "test@example.com",
+        password1: "password",
+        password2: "password",
+      });
 
       // The returned result should be the profile from MSW / db.ts
       expect(result).toEqual(db.getUser());
@@ -93,6 +98,33 @@ describe("API client", () => {
     });
   });
 
+  describe("getQuestionnaireMetadata", () => {
+    it("should normalize questionnaire options for onboarding", async () => {
+      const { server } = await import("./setup");
+      const { http, HttpResponse } = await import("msw");
+
+      server.use(
+        http.get("http://localhost:4001/api/profiles/questionnaire/", () => {
+          return HttpResponse.json({
+            personal_interest_areas: [
+              { value: "health", label: "Sanatate" },
+              { value: "education", label: "Educatie" },
+            ],
+          });
+        })
+      );
+
+      const result = await api.getQuestionnaireMetadata();
+
+      expect(result.impact_categories).toEqual(["Sanatate", "Educatie"]);
+      expect(result.impact_category_options).toEqual([
+        { value: "health", label: "Sanatate" },
+        { value: "education", label: "Educatie" },
+      ]);
+      expect(result.counties).toContain("Cluj");
+    });
+  });
+
   describe("listBills", () => {
     it("should fetch bills successfully", async () => {
       const mockBillsResponse = {
@@ -122,25 +154,6 @@ describe("API client", () => {
       const req = fetchMock.mock.calls[0][0];
       expect(req.url).toBe("http://localhost:4001/api/bills/?page=1&limit=20");
       expect(req.headers.get("Authorization")).toBe("Token test-token");
-    });
-  });
-
-  describe("streamRagChat", () => {
-    it("should reject when the stream emits an error event", async () => {
-      const body = new ReadableStream({
-        start(controller) {
-          controller.enqueue(new TextEncoder().encode('{"type":"error","error":"Bad context"}\n'));
-          controller.close();
-        },
-      });
-
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        body,
-      });
-
-      await expect(api.streamRagChat("test question")).rejects.toThrow("Bad context");
     });
   });
 });

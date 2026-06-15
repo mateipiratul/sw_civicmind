@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check } from "lucide-react";
-import type { User as UserType } from "@/lib/api";
+import type { QuestionnaireMetadata, QuestionnaireOption, User as UserType } from "@/lib/api";
 
 // Modular Components
 import { ProfileHeader } from "./profile-header";
@@ -36,7 +36,7 @@ interface ProfileFormProps {
   user: UserType;
   updateUser: (data: Partial<UserType>) => void;
   logout: () => void | Promise<void>;
-  metadata?: { impact_categories: string[], counties: string[] };
+  metadata?: QuestionnaireMetadata;
 }
 
 function ProfileForm({ user, updateUser, logout, metadata }: ProfileFormProps) {
@@ -44,7 +44,7 @@ function ProfileForm({ user, updateUser, logout, metadata }: ProfileFormProps) {
   const [username, setUsername] = useState(user.username || "");
   const [email] = useState(user.email || "");
   const [county, setCounty] = useState(user.county || "");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(user.interests || []);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(user.personal_interest_areas || []);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateStep, setUpdateStep] = useState<"idle" | "confirm" | "done">("idle");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -61,6 +61,13 @@ function ProfileForm({ user, updateUser, logout, metadata }: ProfileFormProps) {
     setSelectedInterests(interests);
   };
 
+  const interestOptions: QuestionnaireOption[] =
+    metadata?.impact_category_options?.length
+      ? metadata.impact_category_options
+      : metadata?.personal_interest_areas?.length
+        ? metadata.personal_interest_areas
+        : (metadata?.impact_categories || []).map((category) => ({ value: category, label: category }));
+
   const executeProfileUpdate = async () => {
     setIsUpdating(true);
     setToast(null);
@@ -69,7 +76,7 @@ function ProfileForm({ user, updateUser, logout, metadata }: ProfileFormProps) {
         username,
         email,
         county,
-        interests: selectedInterests,
+        personal_interest_areas: selectedInterests,
       });
       updateUser(updated);
       setUpdateStep("done");
@@ -151,7 +158,7 @@ function ProfileForm({ user, updateUser, logout, metadata }: ProfileFormProps) {
             />
           </div>
           <div style={{ opacity: 0.55 }}>
-            <label style={fieldLabel}>Email (doar citire)</label>
+            <label style={fieldLabel}>Email</label>
             <input
               value={email}
               disabled
@@ -172,7 +179,7 @@ function ProfileForm({ user, updateUser, logout, metadata }: ProfileFormProps) {
 
         <InterestsSection
           selectedInterests={selectedInterests}
-          allCategories={metadata?.impact_categories || []}
+          interestOptions={interestOptions}
           onToggle={handleToggleInterest}
           onAiComplete={handleAiComplete}
         />
@@ -272,8 +279,8 @@ export function ProfilePage() {
   const navigate = useNavigate();
 
   const { data: metadata } = useQuery({
-    queryKey: ["metadata"],
-    queryFn: () => api.getMetadata(),
+    queryKey: ["questionnaire-metadata"],
+    queryFn: () => api.getQuestionnaireMetadata(),
   });
 
   useEffect(() => {

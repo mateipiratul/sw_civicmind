@@ -1,12 +1,72 @@
 import { BaseApiClient } from '../base';
-import type { User, AuthKeyResponse } from '../types/auth';
+import type { User, AuthKeyResponse, QuestionnaireMetadata, QuestionnaireOption } from '../types/auth';
+
+const ROMANIAN_COUNTIES = [
+  "Alba",
+  "Arad",
+  "Arges",
+  "Bacau",
+  "Bihor",
+  "Bistrita-Nasaud",
+  "Botosani",
+  "Brasov",
+  "Braila",
+  "Bucuresti",
+  "Buzau",
+  "Caras-Severin",
+  "Calarasi",
+  "Cluj",
+  "Constanta",
+  "Covasna",
+  "Dambovita",
+  "Dolj",
+  "Galati",
+  "Giurgiu",
+  "Gorj",
+  "Harghita",
+  "Hunedoara",
+  "Ialomita",
+  "Iasi",
+  "Ilfov",
+  "Maramures",
+  "Mehedinti",
+  "Mures",
+  "Neamt",
+  "Olt",
+  "Prahova",
+  "Satu Mare",
+  "Salaj",
+  "Sibiu",
+  "Suceava",
+  "Teleorman",
+  "Timis",
+  "Tulcea",
+  "Vaslui",
+  "Valcea",
+  "Vrancea",
+  "Diaspora",
+];
+
+const optionLabels = (options: QuestionnaireOption[] | string[] | undefined): string[] => {
+  if (!Array.isArray(options)) return [];
+  return options
+    .map((option) => (typeof option === "string" ? option : option.label || option.value))
+    .filter((label): label is string => Boolean(label));
+};
+
+const optionList = (options: QuestionnaireOption[] | string[] | undefined): QuestionnaireOption[] => {
+  if (!Array.isArray(options)) return [];
+  return options
+    .map((option) => (typeof option === "string" ? { value: option, label: option } : option))
+    .filter((option) => Boolean(option.value && option.label));
+};
 
 export class AuthModule extends BaseApiClient {
   register = async (username: string, email: string, password: string): Promise<User> => {
     await this.requestTo(this.baseUrl, "/api/auth/csrf/", { method: "GET" });
     const response = await this.request<AuthKeyResponse>("/api/auth/register/", {
       method: "POST",
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password1: password, password2: password }),
     });
     localStorage.setItem("auth_token", response.key);
     return this.getProfile();
@@ -73,8 +133,18 @@ export class AuthModule extends BaseApiClient {
     return this.request("/api/profiles/me/", { method: "PATCH", body: JSON.stringify(data) });
   };
 
-  getQuestionnaireMetadata = async (): Promise<{ impact_categories: string[], counties: string[] }> => {
-    return this.request("/api/profiles/questionnaire/");
+  getQuestionnaireMetadata = async (): Promise<QuestionnaireMetadata> => {
+    const metadata = await this.request<QuestionnaireMetadata>("/api/profiles/questionnaire/");
+    const interestOptions = optionList(
+      metadata.personal_interest_areas?.length ? metadata.personal_interest_areas : metadata.impact_categories
+    );
+
+    return {
+      ...metadata,
+      impact_category_options: interestOptions,
+      impact_categories: optionLabels(interestOptions),
+      counties: metadata.counties?.length ? metadata.counties : ROMANIAN_COUNTIES,
+    };
   };
 
   deleteAccount = async (password: string): Promise<void> => {

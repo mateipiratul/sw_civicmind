@@ -15,13 +15,12 @@ import httpx
 from typing import Optional
 
 from mistralai.client import Mistral
-from mistralai.exceptions import SDKError
 
 from .http_client import _SESSION, _HEADERS
 
 logger = logging.getLogger(__name__)
 
-from env_setup import get_mistral_api_key
+from env_setup import get_mistral_api_key, SDKError
 
 _client: Optional[Mistral] = None
 

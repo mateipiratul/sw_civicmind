@@ -10,6 +10,7 @@ from .models import Parliamentarian, MPVote, VoteSession
 from .filters import ParliamentarianFilterSet
 from .serializers import ParliamentarianListSerializer, ParliamentarianVoteMapSerializer
 from .views import ParliamentarianViewSet
+from .models import ImpactScore
 
 
 class ParliamentarianFilterSetTests(TestCase):
@@ -180,3 +181,173 @@ class ParliamentarianVoteMapTests(APITestCase):
         self.assertEqual(response.data["filters"]["party"], "USR")
         self.assertEqual(len(response.data["parliamentarians"]), 1)
         self.assertEqual(response.data["parliamentarians"][0]["mp_slug"], "mp-1")
+
+
+class ParliamentarianCleaningTests(APITestCase):
+    def test_list_repairs_mojibake_and_dedupes_duplicates(self):
+        Parliamentarian.objects.create(
+            mp_slug="bende-saandor",
+            mp_name="Bende SĂĄndor",
+            party="UDMR",
+        )
+        strong = Parliamentarian.objects.create(
+            mp_slug="bende-sandor",
+            mp_name="Bende Sándor",
+            party="UDMR",
+            county="HARGHITA",
+            email="bende@cdep.ro",
+        )
+        ImpactScore.objects.create(
+            parliamentarian=strong,
+            score=100,
+            total_votes=11,
+            for_count=11,
+            against_count=0,
+            abstain_count=0,
+            absent_count=0,
+            categories_voted=[],
+            narrative="Bende SĂĄndor a votat pentru.",
+        )
+        Parliamentarian.objects.create(
+            mp_slug="albu-dumitril-a",
+            mp_name="Albu DumitriĹŁa",
+            party="Neafiliati",
+        )
+        Parliamentarian.objects.create(
+            mp_slug="albu-dumitrita",
+            mp_name="Albu Dumitriţa",
+            party="Neafiliati",
+            county="DIASPORA",
+        )
+        Parliamentarian.objects.create(
+            mp_slug="barbu-florin-ionul",
+            mp_name="Barbu Florin-IonuĹŁ",
+            party="PSD",
+        )
+        Parliamentarian.objects.create(
+            mp_slug="barbu-florin-ionut",
+            mp_name="Barbu Florin-Ionuţ",
+            party="PSD",
+            county="OLT",
+        )
+
+        response = self.client.get(reverse("parliamentarian-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 3)
+        by_slug = {
+            item["mp_slug"]: item
+            for item in response.data["parliamentarians"]
+        }
+        self.assertEqual(set(by_slug), {"albu-dumitrita", "barbu-florin-ionut", "bende-sandor"})
+        self.assertEqual(by_slug["bende-sandor"]["mp_name"], "Bende Sándor")
+        self.assertEqual(by_slug["bende-sandor"]["county"], "HARGHITA")
+        self.assertEqual(by_slug["albu-dumitrita"]["mp_name"], "Albu Dumitrița")
+        self.assertEqual(by_slug["albu-dumitrita"]["county"], "DIASPORA")
+        self.assertEqual(by_slug["barbu-florin-ionut"]["mp_name"], "Barbu Florin-Ionuț")
+        self.assertEqual(by_slug["barbu-florin-ionut"]["county"], "OLT")
+        self.assertEqual(
+            by_slug["bende-sandor"]["impact_score"]["narrative"],
+            "Bende Sándor a votat pentru.",
+        )
+
+    def test_metadata_repairs_counties_and_parties(self):
+        Parliamentarian.objects.create(
+            mp_slug="biro-bad",
+            mp_name="BirĂł RozĂĄlia-Ibolya",
+            party="UDMR",
+            county="BIHOR",
+        )
+        Parliamentarian.objects.create(
+            mp_slug="biro-good",
+            mp_name="Biró Rozália-Ibolya",
+            party="UDMR",
+            county="BIHOR",
+        )
+
+        response = self.client.get(reverse("parliamentarian-metadata"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["counties"], ["BIHOR"])
+        self.assertEqual(response.data["parties"], ["UDMR"])
+
+
+class ParliamentarianImpactScoreFallbackTests(APITestCase):
+    def test_list_builds_fallback_impact_score_from_votes(self):
+        mp = Parliamentarian.objects.create(
+            mp_slug="amet-varol",
+            mp_name="Amet Varol",
+            party="Minoritati",
+        )
+        bill_1 = Bill.objects.create(idp=101, bill_number="PL-x 101/2026", title="Test Bill 1")
+        bill_2 = Bill.objects.create(idp=102, bill_number="PL-x 102/2026", title="Test Bill 2")
+        session_1 = VoteSession.objects.create(idv=101, bill=bill_1, type="final")
+        session_2 = VoteSession.objects.create(idv=102, bill=bill_2, type="final")
+        MPVote.objects.create(parliamentarian=mp, vote_session=session_1, vote="for", party="Minoritati")
+        MPVote.objects.create(parliamentarian=mp, vote_session=session_2, vote="for", party="Minoritati")
+        ImpactScore.objects.filter(parliamentarian=mp).delete()
+
+        response = self.client.get(reverse("parliamentarian-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total"], 1)
+        item = response.data["parliamentarians"][0]
+        self.assertEqual(item["mp_slug"], "amet-varol")
+        self.assertEqual(item["impact_score"]["score"], 100.0)
+        self.assertEqual(item["impact_score"]["total_votes"], 2)
+        self.assertEqual(item["impact_score"]["for_count"], 2)
+
+    def test_detail_builds_fallback_impact_score_from_prefetched_votes(self):
+        mp = Parliamentarian.objects.create(
+            mp_slug="amet-varol",
+            mp_name="Amet Varol",
+            party="Minoritati",
+        )
+        bill = Bill.objects.create(idp=101, bill_number="PL-x 101/2026", title="Test Bill")
+        session = VoteSession.objects.create(idv=101, bill=bill, type="final")
+        MPVote.objects.create(parliamentarian=mp, vote_session=session, vote="for", party="Minoritati")
+        ImpactScore.objects.filter(parliamentarian=mp).delete()
+
+        response = self.client.get(reverse("parliamentarian-detail", kwargs={"pk": "amet-varol"}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["impact_score"]["score"], 100.0)
+        self.assertEqual(response.data["impact_score"]["total_votes"], 1)
+        self.assertEqual(len(response.data["recent_votes"]), 1)
+
+    def test_vote_signal_persists_score_for_new_votes(self):
+        mp = Parliamentarian.objects.create(
+            mp_slug="amet-varol",
+            mp_name="Amet Varol",
+            party="Minoritati",
+        )
+        bill = Bill.objects.create(idp=101, bill_number="PL-x 101/2026", title="Test Bill")
+        session = VoteSession.objects.create(idv=101, bill=bill, type="final")
+
+        MPVote.objects.create(parliamentarian=mp, vote_session=session, vote="for", party="Minoritati")
+
+        impact_score = ImpactScore.objects.get(parliamentarian=mp)
+        self.assertEqual(impact_score.score, 100.0)
+        self.assertEqual(impact_score.total_votes, 1)
+
+    def test_existing_impact_score_with_null_score_is_completed_in_response(self):
+        mp = Parliamentarian.objects.create(
+            mp_slug="amet-varol",
+            mp_name="Amet Varol",
+            party="Minoritati",
+        )
+        ImpactScore.objects.create(
+            parliamentarian=mp,
+            score=None,
+            total_votes=2,
+            for_count=2,
+            against_count=0,
+            abstain_count=0,
+            absent_count=0,
+            categories_voted=[],
+        )
+
+        response = self.client.get(reverse("parliamentarian-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["parliamentarians"][0]["impact_score"]["score"], 100.0)

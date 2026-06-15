@@ -36,3 +36,27 @@ export interface PaginatedUsers extends PaginatedResponse {
 export interface AuthKeyResponse {
   key: string;
 }
+
+export interface QuestionnaireOption {
+  value: string;
+  label: string;
+}
+
+export interface QuestionnaireMetadata {
+  impact_categories: string[];
+  impact_category_options: QuestionnaireOption[];
+  counties: string[];
+  affected_profiles?: string[];
+  county_label?: string;
+  party_label?: string;
+  party_options?: QuestionnaireOption[];
+  work_domains?: QuestionnaireOption[];
+  employment_statuses?: QuestionnaireOption[];
+  personal_interest_areas?: QuestionnaireOption[];
+  age_ranges?: QuestionnaireOption[];
+  housing_statuses?: QuestionnaireOption[];
+  mobility_modes?: QuestionnaireOption[];
+  education_contexts?: QuestionnaireOption[];
+  energy_focus_options?: QuestionnaireOption[];
+  public_service_options?: QuestionnaireOption[];
+}

@@ -280,7 +280,7 @@ VALID_MULTI_VALUE_FIELDS: dict[str, set[str]] = {
 
 
 def derive_profile_interests(profile_data: dict[str, Any]) -> list[str]:
-    tags: set[str] = set(profile_data.get("interests") or [])
+    tags: set[str] = set()
 
     tags.update(WORK_DOMAIN_TO_INTERESTS.get(profile_data.get("work_domain") or "", []))
     tags.update(EMPLOYMENT_STATUS_TO_INTERESTS.get(profile_data.get("employment_status") or "", []))
@@ -302,7 +302,7 @@ def derive_profile_interests(profile_data: dict[str, Any]) -> list[str]:
 
 
 def derive_persona_tags(profile_data: dict[str, Any]) -> list[str]:
-    tags: set[str] = set(profile_data.get("persona_tags") or [])
+    tags: set[str] = set()
 
     tags.update(WORK_DOMAIN_TO_PERSONAS.get(profile_data.get("work_domain") or "", []))
     tags.update(EMPLOYMENT_STATUS_TO_PERSONAS.get(profile_data.get("employment_status") or "", []))

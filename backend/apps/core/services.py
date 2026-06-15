@@ -18,6 +18,9 @@ class CacheService:
     def get_client(cls):
         if not cls._client_initialized:
             cls._client_initialized = True
+            if getattr(settings, "TESTING", False):
+                return None
+
             import os
             url = os.environ.get('UPSTASH_REDIS_REST_URL')
             token = os.environ.get('UPSTASH_REDIS_REST_TOKEN')

@@ -4,6 +4,12 @@ from django.db.models.query import QuerySet
 from rest_framework import serializers
 from .models import Parliamentarian, MPVote, ImpactScore
 from apps.bills.models import AIAnalysis
+from .score_utils import (
+    build_impact_score_payload,
+    build_impact_score_payload_from_annotations,
+    build_impact_score_payload_from_votes,
+)
+from .text_utils import repair_text
 
 
 class ImpactScoreSerializer(serializers.ModelSerializer):
@@ -55,8 +61,38 @@ class MPVoteSerializer(serializers.ModelSerializer):
         return []
 
 
-class ParliamentarianListSerializer(serializers.ModelSerializer):
-    impact_score = ImpactScoreSerializer(read_only=True)
+class ParliamentarianImpactScoreMixin(serializers.Serializer):
+    impact_score = serializers.SerializerMethodField()
+
+    def get_impact_score(self, obj: Parliamentarian):
+        impact_score = getattr(obj, "impact_score", None)
+        if impact_score is not None:
+            data = ImpactScoreSerializer(impact_score).data
+            if data.get("score") is None and data.get("total_votes", 0) > 0:
+                return build_impact_score_payload(
+                    total_votes=data["total_votes"],
+                    for_count=data["for_count"],
+                    against_count=data["against_count"],
+                    abstain_count=data["abstain_count"],
+                    absent_count=data["absent_count"],
+                    categories_voted=data.get("categories_voted") or [],
+                    narrative=data.get("narrative") or "",
+                    calculated_at=data.get("calculated_at"),
+                )
+            return data
+
+        annotated_payload = build_impact_score_payload_from_annotations(obj)
+        if annotated_payload is not None:
+            return annotated_payload
+
+        prefetched_votes = getattr(obj, "prefetched_votes", None)
+        if prefetched_votes is not None:
+            return build_impact_score_payload_from_votes(prefetched_votes)
+
+        return None
+
+
+class ParliamentarianListSerializer(ParliamentarianImpactScoreMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Parliamentarian
@@ -65,9 +101,12 @@ class ParliamentarianListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return _clean_parliamentarian_payload(data)
 
-class ParliamentarianDetailSerializer(serializers.ModelSerializer):
-    impact_score = ImpactScoreSerializer(read_only=True)
+
+class ParliamentarianDetailSerializer(ParliamentarianImpactScoreMixin, serializers.ModelSerializer):
     recent_votes = serializers.SerializerMethodField()
 
     class Meta:
@@ -77,6 +116,10 @@ class ParliamentarianDetailSerializer(serializers.ModelSerializer):
             'impact_score', 'recent_votes'
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return _clean_parliamentarian_payload(data)
 
     def get_recent_votes(self, obj: Parliamentarian):
         # We rely on prefetched data. If not prefetched, we fallback but this should be avoided in ViewSet.
@@ -102,8 +145,7 @@ class ParliamentarianDetailSerializer(serializers.ModelSerializer):
         return MPVoteSerializer(filtered_votes, many=True).data
 
 
-class ParliamentarianVoteMapSerializer(serializers.ModelSerializer):
-    impact_score = ImpactScoreSerializer(read_only=True)
+class ParliamentarianVoteMapSerializer(ParliamentarianImpactScoreMixin, serializers.ModelSerializer):
     votes = serializers.SerializerMethodField()
     total_votes = serializers.SerializerMethodField()
 
@@ -114,6 +156,10 @@ class ParliamentarianVoteMapSerializer(serializers.ModelSerializer):
             'impact_score', 'votes', 'total_votes'
         ]
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return _clean_parliamentarian_payload(data)
 
     def get_votes(self, obj: Parliamentarian):
         vote_limit = self.context.get('vote_limit')
@@ -133,3 +179,15 @@ class ParliamentarianVoteMapSerializer(serializers.ModelSerializer):
         
         votes_manager = getattr(obj, 'votes', None)
         return votes_manager.count() if votes_manager else 0
+
+
+def _clean_parliamentarian_payload(data: dict) -> dict:
+    for field in ("mp_name", "party", "county", "chamber"):
+        if data.get(field):
+            data[field] = repair_text(data[field])
+
+    impact_score = data.get("impact_score")
+    if impact_score and impact_score.get("narrative"):
+        impact_score["narrative"] = repair_text(impact_score["narrative"])
+
+    return data

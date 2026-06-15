@@ -30,12 +30,17 @@ export const handlers = [
     }
   }),
 
-  // GET bills metadata
-  http.get("http://localhost:4001/api/bills/metadata/", () => {
+  // GET questionnaire metadata
+  http.get("http://localhost:4001/api/profiles/questionnaire/", () => {
     return HttpResponse.json({
-      impact_categories: ["Justiție", "Sănătate", "Educație"],
-      counties: ["București", "Cluj", "Timiș"],
-      affected_profiles: ["Student", "Pensionar", "Angajat"]
+      impact_categories: ["Justitie", "Sanatate", "Educatie"],
+      personal_interest_areas: [
+        { value: "justice", label: "Justitie" },
+        { value: "health", label: "Sanatate" },
+        { value: "education", label: "Educatie" },
+      ],
+      counties: ["Bucuresti", "Cluj", "Timis"],
+      affected_profiles: ["Student", "Pensionar", "Angajat"],
     });
   }),
 ];

@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from datetime import date, timedelta
 
 from apps.profiles.models import Profile
-from .models import Bill, AIAnalysis, ImpactCategory, AffectedProfile
+from .models import Bill, AIAnalysis, ImpactCategory, AffectedProfile, VoteSession
 from apps.parliamentarians.models import Parliamentarian, MPVote
 from .filters import BillFilterSet
 from .views import BillViewSet
@@ -25,6 +25,7 @@ class FeedTests(APITestCase):
         
         # Create categories and profiles
         self.cat_it = ImpactCategory.objects.create(name="it", slug="it")
+        self.cat_health = ImpactCategory.objects.create(name="sanatate", slug="sanatate")
         self.prof_student = AffectedProfile.objects.create(name="student", slug="student")
 
     def test_feed_returns_recent_bills(self):
@@ -42,8 +43,7 @@ class FeedTests(APITestCase):
         profile = user.profile
         profile.county = "Cluj"
         profile.preferred_party = "USR"
-        profile.interests = ["it"]
-        profile.persona_tags = ["student"]
+        profile.personal_interest_areas = ["digitalization"]
         profile.questionnaire_completed = True
         profile.save()
         self.client.force_authenticate(user)
@@ -72,6 +72,39 @@ class FeedTests(APITestCase):
         self.assertEqual(len(bills_data), 2)
         self.assertEqual(bills_data[0]["idp"], self.bill1.idp)
 
+    def test_personalized_orders_by_relevance_before_recency(self):
+        user = User.objects.create_user(username="ranked-feed-user", password="StrongPass1!")
+        profile = user.profile
+        profile.personal_interest_areas = ["digitalization", "health"]
+        profile.questionnaire_completed = True
+        profile.save()
+        self.client.force_authenticate(user)
+
+        recent_single_match = Bill.objects.create(
+            idp=3,
+            bill_number="PL-x 3/2026",
+            title="Recent IT Bill",
+            registered_at=date.today(),
+        )
+        recent_single_analysis = AIAnalysis.objects.create(bill=recent_single_match)
+        recent_single_analysis.rel_impact_categories.add(self.cat_it)
+
+        older_double_match = Bill.objects.create(
+            idp=4,
+            bill_number="PL-x 4/2026",
+            title="Older Health and IT Bill",
+            registered_at=date.today() - timedelta(days=30),
+        )
+        older_double_analysis = AIAnalysis.objects.create(bill=older_double_match)
+        older_double_analysis.rel_impact_categories.add(self.cat_it, self.cat_health)
+
+        response = self.client.get(reverse("bill-personalized"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        bill_ids = [bill["idp"] for bill in response.data.get("bills", [])]
+        self.assertEqual(bill_ids[0], older_double_match.idp)
+        self.assertLess(bill_ids.index(recent_single_match.idp), bill_ids.index(self.bill1.idp))
+
 
 class BillFilterSetTests(APITestCase):
     def setUp(self):
@@ -97,3 +130,44 @@ class BillFilterSetTests(APITestCase):
 
     def test_viewset_uses_bill_filterset(self):
         self.assertIs(BillViewSet.filterset_class, BillFilterSet)
+
+
+class BillVotesTests(APITestCase):
+    def test_votes_endpoint_repairs_and_dedupes_mp_names(self):
+        bill = Bill.objects.create(idp=23131, bill_number="PL-x 23131/2026", title="Test Bill")
+        vote_session = VoteSession.objects.create(
+            idv=23131,
+            bill=bill,
+            type="final",
+            present=2,
+            for_votes=2,
+        )
+        bad_mp = Parliamentarian.objects.create(
+            mp_slug="neaclu-andreea-firula",
+            mp_name="Neac\u0139\u009fu Andreea-Firu\u0139\u0141a",
+            party="PNL(afiliat)",
+        )
+        good_mp = Parliamentarian.objects.create(
+            mp_slug="neacsu-andreea-firuta",
+            mp_name="Neac\u015fu Andreea-Firu\u0163a",
+            party="PNL(afiliat)",
+        )
+        MPVote.objects.create(
+            vote_session=vote_session,
+            parliamentarian=bad_mp,
+            vote="for",
+            party="PNL(afiliat)",
+        )
+        MPVote.objects.create(
+            vote_session=vote_session,
+            parliamentarian=good_mp,
+            vote="for",
+            party="PNL(afiliat)",
+        )
+
+        response = self.client.get(reverse("bill-votes", kwargs={"pk": bill.idp}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["votes"]["for"]), 1)
+        self.assertEqual(response.data["votes"]["for"][0]["mp_name"], "Neac\u0219u Andreea-Firu\u021ba")
+        self.assertEqual(response.data["votes"]["for"][0]["party"], "PNL(afiliat)")

@@ -89,6 +89,37 @@ describe("Profile Page", () => {
     });
   });
 
+  it("should persist manual interests through questionnaire fields", async () => {
+    const updateUserMock = vi.fn();
+    (useAuth as Mock).mockReturnValue({
+      user: mockUser,
+      isAuthenticated: true,
+      isLoading: false,
+      updateUser: updateUserMock,
+    });
+
+    const ProfilePage = (ProfileRoute as unknown as { component: React.ComponentType }).component;
+    render(<ProfilePage />);
+
+    const healthButton = await screen.findByRole("button", { name: /sanatate/i });
+    fireEvent.click(healthButton);
+
+    const saveButton = screen.getByText(/salveaz/i);
+    fireEvent.click(saveButton);
+
+    const confirmButton = await screen.findByText(/da, salveaz/i);
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(updateUserMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          personal_interest_areas: ["health"],
+          interests: expect.arrayContaining(["sanatate"]),
+        })
+      );
+    });
+  });
+
   it("should show error on update failure", async () => {
     const { server } = await import("./setup");
     const { http, HttpResponse } = await import("msw");

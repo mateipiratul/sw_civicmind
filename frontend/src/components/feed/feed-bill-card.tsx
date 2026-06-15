@@ -8,14 +8,22 @@ interface FeedBillCardProps {
   userInterests?: string[];
 }
 
+const normalizeInterest = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
 export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
   const ai = bill.ai_analysis;
   const { title } = extractBillTitleAndBody(ai?.title_short || bill.title);
   const isAdopted = bill.status?.toLowerCase().includes("adoptat");
+  const userInterestSet = new Set(userInterests.map(normalizeInterest));
 
   const allCats = ai?.impact_categories || [];
-  const matchedCats = allCats.filter(c => userInterests.includes(c));
-  const unmatchedCats = allCats.filter(c => !userInterests.includes(c));
+  const matchedCats = allCats.filter(c => userInterestSet.has(normalizeInterest(c)));
+  const unmatchedCats = allCats.filter(c => !userInterestSet.has(normalizeInterest(c)));
   const displayCats = [...matchedCats, ...unmatchedCats].slice(0, 2);
 
   return (
@@ -35,7 +43,7 @@ export function FeedBillCard({ bill, userInterests = [] }: FeedBillCardProps) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         {displayCats.map((cat) => {
-          const isMatch = userInterests.includes(cat);
+          const isMatch = userInterestSet.has(normalizeInterest(cat));
           return (
             <span key={cat} style={{ 
               fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, 

@@ -1,4 +1,5 @@
 from collections import Counter
+import hashlib
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -21,6 +22,48 @@ from apps.core.constants import DEFAULT_TRENDING_TOPICS
 
 from django.db.models import Count, Case, When, IntegerField
 from apps.core.decorators import cache_endpoint
+
+
+def _bill_cache_key(view_instance, request, *args, **kwargs):
+    query_string = request.META.get('QUERY_STRING', '')
+    user_id = request.user.id if request.user.is_authenticated else 'anon'
+    lookup_value = kwargs.get(view_instance.lookup_field or 'pk', '')
+    raw_key = (
+        f"bills_v3:"
+        f"{getattr(view_instance, 'action', '')}:"
+        f"{request.path}:"
+        f"{lookup_value}:"
+        f"{query_string}:"
+        f"{user_id}"
+    )
+    return f"endpoint_{hashlib.md5(raw_key.encode('utf-8')).hexdigest()}"
+
+
+def _personalized_bill_cache_key(view_instance, request, *args, **kwargs):
+    query_string = request.META.get('QUERY_STRING', '')
+    user_id = request.user.id if request.user.is_authenticated else 'anon'
+    profile_state = 'anon'
+
+    if request.user.is_authenticated:
+        profile = Profile.objects.filter(user_id=user_id).values(
+            'county',
+            'preferred_party',
+            'interests',
+            'persona_tags',
+            'personal_interest_areas',
+            'questionnaire_completed',
+        ).first()
+        profile_state = repr(profile or {})
+
+    raw_key = (
+        f"bills_v3:personalized:"
+        f"{request.path}:"
+        f"{query_string}:"
+        f"{user_id}:"
+        f"{profile_state}"
+    )
+    return f"endpoint_{hashlib.md5(raw_key.encode('utf-8')).hexdigest()}"
+
 
 class BillViewSet(viewsets.ReadOnlyModelViewSet):
 
@@ -52,7 +95,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         return super().list(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'])
-    @cache_endpoint()
+    @cache_endpoint(key_func=_bill_cache_key)
     def votes(self, request, pk=None):
         bill = self.get_object()
         # Get the latest final vote session
@@ -90,7 +133,7 @@ class BillViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    @cache_endpoint()
+    @cache_endpoint(key_func=_personalized_bill_cache_key)
     def personalized(self, request):
         logger = logging.getLogger(__name__)
         try:
