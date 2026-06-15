@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, User } from "lucide-react";
+import { Check } from "lucide-react";
 import type { QuestionnaireMetadata, QuestionnaireOption, User as UserType } from "@/lib/api";
 
 // Modular Components

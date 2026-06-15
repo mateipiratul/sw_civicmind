@@ -24,9 +24,6 @@ export function DashboardPage() {
     navigate({ to: "/", search: { page: String(newPage), category: activeCategory }, replace: false });
   }, [navigate, activeCategory]);
 
-  const handleCategoryChange = useCallback((cat: string | undefined) => {
-    navigate({ to: "/", search: { page: "1", category: cat }, replace: false });
-  }, [navigate]);
 
   // Bills Query
   const billsQuery = useQuery({

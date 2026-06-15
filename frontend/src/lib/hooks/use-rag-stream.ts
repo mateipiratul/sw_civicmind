@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, type RagSource, type RagChatOptions, type RagStreamEvent, ApiError } from "@/lib/api";
+import { api, type RagSource, type RagChatOptions, type RagStreamEvent } from "@/lib/api";
 
 export interface ChatMessage {
   id: string;
@@ -93,9 +93,9 @@ export function useRagStream(initialMessages: ChatMessage[] = []) {
       setSources(result.sources || []);
       setResolvedSource(result.resolved_source ?? null);
 
-    } catch (error) {
-      console.error("RAG Chat Stream Error:", error);
-      const errorMessage = buildErrorMessage(error);
+    } catch (_error) {
+      console.error("RAG Chat Stream Error:", _error);
+      const errorMessage = buildErrorMessage(_error);
       setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: errorMessage }]);
       setSources([]);
     } finally {
