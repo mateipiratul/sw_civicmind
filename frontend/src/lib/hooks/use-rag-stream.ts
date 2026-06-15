@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { api, type RagSource, type RagChatOptions, type RagStreamEvent, ApiError } from "@/lib/api";
 
 export interface ChatMessage {

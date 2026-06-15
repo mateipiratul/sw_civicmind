@@ -57,7 +57,9 @@ export class AIModule extends BaseApiClient {
       try {
         const data = await response.json();
         detail = data.detail || data.error || detail;
-      } catch { }
+      } catch {
+        // Keep the status-based message when the response body is not JSON.
+      }
       throw new ApiError(detail, response.status);
     }
 
@@ -81,20 +83,23 @@ export class AIModule extends BaseApiClient {
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
+        let event: RagStreamEvent;
         try {
-          const event = JSON.parse(trimmed) as RagStreamEvent;
-          handlers.onEvent?.(event);
-          if (event.type === "error") throw new ApiError(event.error, 503);
-          if (event.type === "done") {
-            finalResponse = {
-              answer: event.answer,
-              sources: event.sources,
-              resolved_source: event.resolved_source,
-              agent_mode: event.agent_mode,
-            };
-          }
+          event = JSON.parse(trimmed) as RagStreamEvent;
         } catch (e) {
           console.error("Failed to parse stream event", trimmed, e);
+          continue;
+        }
+
+        handlers.onEvent?.(event);
+        if (event.type === "error") throw new ApiError(event.error, 503);
+        if (event.type === "done") {
+          finalResponse = {
+            answer: event.answer,
+            sources: event.sources,
+            resolved_source: event.resolved_source,
+            agent_mode: event.agent_mode,
+          };
         }
       }
     }

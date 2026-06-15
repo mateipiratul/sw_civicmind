@@ -34,6 +34,7 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (fn: (props: unknown) => React.ReactNode) => fn,
   useParams: () => ({ id: "999" }),
   useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 

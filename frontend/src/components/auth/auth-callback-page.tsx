@@ -32,7 +32,11 @@ export function AuthCallbackPage() {
             console.warn('[AuthCallback] postMessage to opener failed, falling back to direct exchange', postErr);
             // fallback to server-side exchange below
           }
-          try { window.close(); } catch {}
+          try {
+            window.close();
+          } catch {
+            // Browser may deny scripted popup close; direct exchange remains available.
+          }
           return;
         }
 

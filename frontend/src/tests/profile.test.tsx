@@ -6,7 +6,6 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Route as ProfileRoute } from "../routes/profile/index";
 import { useAuth } from "@/lib/use-auth";
-import { api } from "@/lib/api";
 
 // Mock useAuth locally
 vi.mock("@/lib/use-auth", () => ({
