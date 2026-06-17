@@ -554,10 +554,14 @@ class OnboardingAnalysisResponse(BaseModel):
 def analyze_onboarding(req: OnboardingAnalysisRequest):
     try:
         from langchain_mistralai import ChatMistralAI
-        from env_setup import load_project_env
+        from env_setup import get_mistral_api_key, load_project_env
         load_project_env()
 
-        llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+        llm = ChatMistralAI(
+            model="mistral-large-latest",
+            temperature=0,
+            api_key=get_mistral_api_key(raise_error=True),
+        )
         structured_llm = llm.with_structured_output(OnboardingAnalysisResponse)
         
         prompt = f"""

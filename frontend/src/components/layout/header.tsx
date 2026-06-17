@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/use-auth";
-import { Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,12 +53,6 @@ export function Header() {
 
       {/* Right side */}
       <div className="header-actions">
-        {isAuthenticated && user && (
-          <button className="icon-button">
-            <Bell size={15} />
-          </button>
-        )}
-
         {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

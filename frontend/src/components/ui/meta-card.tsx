@@ -8,13 +8,13 @@ interface MetaCardProps {
 
 export function MetaCard({ icon, label, value }: MetaCardProps) {
   return (
-    <div className="min-w-0 flex items-start gap-3 p-3 rounded-lg bg-white border border-gray-200">
-      <div className="mt-1 color-gray-500 flex-shrink-0">{icon}</div>
-      <div className="min-w-0">
-        <div className="text-[9px] font-semibold tracking-wider uppercase text-gray-400 mb-1">
+    <div className="meta-card">
+      <div className="meta-card-icon">{icon}</div>
+      <div className="meta-card-copy">
+        <div className="meta-card-label">
           {label}
         </div>
-        <div className="text-sm font-bold text-gray-900 truncate">
+        <div className="meta-card-value">
           {value}
         </div>
       </div>
