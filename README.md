@@ -98,6 +98,16 @@ CivicMind integrates a multi-agent architecture (using selfhosted Qwen 3.5 & Lan
 * **As an engaged constituent who wants their voice heard**, I want to send an official email to my local deputy with a single click using AI templates so that I can easily express my polite support or protest without spending time writing a formal letter.
 * **As an administrator maintaining trust**, I want automated checks to run before changes are merged so that broken builds, regressions, and unsafe agent changes are caught early.
 
+## Candidate Requirements
+
+| # | Requirement | Priority | Type | Source · confirmed by | Why (rationale) | How we check it |
+|---|---|---|---|---|---|---|
+| C1 | The system shall show citizens the newest legislative projects, ordered from newest to oldest. | must | F | README §User Stories, “stay updated”; team/stakeholder confirmation pending. | Citizens should not have to search multiple government websites to find current projects. | Feed integration test with dated fixtures verifies descending date order and inclusion of the newest project. |
+| C2 | For each supported legislative project, the system shall provide a plain-language summary containing exactly three key ideas, Pro and Con arguments, and links to the official source data used. | must | F | README §User Stories, “without a legal background” and “objective voter”; team/stakeholder confirmation pending. | Citizens need accessible explanations and evidence to form their own opinions. | Analysis output test verifies three key ideas, both argument categories, and valid official-source references. |
+| C3 | The system shall show each parliamentarian’s recorded votes on finalized laws and an Impact Score derived from the available voting record. | must | F | README §User Stories, “voter demanding transparency” and “tracking politician consistency”; team/stakeholder confirmation pending. | Citizens need evidence of representatives’ actions to assess accountability. | Vote/score integration test verifies displayed votes match fixture records and the score matches the documented calculation for those records. |
+| C4 | The system shall let a signed-in citizen save a county and interest categories, then use those preferences to tailor the feed and voting alerts. | should | F | README §User Stories, “new user” and “busy professional”; team/stakeholder confirmation pending. | Relevant information helps citizens follow issues that affect them without excessive alerts. | Profile/feed/alert tests verify saved preferences affect matching results and non-matching projects do not trigger alerts. |
+| C5 | The system shall generate an editable email draft addressed to the citizen’s selected representative, using a supplied civic-engagement template. | should | F | README §User Stories, “engaged constituent”; team/stakeholder confirmation pending. | A usable starting point can lower the effort needed to contact elected representatives. | Messenger test verifies the draft contains the selected representative’s address and generated body, and can be edited before sending. |
+
 ---
 
 ## 🧱 High-Level Architecture
